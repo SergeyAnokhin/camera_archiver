@@ -1,0 +1,10 @@
+{
+  "domain": "camera_archiver",
+  "name": "Camera Archiver",
+  "documentation": "https://github.com/SergeyAnokhin/camera_archiver",
+  "dependencies": [],
+  "codeowners": ["@SergeyAnokhin"],
+  "iot_class": "local_push",
+  "config_flow": false,
+  "version": "v0.0.1"
+}
