@@ -33,6 +33,10 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 
 _LOGGER = logging.getLogger(__name__)
 
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    pass
+
 class TransferSensor(SensorEntity):
 
     def __init__(self, name, icon, unit=""):

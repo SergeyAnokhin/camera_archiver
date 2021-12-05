@@ -13,7 +13,6 @@ PLATFORMS = ["sensor", "binary_sensor", "switch"]
 
 _LOGGER = logging.getLogger(__name__)
 
-
 # def setup_platform(hass, config, add_devices, discovery_info=None):
 #     """Setup the sensor platform."""
 #     _LOGGER.info("Start setup_platform")
@@ -21,7 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 CFG = {}
 
 def FileTransferCallback(stat):
-    print(f"🔁 Callback: {stat}")
+    _LOGGER.Info(f"🔁 Callback: {stat}")
 
 async def async_setup(hass: HomeAssistant, global_config: Config):
     """Set up this integration using YAML."""
@@ -31,7 +30,7 @@ async def async_setup(hass: HomeAssistant, global_config: Config):
     archiver.FileCopiedCallBack = FileTransferCallback
 
     async def service_archive_private(call: ServiceCall) -> None:
-        _LOGGER.info("service archive call")
+        _LOGGER.info("service camera archive call")
         archiver.run(call)
 
     hass.services.async_register(DOMAIN, 'archive', service_archive_private)
