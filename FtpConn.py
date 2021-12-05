@@ -1,7 +1,9 @@
-import os
+import os, logging
 
 from ftplib import FTP
 from .FtpItem import FtpItem
+
+_LOGGER = logging.getLogger(__name__)
 
 class FtpConn:
 
@@ -36,10 +38,8 @@ class FtpConn:
         current_path = self.ftp.pwd()
         if dir:
             newpath = self.config["path"] + "/" + dir
-            #print(f"#dir {current_path} / {dir}")
             self.ftp.dir(dir, filelist.append)
         else:
-            #print(f"#dir {current_path}")
             self.ftp.dir(filelist.append)
         return [FtpItem(self.config, newpath, x) for x in filelist]
 
@@ -60,5 +60,5 @@ class FtpConn:
         with open(localfilename, 'wb') as localfile:
             self.ftp.retrbinary(f'RETR {fileFtp.fullname}', localfile.write)
         filesize = os.path.getsize(localfilename)
-        print(f'🗄️⏬ File downloaded : {fileFtp.fullname} ==> {localfilename} ({filesize}b)')
+        _LOGGER.debug(f'🗄️⏬ File downloaded : {fileFtp.fullname} ==> {localfilename} ({filesize}b)')
 

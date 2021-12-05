@@ -1,9 +1,11 @@
 from datetime import datetime
-import os
+import os, logging
 
 from .FtpConn import FtpConn
 from .FtpItem import FtpItem
 from .FtpTransferStat import FtpTransferStat
+
+_LOGGER = logging.getLogger(__name__)
 
 class FtpTransfer:
     def __init__(self, config: dict):
@@ -22,10 +24,8 @@ class FtpTransfer:
             files_copied = 0
             for fs in fs_items:
                 subitems = srcFtp.GetFtpItems(fs.name)
-                #print(fs, f" ({len(subitems)} file)")
 
                 for f in subitems:
-                    # print(" / ", f, f" {files_counter}")
                     files_counter = files_counter + 1
                     if files_counter > max:
                         continue
@@ -42,22 +42,7 @@ class FtpTransfer:
                     stat.info["value"] = os.path.getsize(localfile)
                     self.OnFileTransferCall(stat)
 
-        # with FTP(host=cfrom["ftp"]["host"], user=cfrom["ftp"]["user"], passwd=cfrom["ftp"]["password"]) as srcFTP:
-        #     srcFTP.cwd(cfrom["ftp"]["path"])
-        #     fs_items = self.GetFtpItems(srcFTP)
-        #     max = max if max != None else max(fs_items)
-        #     for f in fs_items[0:max]:
-        #         fs = FtpItem(cfrom, cfrom["ftp"]["path"], f)
-        #         print(fs)
-        #         subitems = fs.subitems(srcFTP)
-        #         [print(x) for x in subitems]
-
-        #         for f in subitems:
-        #             f.download(self.localFileStorage(f), srcFTP)
-        #             self.Upload(f, f.datetime())
-
-        #     srcFTP.quit()
-        print(f"🆗 Files transferring done. Copied: {files_copied} / {files_counter}")
+        _LOGGER.info(f"🆗 Files transferring done. Copied: {files_copied} / {files_counter}")
 
     def datetime(self, item: FtpItem):
         #p = re.compile(".*(?P<year>\d{4})Y(?P<month>\d\d)M(?P<day>\d\d)D(?P<hour>\d\d)H/E1(?P<min>\d\d)M(?P<sec>\d\d)S(?P<msec>\d\d).*")
@@ -68,7 +53,7 @@ class FtpTransfer:
         try:
             return datetime.strptime(item.fullname, pattern)
         except Exception as e:
-            print(f"❗ Can't parse datetime from: '{item.fullname}' pattern: '{pattern}' ❗ \n {e}")
+            _LOGGER.warn(f"❗ Can't parse datetime from: '{item.fullname}' pattern: '{pattern}' ❗ \n {e}")
     
     def localFileStorage(self, file: FtpItem) -> str:
         return f'{self.config["local_storage"]}/camera.{self.config["camera"]["name"]}.{file.extension}'
