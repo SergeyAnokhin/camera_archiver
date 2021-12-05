@@ -37,7 +37,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 
 _LOGGER = logging.getLogger(__name__)
 
-def get_sensor_unique_id(config: ConfigEntry, sensor_name: str):
+def get_sensor_unique_id(config, sensor_name: str):
     return f'{config[CONF_NAME]} {sensor_name}'
 
 
@@ -91,6 +91,18 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
         CopiedFilesSensor(coordinator, config)
     ])
 
+    # async def async_get_last_state(self) -> State | None:
+    #     """Get the entity state from the previous run."""
+    #     if self.hass is None or self.entity_id is None:
+    #         # Return None if this entity isn't added to hass yet
+    #         _LOGGER.warning("Cannot get last state. Entity not added to hass")  # type: ignore[unreachable]
+    #         return None
+    #     data = cast(
+    #         RestoreStateData, await RestoreStateData.async_get_instance(self.hass)
+    #     )
+    #     if self.entity_id not in data.last_states:
+    #         return None
+    #     return data.last_states[self.entity_id].state
 
 class TransferSensor(CoordinatorEntity, SensorEntity):
 
@@ -101,8 +113,8 @@ class TransferSensor(CoordinatorEntity, SensorEntity):
         self._name = name
         self._unit = unit
         self._icon = icon
-        self._timestamp = None
-        self._state = None
+        # self._timestamp = None
+        # self._state = None
 
     @property
     def name(self):
