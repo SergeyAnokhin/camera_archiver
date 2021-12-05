@@ -1,8 +1,8 @@
 from datetime import timedelta
 import logging, os
+from homeassistant.helpers.config_validation import string
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from .CameraArchiver import CameraArchive
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC, CONF_NAME
@@ -10,7 +10,7 @@ from homeassistant.core import Config, HomeAssistant, ServiceCall
 
 from .FtpTransfer import FtpTransfer
 
-from .const import (DOMAIN, HA_FILES_COPIED, HA_NOT_PROCESSED_FILES)
+from .const import (DOMAIN, SENSOR_NAME_FILES_COPIED, SENSOR_NAME_TO_COPY_FILES)
 
 PLATFORMS = ["sensor", "binary_sensor", "switch"]
 
@@ -20,10 +20,8 @@ _LOGGER = logging.getLogger(__name__)
 #     """Setup the sensor platform."""
 #     _LOGGER.info("Start setup_platform")
 
-CFG = {}
-
-def FileTransferCallback(stat):
-    _LOGGER.Info(f"🔁 Callback: {stat}")
+# def FileTransferCallback(stat):
+#     _LOGGER.Info(f"🔁 Callback: {stat}")
 
 async def async_setup(hass: HomeAssistant, global_config: Config):
     """Set up this integration using YAML."""
@@ -38,29 +36,29 @@ async def async_setup(hass: HomeAssistant, global_config: Config):
 
     # hass.services.async_register(DOMAIN, 'archive', service_archive_private)
 
-    data = {
-        HA_NOT_PROCESSED_FILES: 100,
-        HA_FILES_COPIED: 0
-    }
+    # data = {
+    #     SENSOR_NAME_TO_COPY_FILES: 100,
+    #     SENSOR_NAME_FILES_COPIED: 0
+    # }
 
+    # async def async_get_status():
+    #     _LOGGER.info(f"Get Status Call")
+    #     data = hass.data[DOMAIN].data
+    #     data[SENSOR_NAME_TO_COPY_FILES] = data[SENSOR_NAME_TO_COPY_FILES] - 1
+    #     data[SENSOR_NAME_FILES_COPIED] = data[SENSOR_NAME_FILES_COPIED] + 1
+    #     return data
 
-    async def async_get_status():
-        _LOGGER.info(f"Get Status Call")
-        data = hass.data[DOMAIN].data
-        data[HA_NOT_PROCESSED_FILES] = data[HA_NOT_PROCESSED_FILES] - 1
-        data[HA_FILES_COPIED] = data[HA_FILES_COPIED] + 1
-        return data
+    # coordinator = DataUpdateCoordinator(
+    #     hass,
+    #     logging.getLogger(__name__),
+    #     name=DOMAIN,
+    #     update_method=async_get_status,
+    #     update_interval=timedelta(seconds=5),
+    # )
+    # coordinator.data = data
 
-    coordinator = DataUpdateCoordinator(
-        hass,
-        logging.getLogger(__name__),
-        name=DOMAIN,
-        update_method=async_get_status,
-        update_interval=timedelta(seconds=5),
-    )
-    coordinator.data = data
-
-    hass.data[DOMAIN] = coordinator
+    # # instance_name = global_config[DOMAIN][CONF_NAME]
+    # hass.data[DOMAIN] = coordinator
 
     return True
 
@@ -73,3 +71,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
     _LOGGER.info("Start async_unload_entry")
+
+
+# def get_coordinator(hass: HomeAssistant, config: Config):
+#     instance_name = config[DOMAIN][CONF_NAME]
+#     return hass.data[DOMAIN][instance_name]
