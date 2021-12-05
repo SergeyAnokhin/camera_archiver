@@ -46,12 +46,10 @@ async def async_setup(hass: HomeAssistant, global_config: Config):
 
     async def async_get_status():
         _LOGGER.info(f"Get Status Call")
-        coordinator: DataUpdateCoordinator = hass.data[DOMAIN]
-        # data[HA_NOT_PROCESSED_FILES] = data[HA_NOT_PROCESSED_FILES] - 1
-        # data[HA_FILES_COPIED] = data[HA_FILES_COPIED] - 1
-        coordinator.data[HA_NOT_PROCESSED_FILES] = coordinator.data[HA_NOT_PROCESSED_FILES] - 1
-        coordinator.data[HA_FILES_COPIED] = coordinator.data[HA_FILES_COPIED] + 1
-        return coordinator.data
+        data = hass.data[DOMAIN].data
+        data[HA_NOT_PROCESSED_FILES] = data[HA_NOT_PROCESSED_FILES] - 1
+        data[HA_FILES_COPIED] = data[HA_FILES_COPIED] - 1
+        return data
 
     coordinator = DataUpdateCoordinator(
         hass,
