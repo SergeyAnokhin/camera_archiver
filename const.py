@@ -4,7 +4,7 @@ DOMAIN = "camera_archiver"
 DEFAULT_SCAN_INTERVAL = 300
 
 CONF_LOCAL_STORAGE = "local_storage"
-CONF_USER = "USER"
+CONF_USER = "user"
 CONF_FROM = "from"
 CONF_TO = "to"
 CONF_FTP = "ftp"

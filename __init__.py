@@ -24,16 +24,16 @@ def FileTransferCallback(stat):
 
 async def async_setup(hass: HomeAssistant, global_config: Config):
     """Set up this integration using YAML."""
-    config = global_config[DOMAIN]
+    # config = global_config[DOMAIN]
     
-    archiver = CameraArchive(hass, config)
-    archiver.FileCopiedCallBack = FileTransferCallback
+    # archiver = CameraArchive(hass, config)
+    # archiver.FileCopiedCallBack = FileTransferCallback
 
-    async def service_archive_private(call: ServiceCall) -> None:
-        _LOGGER.info("service camera archive call")
-        archiver.run(call)
+    # async def service_archive_private(call: ServiceCall) -> None:
+    #     _LOGGER.info("service camera archive call")
+    #     archiver.run(call)
 
-    hass.services.async_register(DOMAIN, 'archive', service_archive_private)
+    # hass.services.async_register(DOMAIN, 'archive', service_archive_private)
 
     return True
 

@@ -4,7 +4,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity, STATE_CLASS_TOTAL_INCREASING
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_PATH
 
-from .const import CONF_DATETIME_PARSER, CONF_DATETIME_PATTERN, CONF_FROM, CONF_LOCAL_STORAGE, CONF_TO, CONF_USER, \
+from .const import CONF_DATETIME_PARSER, CONF_DATETIME_PATTERN, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_TO, CONF_USER, \
                     HA_MEGABYTES_COPIED, HA_FILES_COPIED, ICON_DEFAULT, ICONS_MAPPING
 
 FTP_SCHEMA = vol.Schema({
@@ -15,12 +15,12 @@ FTP_SCHEMA = vol.Schema({
     })
 
 FROM_SCHEMA = vol.Schema({
-        vol.Required(CONF_FROM): FTP_SCHEMA,
+        vol.Required(CONF_FTP): FTP_SCHEMA,
         vol.Required(CONF_DATETIME_PARSER): cv.string
     })
 
 TO_SCHEMA = vol.Schema({
-        vol.Required(CONF_FROM): FTP_SCHEMA,
+        vol.Required(CONF_FTP): FTP_SCHEMA,
         vol.Required(CONF_DATETIME_PATTERN): cv.string
     })
 
@@ -34,7 +34,10 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+# async def async_setup_entry(hass, config_entry, async_add_entities):
+#     pass
+
+def setup_platform(hass, config, add_entities, discovery_info=None):
     pass
 
 class TransferSensor(SensorEntity):
