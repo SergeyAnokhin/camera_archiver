@@ -3,9 +3,10 @@ import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity, STATE_CLASS_TOTAL_INCREASING
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_PATH
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_DATETIME_PARSER, CONF_DATETIME_PATTERN, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_TO, CONF_USER, \
-                    HA_MEGABYTES_COPIED, HA_FILES_COPIED, ICON_DEFAULT, ICONS_MAPPING
+from .const import CONF_DATETIME_PARSER, CONF_DATETIME_PATTERN, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_TO, CONF_USER, DOMAIN, \
+                    HA_MEGABYTES_COPIED, HA_FILES_COPIED, HA_NOT_PROCESSED_FILES, ICON_COPIED, ICON_DEFAULT, ICON_NOT_COPIED, ICONS_MAPPING
 
 FTP_SCHEMA = vol.Schema({
         vol.Required(CONF_HOST): cv.string,
@@ -38,12 +39,18 @@ _LOGGER = logging.getLogger(__name__)
 #     pass
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
-    pass
+    coordinator = hass.data[DOMAIN]
 
-class TransferSensor(SensorEntity):
+    add_entities([
+        TransferSensor(coordinator, HA_NOT_PROCESSED_FILES, ICON_NOT_COPIED),
+        TransferSensor(coordinator, HA_FILES_COPIED, ICON_COPIED)
+    ])
 
-    def __init__(self, name, icon, unit=""):
+class TransferSensor(CoordinatorEntity, SensorEntity):
+
+    def __init__(self, coordinator, name, icon, unit=""):
         """Initialize the sensor."""
+        super().__init__(coordinator)
         self._name = name
         self._unit = unit
         self._icon = icon
@@ -61,6 +68,7 @@ class TransferSensor(SensorEntity):
     @property
     def state(self):
         """Return the state of the sensor."""
+        self._state = self.coordinator.data[self._name]
         return self._state
 
     @property
@@ -73,7 +81,7 @@ class TransferSensor(SensorEntity):
         """Return the icon of the sensor."""
         return self._icon
 
-    def set_data(self, timestamp, state):
-        """Update sensor data"""
-        self._state = state
-        self._timestamp = timestamp
+    # def set_data(self, timestamp, state):
+    #     """Update sensor data"""
+    #     self._state = state
+    #     self._timestamp = timestamp
