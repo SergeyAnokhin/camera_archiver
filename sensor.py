@@ -83,6 +83,7 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
         update_method=async_get_status,
         update_interval=timedelta(seconds=interval),
     )
+    coordinator.last_update_success = False
     coordinator.data = data
 
     hass.data[DOMAIN][instanceName] = coordinator
@@ -109,6 +110,7 @@ class TransferSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         self._icon = icon
         # self._timestamp = None
         self._state = None
+        self._available = False
 
     @property
     def name(self):
@@ -140,12 +142,22 @@ class TransferSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
     #     self._state = self.coordinator.data[self._name]
     #     return self._state
 
+    @property
+    def available(self):
+        """Return True if entity is available."""
+        return self._available
+
+    @property
+    def native_value(self):
+        """Get the latest reading."""
+        return self._state
+
     @callback
     def _state_update(self):
         """Call when the coordinator has an update."""
-        # self._available = self.coordinator.last_update_success
-        # if self._available:
-        #     self._state = self.meter.reading
+        self._available = self.coordinator.last_update_success
+        if self._available:
+            self._state = self.coordinator.data[self._name]
         _LOGGER.info(f"#{self._name}# Call Callback TransferSensor._state_update() STATE={self._state}")
         self.async_write_ha_state()
 
@@ -158,8 +170,8 @@ class TransferSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         # we added the entity, there is no need to restore
         # state.
         _LOGGER.info(f"#{self._name}# coordinator.last_update_success={self.coordinator.last_update_success} STATE={self._state}")
-        if self.coordinator.last_update_success:
-            return
+        # if self.coordinator.last_update_success:
+        #     return
 
         last_state = await self.async_get_last_state()
         _LOGGER.info(f"#{self._name}# call async_get_last_state STATE={self._state}")
