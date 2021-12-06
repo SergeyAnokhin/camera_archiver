@@ -1,6 +1,7 @@
 from datetime import timedelta
 import logging
 import voluptuous as vol
+from .FtpTransfer import FtpTransfer
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
@@ -62,10 +63,13 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
     }
 
     async def async_get_status():
-        _LOGGER.info(f"Get Status Call")
+        _LOGGER.info(f"Get Status Call '{config[CONF_NAME]}'")
         data = hass.data[DOMAIN][instanceName].data
-        data[sensor1] = data[sensor1] - 1
-        data[sensor2] = data[sensor2] + 1
+        # data[sensor1] = data[sensor1] - 1
+        # data[sensor2] = data[sensor2] + 1
+        transfer = FtpTransfer(config)
+        files = transfer.State()
+        data[sensor1] = files
         return data
 
     interval = 5 if instanceName == "Yi1080pWoodSouth" else 10
@@ -103,6 +107,7 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
     #     if self.entity_id not in data.last_states:
     #         return None
     #     return data.last_states[self.entity_id].state
+
 
 class TransferSensor(CoordinatorEntity, SensorEntity):
 
@@ -149,14 +154,12 @@ class TransferSensor(CoordinatorEntity, SensorEntity):
 
 class ToCopyFilesSensor(TransferSensor):
     def __init__(self, coordinator, config):
-        instanceName = config[CONF_NAME]
         name = get_sensor_unique_id(config, SENSOR_NAME_TO_COPY_FILES)
         icon = ICON_TO_COPY
         super().__init__(coordinator, config, name, icon)    
 
 class CopiedFilesSensor(TransferSensor):
     def __init__(self, coordinator, config):
-        instanceName = config[CONF_NAME]
         name = get_sensor_unique_id(config, SENSOR_NAME_FILES_COPIED)
         icon = ICON_COPIED
         super().__init__(coordinator, config, name, icon)    

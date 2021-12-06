@@ -14,6 +14,22 @@ class FtpTransfer:
     def OnFileTransferCallback(self, callback):
         self.OnFileTransferCall = callback
 
+    def State(self):
+        cfrom = self.config["from"]
+
+        with FtpConn(cfrom["ftp"]) as srcFtp:
+            srcFtp.cd(cfrom["ftp"]["path"])
+            fs_items = srcFtp.GetFtpItems()
+            files_counter = 0
+            for fs in fs_items:
+                subitems = srcFtp.GetFtpItems(fs.name)
+
+                for f in subitems:
+                    files_counter = files_counter + 1
+
+        _LOGGER.info(f"🆗 Files check done. Found: {files_counter} files")
+        return files_counter
+
     def Copy(self, max=100):
         cfrom = self.config["from"]
 
