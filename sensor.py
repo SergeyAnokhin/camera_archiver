@@ -3,7 +3,7 @@ import logging
 import voluptuous as vol
 from .FtpTransfer import FtpTransfer
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity, STATE_CLASS_TOTAL_INCREASING
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_PATH
@@ -48,6 +48,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
     instanceName = config[CONF_NAME]
+    _LOGGER.debug(f"#{instanceName}# Call sensor.py:get_coordinator() {instanceName}")
 
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
@@ -64,7 +65,7 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
     }
 
     async def async_get_status():
-        _LOGGER.info(f"Get Status Call '{config[CONF_NAME]}'")
+        _LOGGER.info(f"#{instanceName}# Call Callback sensor.py:get_coordinator.async_get_status() ")
         data = hass.data[DOMAIN][instanceName].data
         data[sensor1] = data[sensor1] - 1
         data[sensor2] = data[sensor2] + 1
@@ -89,26 +90,13 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
     return coordinator
 
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
+    _LOGGER.debug("Call sensor.py:async_setup_platform()")
     coordinator = get_coordinator(hass, config)
 
     add_entities([
         ToCopyFilesSensor(coordinator, config),
         CopiedFilesSensor(coordinator, config)
     ])
-
-    # async def async_get_last_state(self) -> State | None:
-    #     """Get the entity state from the previous run."""
-    #     if self.hass is None or self.entity_id is None:
-    #         # Return None if this entity isn't added to hass yet
-    #         _LOGGER.warning("Cannot get last state. Entity not added to hass")  # type: ignore[unreachable]
-    #         return None
-    #     data = cast(
-    #         RestoreStateData, await RestoreStateData.async_get_instance(self.hass)
-    #     )
-    #     if self.entity_id not in data.last_states:
-    #         return None
-    #     return data.last_states[self.entity_id].state
-
 
 class TransferSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
 
@@ -120,7 +108,7 @@ class TransferSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         self._unit = unit
         self._icon = icon
         # self._timestamp = None
-        self._state = 100
+        self._state = None
 
     @property
     def name(self):
@@ -135,11 +123,11 @@ class TransferSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
     #         self._state = state
     #     return self._state
 
-    async def async_added_to_hass(self) -> None:
-        """Handle entity which will be added."""
-        await super().async_added_to_hass()
-        if state := await self.async_get_last_state():
-            self._state = state.state
+    # async def async_added_to_hass(self) -> None:
+    #     """Handle entity which will be added."""
+    #     await super().async_added_to_hass()
+    #     if state := await self.async_get_last_state():
+    #         self._state = state.state
 
     # @property
     # def available(self) -> bool:
@@ -151,6 +139,35 @@ class TransferSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
     #     """Return the state of the sensor."""
     #     self._state = self.coordinator.data[self._name]
     #     return self._state
+
+    @callback
+    def _state_update(self):
+        """Call when the coordinator has an update."""
+        # self._available = self.coordinator.last_update_success
+        # if self._available:
+        #     self._state = self.meter.reading
+        _LOGGER.info(f"#{self._name}# Call Callback TransferSensor._state_update() STATE={self._state}")
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self):
+        """Subscribe to updates."""
+        _LOGGER.info(f"#{self._name}# Call TransferSensor.async_added_to_hass() STATE={self._state}")
+        self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
+
+        # If the background update finished before
+        # we added the entity, there is no need to restore
+        # state.
+        _LOGGER.info(f"#{self._name}# coordinator.last_update_success={self.coordinator.last_update_success} STATE={self._state}")
+        if self.coordinator.last_update_success:
+            return
+
+        last_state = await self.async_get_last_state()
+        _LOGGER.info(f"#{self._name}# call async_get_last_state STATE={self._state}")
+        if last_state:
+            self._state = last_state.state
+            self._available = True
+            _LOGGER.info(f"#{self._name}# NEW_STATE={self._state}")
+
 
     @property
     def unit_of_measurement(self):
