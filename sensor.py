@@ -8,6 +8,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity, STATE_CLASS_TOTAL_INCREASING
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_PATH
 from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
+from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import CONF_DATETIME_PARSER, CONF_DATETIME_PATTERN, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_TO, CONF_USER, DOMAIN, \
                     ICON_COPIED, ICON_DEFAULT, ICON_TO_COPY, SENSOR_NAME_FILES_COPIED, SENSOR_NAME_TO_COPY_FILES
@@ -58,18 +59,18 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
     sensor2 = get_sensor_unique_id(config, SENSOR_NAME_FILES_COPIED)
 
     data = {
-        sensor1: 100,
-        sensor2: 0
+        sensor1: 101,
+        sensor2: 1
     }
 
     async def async_get_status():
         _LOGGER.info(f"Get Status Call '{config[CONF_NAME]}'")
         data = hass.data[DOMAIN][instanceName].data
-        # data[sensor1] = data[sensor1] - 1
-        # data[sensor2] = data[sensor2] + 1
-        transfer = FtpTransfer(config)
-        files = transfer.State()
-        data[sensor1] = files
+        data[sensor1] = data[sensor1] - 1
+        data[sensor2] = data[sensor2] + 1
+        # transfer = FtpTransfer(config)
+        # files = transfer.State()
+        # data[sensor1] = files
         return data
 
     interval = 5 if instanceName == "Yi1080pWoodSouth" else 10
@@ -109,7 +110,7 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
     #     return data.last_states[self.entity_id].state
 
 
-class TransferSensor(CoordinatorEntity, SensorEntity):
+class TransferSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
 
     def __init__(self, coordinator, config, name, icon, unit=""):
         """Initialize the sensor."""
@@ -119,23 +120,37 @@ class TransferSensor(CoordinatorEntity, SensorEntity):
         self._unit = unit
         self._icon = icon
         # self._timestamp = None
-        # self._state = None
+        self._state = 100
 
     @property
     def name(self):
         """Return the name of the sensor."""
         return self._name
 
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return self._name in self.coordinator.data
+    # @property
+    # def native_value(self):
+    #     """Return native value for entity."""
+    #     if self.coordinator.data:
+    #         state = self.coordinator.data[self._name]
+    #         self._state = state
+    #     return self._state
 
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-        self._state = self.coordinator.data[self._name]
-        return self._state
+    async def async_added_to_hass(self) -> None:
+        """Handle entity which will be added."""
+        await super().async_added_to_hass()
+        if state := await self.async_get_last_state():
+            self._state = state.state
+
+    # @property
+    # def available(self) -> bool:
+    #     """Return True if entity is available."""
+    #     return self._name in self.coordinator.data
+
+    # @property
+    # def state(self):
+    #     """Return the state of the sensor."""
+    #     self._state = self.coordinator.data[self._name]
+    #     return self._state
 
     @property
     def unit_of_measurement(self):
