@@ -132,7 +132,7 @@ class TransferRestoreSensor(CoordinatorEntity, TransferSensor):
 
     @property
     def available(self):
-        return self._state == None
+        return self._state and self._state.isdigit()
 
     @property
     def native_value(self):
@@ -141,10 +141,16 @@ class TransferRestoreSensor(CoordinatorEntity, TransferSensor):
     @callback
     def _state_update(self):
         _LOGGER.debug(f"#{self._name}# Call Callback TransferRestoreSensor._state_update() STATE={self._state}")
-        if not self._state:
-            self._state = 0
-        self._state = int(self._state) + 1
+        coor = self.coordinator
+        if not self.available:
+            self._state = '0'
+        self._state = str(int(self._state) + 1)
+        av = self.available
         self.async_write_ha_state()
+        # #CHECK
+        # last_state = await self.async_get_last_state()
+        # state = last_state.state
+
 
     async def async_added_to_hass(self):
         _LOGGER.info(f"#{self._name}# Call TransferRestoreSensor.async_added_to_hass()")
@@ -162,13 +168,16 @@ class TransferRestoreSensor(CoordinatorEntity, TransferSensor):
         #         self.hass, f"{DOMAIN}_data_updated", self._schedule_immediate_update
         #     )
         # )
-        self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
+        self.async_on_remove(
+            self.coordinator.async_add_listener(
+                self._state_update
+            )
+        )
 
         last_state = await self.async_get_last_state()
         _LOGGER.info(f"#{self._name}# call async_get_last_state STATE={self._state}")
-        if last_state:
+        if last_state and last_state.state and last_state.state.isdigit():
             self._state = last_state.state
-            self._available = True
             _LOGGER.info(f"#{self._name}# NEW_STATE={self._state}")
 
 
