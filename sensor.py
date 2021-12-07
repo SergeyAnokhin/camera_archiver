@@ -1,16 +1,20 @@
 from datetime import timedelta
 import logging
+from typing import Any
 import voluptuous as vol
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
+
+from homeassistant.helpers.event import async_track_time_change
 from .FtpTransfer import FtpTransfer
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity, STATE_CLASS_TOTAL_INCREASING
-from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_PATH
+from homeassistant.const import CONF_ENTITIES, CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_PATH, CONF_SCAN_INTERVAL
 from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import CONF_DATETIME_PARSER, CONF_DATETIME_PATTERN, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_TO, CONF_USER, DOMAIN, \
+from .const import CONF_DATETIME_PARSER, CONF_DATETIME_PATTERN, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MAX_FILES, CONF_TO, CONF_TRIGGERS, CONF_USER, DEFAULT_TIME_INTERVAL, DOMAIN, \
                     ICON_COPIED, ICON_DEFAULT, ICON_TO_COPY, SENSOR_NAME_FILES_COPIED, SENSOR_NAME_TO_COPY_FILES
 
 FTP_SCHEMA = vol.Schema({
@@ -34,7 +38,10 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
         vol.Required(CONF_NAME): cv.string,
         vol.Required(CONF_LOCAL_STORAGE): cv.string,
         vol.Required(CONF_FROM): FROM_SCHEMA,
-        vol.Required(CONF_TO): TO_SCHEMA
+        vol.Required(CONF_TO): TO_SCHEMA,
+        vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_TIME_INTERVAL): cv.time_period,
+        vol.Optional(CONF_MAX_FILES): cv.positive_int,
+        vol.Optional(CONF_TRIGGERS): vol.Any(cv.entity_ids, None),
     })
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,9 +49,8 @@ _LOGGER = logging.getLogger(__name__)
 def get_sensor_unique_id(config, sensor_name: str):
     return f'{config[CONF_NAME]} {sensor_name}'
 
-
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    pass
+# async def async_setup_entry(hass, config_entry, async_add_entities):
+#     pass
 
 def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
     instanceName = config[CONF_NAME]
@@ -59,16 +65,13 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
     sensor1 = get_sensor_unique_id(config, SENSOR_NAME_TO_COPY_FILES)
     sensor2 = get_sensor_unique_id(config, SENSOR_NAME_FILES_COPIED)
 
-    data = {
-        sensor1: 101,
-        sensor2: 1
-    }
-
     async def async_get_status():
         _LOGGER.info(f"#{instanceName}# Call Callback sensor.py:get_coordinator.async_get_status() ")
         data = hass.data[DOMAIN][instanceName].data
+        if sensor1 not in data:
+            data[sensor1] = 1000
         data[sensor1] = data[sensor1] - 1
-        data[sensor2] = data[sensor2] + 1
+        # data[sensor2] = data[sensor2] + 1
         # transfer = FtpTransfer(config)
         # files = transfer.State()
         # data[sensor1] = files
@@ -83,8 +86,8 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
         update_method=async_get_status,
         update_interval=timedelta(seconds=interval),
     )
+    coordinator.data = {}
     coordinator.last_update_success = False
-    coordinator.data = data
 
     hass.data[DOMAIN][instanceName] = coordinator
 
@@ -99,11 +102,8 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
         CopiedFilesSensor(coordinator, config)
     ])
 
-class TransferSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
-
-    def __init__(self, coordinator, config, name, icon, unit=""):
-        """Initialize the sensor."""
-        super().__init__(coordinator)
+class TransferSensor(RestoreEntity, SensorEntity):
+    def __init__(self, config, name, icon, unit=""):
         self._config = config
         self._name = name
         self._unit = unit
@@ -114,8 +114,71 @@ class TransferSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
 
     @property
     def name(self):
-        """Return the name of the sensor."""
         return self._name
+
+    @property
+    def unit_of_measurement(self):
+        return self._unit
+
+    @property
+    def icon(self):
+        return self._icon
+
+
+class TransferRestoreSensor(CoordinatorEntity, TransferSensor):
+    def __init__(self, coordinator, config, name, icon, unit=""):
+        CoordinatorEntity.__init__(self, coordinator)
+        TransferSensor.__init__(self, config, name, icon, unit)
+
+    @property
+    def available(self):
+        return self._state == None
+
+    @property
+    def native_value(self):
+        return self._state
+
+    @callback
+    def _state_update(self):
+        _LOGGER.debug(f"#{self._name}# Call Callback TransferRestoreSensor._state_update() STATE={self._state}")
+        if not self._state:
+            self._state = 0
+        self._state = int(self._state) + 1
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self):
+        _LOGGER.info(f"#{self._name}# Call TransferRestoreSensor.async_added_to_hass()")
+        """Subscribe to updates."""
+        #self.async_on_remove(self._state_update)
+        # TIME CHANGE
+        # self.async_on_remove(
+        #     async_track_time_change(
+        #         self.hass, self.async_update_prices, second=30
+        #     )
+        # )
+        # # SIGNAL
+        # self.async_on_remove(
+        #     async_dispatcher_connect(
+        #         self.hass, f"{DOMAIN}_data_updated", self._schedule_immediate_update
+        #     )
+        # )
+        self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
+
+        last_state = await self.async_get_last_state()
+        _LOGGER.info(f"#{self._name}# call async_get_last_state STATE={self._state}")
+        if last_state:
+            self._state = last_state.state
+            self._available = True
+            _LOGGER.info(f"#{self._name}# NEW_STATE={self._state}")
+
+
+class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
+
+    def __init__(self, coordinator, config, name, icon, unit=""):
+        """Initialize the sensor."""
+        CoordinatorEntity.__init__(self, coordinator)
+        TransferSensor.__init__(self, config, name, icon, unit)
+        nn = self._name
 
     # @property
     # def native_value(self):
@@ -170,8 +233,8 @@ class TransferSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         # we added the entity, there is no need to restore
         # state.
         _LOGGER.info(f"#{self._name}# coordinator.last_update_success={self.coordinator.last_update_success} STATE={self._state}")
-        # if self.coordinator.last_update_success:
-        #     return
+        if self.coordinator.last_update_success:
+            return
 
         last_state = await self.async_get_last_state()
         _LOGGER.info(f"#{self._name}# call async_get_last_state STATE={self._state}")
@@ -180,29 +243,14 @@ class TransferSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
             self._available = True
             _LOGGER.info(f"#{self._name}# NEW_STATE={self._state}")
 
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        return self._unit
-
-    @property
-    def icon(self):
-        """Return the icon of the sensor."""
-        return self._icon
-
-    # def set_data(self, timestamp, state):
-    #     """Update sensor data"""
-    #     self._state = state
-    #     self._timestamp = timestamp
-
-class ToCopyFilesSensor(TransferSensor):
+class ToCopyFilesSensor(TransferCoordinatorSensor):
     def __init__(self, coordinator, config):
         name = get_sensor_unique_id(config, SENSOR_NAME_TO_COPY_FILES)
         icon = ICON_TO_COPY
-        super().__init__(coordinator, config, name, icon)    
+        super().__init__(coordinator, config, name, icon)
 
-class CopiedFilesSensor(TransferSensor):
+
+class CopiedFilesSensor(TransferRestoreSensor):
     def __init__(self, coordinator, config):
         name = get_sensor_unique_id(config, SENSOR_NAME_FILES_COPIED)
         icon = ICON_COPIED

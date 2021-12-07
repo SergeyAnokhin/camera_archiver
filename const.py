@@ -1,7 +1,7 @@
 DOMAIN = "camera_archiver"
 
 
-DEFAULT_SCAN_INTERVAL = 300
+DEFAULT_TIME_INTERVAL = '00:01:00'
 
 CONF_LOCAL_STORAGE = "local_storage"
 CONF_USER = "user"
@@ -10,6 +10,8 @@ CONF_TO = "to"
 CONF_FTP = "ftp"
 CONF_DATETIME_PARSER = "datetime_parser"
 CONF_DATETIME_PATTERN = "datetime_pattern"
+CONF_MAX_FILES = "max_files"
+CONF_TRIGGERS = "triggers"
 
 # Sensors:
 SENSOR_NAME_LAST_VIDEO = "Last video"
