@@ -8,9 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC, CONF_NAME
 from homeassistant.core import Config, HomeAssistant, ServiceCall
 
-from .FtpTransfer import FtpTransfer
-
-from .const import (DOMAIN, SENSOR_NAME_FILES_COPIED, SENSOR_NAME_TO_COPY_FILES)
+from .const import (DOMAIN)
 
 PLATFORMS = ["sensor", "binary_sensor", "switch"]
 
