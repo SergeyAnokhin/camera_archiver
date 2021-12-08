@@ -57,9 +57,6 @@ _LOGGER = logging.getLogger(__name__)
 def get_sensor_unique_id(config, sensor_name: str):
     return f'{config[CONF_NAME]} {sensor_name}'
 
-# async def async_setup_entry(hass, config_entry, async_add_entities):
-#     pass
-
 def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
     instanceName = config[CONF_NAME]
     _LOGGER.debug(f"#{instanceName}# Call sensor.py:get_coordinator() {instanceName}")
@@ -71,7 +68,6 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
         return hass.data[DOMAIN][instanceName]
 
     sensor1 = get_sensor_unique_id(config, SENSOR_NAME_TO_COPY_FILES)
-    sensor2 = get_sensor_unique_id(config, SENSOR_NAME_MEGABYTES_TO_COPY)
 
     async def async_get_status():
         _LOGGER.info(f"#{instanceName}# Call Callback sensor.py:get_coordinator.async_get_status() ")
@@ -86,14 +82,6 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
             state = tr.state()
 
         data[sensor1] = state
-        data[sensor2] = state
-        # if sensor1 not in data:
-        #     data[sensor1] = 1000
-        # data[sensor1] = data[sensor1] - 1
-        # data[sensor2] = data[sensor2] + 1
-        # transfer = FtpTransfer(config)
-        # files = transfer.State()
-        # data[sensor1] = files
         return data
 
     coordinator = DataUpdateCoordinator(
@@ -111,12 +99,10 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
     return coordinator
 
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
-    _LOGGER.debug("Call sensor.py:async_setup_platform()")
     coordinator = get_coordinator(hass, config)
 
     add_entities([
         ToCopyFilesSensor(coordinator, config),
-        ToCopyMegabytesSensor(coordinator, config)
     ])
 
 class TransferSensor(SensorEntity):
@@ -125,7 +111,6 @@ class TransferSensor(SensorEntity):
         self._name = name
         self._unit = unit
         self._icon = icon
-        # self._timestamp = None
         self._state = None
         self._available = False
 
@@ -149,21 +134,18 @@ class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
         CoordinatorEntity.__init__(self, coordinator)
         TransferSensor.__init__(self, config, name, icon, unit)
         self._coordinator_data = None
+        cfrom = config[CONF_FROM]
+        from_attr = cfrom[CONF_FTP][CONF_HOST] if CONF_FTP in cfrom else cfrom[CONF_DIRECTORY][CONF_PATH]
         self._attr_extra_state_attributes = {
-            "from": config[CONF_FROM][CONF_FTP][CONF_HOST]
+            "from": from_attr
         }
 
     @property
     def available(self):
-        """Return True if entity is available."""
         return self._available
 
     @property
     def native_value(self):
-        """Get the latest reading."""
-    #     if self.coordinator.data:
-    #         state = self.coordinator.data[self._name]
-    #         self._state = state
         return self._state
 
     @callback
@@ -179,6 +161,20 @@ class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
         await super().async_added_to_hass()
         self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
 
+class ToCopyFilesSensor(TransferCoordinatorSensor):
+    def __init__(self, coordinator, config):
+        name = get_sensor_unique_id(config, SENSOR_NAME_TO_COPY_FILES)
+        icon = ICON_TO_COPY
+        super().__init__(coordinator, config, name, icon)
+
+    @property
+    def native_value(self):
+        data = cast(TransferState, self._coordinator_data)
+        self._attr_extra_state_attributes["Extensions"] = data.files_ext()
+        self._attr_extra_state_attributes["Duration"] = data.duration().seconds
+        self._attr_extra_state_attributes["Size"] = f"{data.files_size_mb()} Mb" 
+        return data.files_count()
+
         # If the background update finished before
         # we added the entity, there is no need to restore
         # state.
@@ -193,31 +189,6 @@ class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
         #     self._available = True
         #     _LOGGER.info(f"#{self._name}# NEW_STATE={self._state}")
 
-class ToCopyMegabytesSensor(TransferCoordinatorSensor):
-    def __init__(self, coordinator, config):
-        name = get_sensor_unique_id(config, SENSOR_NAME_MEGABYTES_TO_COPY)
-        icon = ICON_TO_COPY
-        super().__init__(coordinator, config, name, icon, unit="Mb")
-
-    @property
-    def native_value(self):
-        data = cast(TransferState, self._coordinator_data)
-        self._attr_extra_state_attributes["Extensions"] = data.files_ext()
-        self._attr_extra_state_attributes["Duration"] = data.duration()
-        return data.files_size_mb()
-
-class ToCopyFilesSensor(TransferCoordinatorSensor):
-    def __init__(self, coordinator, config):
-        name = get_sensor_unique_id(config, SENSOR_NAME_TO_COPY_FILES)
-        icon = ICON_TO_COPY
-        super().__init__(coordinator, config, name, icon)
-
-    @property
-    def native_value(self):
-        data = cast(TransferState, self._coordinator_data)
-        self._attr_extra_state_attributes["Extensions"] = data.files_ext()
-        self._attr_extra_state_attributes["Duration"] = data.duration()
-        return data.files_count()
 
 # class CopiedFilesSensor(TransferRestoreSensor):
 #     def __init__(self, coordinator, config):
