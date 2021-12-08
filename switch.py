@@ -19,7 +19,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Setup the sensor platform."""
-    add_devices([CameraArchiverSwitch(hass, config)])
+    add_devices([CameraArchiverEnabler(hass, config)])
     _LOGGER.info("Start switch setup_platform")
 
     # async def archive(call: ServiceCall):
@@ -27,7 +27,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     # hass.services.register(DOMAIN, 'archive2', archive)
 
 
-class CameraArchiverSwitch(SwitchEntity):
+class CameraArchiverEnabler(SwitchEntity):
     """Representation of a Yi Camera Switch."""
 
     def __init__(self, hass, config):

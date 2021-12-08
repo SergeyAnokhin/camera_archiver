@@ -1,5 +1,8 @@
 from datetime import timedelta
 import logging, os
+from .TransferState import TransferState
+from .lib_directory.DirectoryTransfer import DirectoryTransfer
+from .lib_ftp.FtpTransfer import FtpTransfer
 from homeassistant.helpers.config_validation import string
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -8,7 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC, CONF_NAME
 from homeassistant.core import Config, HomeAssistant, ServiceCall
 
-from .const import (DOMAIN)
+from .const import (CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_MQTT, DOMAIN, SENSOR_NAME_TO_COPY_FILES)
 
 PLATFORMS = ["sensor", "binary_sensor", "switch"]
 
@@ -18,8 +21,47 @@ _LOGGER = logging.getLogger(__name__)
 #     """Setup the sensor platform."""
 #     _LOGGER.info("Start setup_platform")
 
-# def FileTransferCallback(stat):
-#     _LOGGER.Info(f"🔁 Callback: {stat}")
+def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
+    instanceName = config[CONF_NAME]
+    _LOGGER.debug(f"#{instanceName}# Call sensor.py:get_coordinator() {instanceName}")
+
+    if DOMAIN not in hass.data:
+        hass.data[DOMAIN] = {}
+
+    if instanceName in hass.data[DOMAIN]:
+        return hass.data[DOMAIN][instanceName]
+
+    async def async_get_status():
+        _LOGGER.info(f"#{instanceName}# Call Callback sensor.py:get_coordinator.async_get_status() ")
+        data = hass.data[DOMAIN][instanceName].data
+
+        state: TransferState = None
+        cfrom = config[CONF_FROM]
+        if CONF_DIRECTORY in cfrom:
+            tr = DirectoryTransfer(config[CONF_DIRECTORY])
+            state = tr.state()
+        elif CONF_FTP in cfrom:
+            tr = FtpTransfer(cfrom[CONF_FTP])
+            state = tr.state()
+
+        data[SENSOR_NAME_TO_COPY_FILES] = state
+        return data
+
+    coordinator = DataUpdateCoordinator(
+        hass,
+        logging.getLogger(__name__),
+        name=DOMAIN,
+        update_method=async_get_status,
+        update_interval=timedelta(seconds=5),
+    )
+    coordinator.data = {}
+    coordinator.last_update_success = False
+
+    hass.data[DOMAIN][instanceName] = coordinator
+
+    return coordinator
+
+
 
 async def async_setup(hass: HomeAssistant, global_config: Config):
     """Set up this integration using YAML."""

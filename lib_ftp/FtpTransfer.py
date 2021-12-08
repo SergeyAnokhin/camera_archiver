@@ -11,17 +11,17 @@ _LOGGER = logging.getLogger(__name__)
 
 class FtpTransfer:
     def __init__(self, config: dict):
-        self.config = config
+        self._config = config
 
     def OnFileTransferCallback(self, callback):
         self.OnFileTransferCall = callback
 
     def state(self) -> TransferState:
-        cfrom = self.config[CONF_FROM]
+        cftp = self._config
         state = TransferState()
 
-        with FtpConn(cfrom[CONF_FTP]) as srcFtp:
-            srcFtp.cd(cfrom[CONF_FTP][CONF_PATH])
+        with FtpConn(cftp) as srcFtp:
+            srcFtp.cd(cftp[CONF_PATH])
             fs_items = srcFtp.GetFtpItems()
             for fs in fs_items:
                 subitems = srcFtp.GetFtpItems(fs.name)
@@ -35,10 +35,10 @@ class FtpTransfer:
         return state
 
     def Copy(self, max=100):
-        cfrom = self.config["from"]
+        cftp = self.config
 
-        with FtpConn(self.config["from"]["ftp"]) as srcFtp:
-            srcFtp.cd(cfrom["ftp"]["path"])
+        with FtpConn(cftp) as srcFtp:
+            srcFtp.cd(cftp[CONF_PATH])
             fs_items = srcFtp.GetFtpItems()
             files_counter = 0
             files_copied = 0

@@ -1,7 +1,7 @@
 import os, logging
 
 from ftplib import FTP
-from .FtpItem import FtpItem
+from .ftp_file_info import FtpFileInfo
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class FtpConn:
         else:
             self.ftp.cwd(fullpath)
 
-    def GetFtpItems(self, dir: str = None) -> list[FtpItem]:
+    def GetFtpItems(self, dir: str = None) -> list[FtpFileInfo]:
         filelist = []
         newpath = self.config["path"]
         current_path = self.ftp.pwd()
@@ -41,7 +41,7 @@ class FtpConn:
             self.ftp.dir(dir, filelist.append)
         else:
             self.ftp.dir(filelist.append)
-        return [FtpItem(self.config, newpath, x) for x in filelist]
+        return [FtpFileInfo(newpath, x) for x in filelist]
 
     def directory_exists(self, directory: str) -> bool:
         filelist = self.GetFtpItems()

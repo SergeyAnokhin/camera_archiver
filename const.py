@@ -9,6 +9,7 @@ CONF_FROM = "from"
 CONF_TO = "to"
 CONF_FTP = "ftp"
 CONF_DIRECTORY = "directory"
+CONF_MQTT = "mqtt"
 CONF_PATH = "path"
 CONF_DATETIME_PARSER = "datetime_parser"
 CONF_DATETIME_PATTERN = "datetime_pattern"
@@ -34,6 +35,11 @@ ICON_TO_COPY = 'mdi:file-clock'
 ICON_24HOURS = 'mdi:hours-24'
 ICON_7DAYS = 'mdi:calendar-week'
 ICON_DEFAULT = 'mdi:upload'
+
+ATTR_FROM = "From"
+ATTR_DURATION = "Duration"
+ATTR_EXTENSIONS = "Extensions"
+ATTR_SIZE = "Size"
 
 # ICONS_MAPPING = {
 #     HA_LAST_VIDEO: ICON_VIDEO,

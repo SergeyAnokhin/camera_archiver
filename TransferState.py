@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
 import os
 
+from .common.ifile_info import IFileInfo
+
 class TransferState:
 
     def __init__(self) -> None:
-        self._filenames = []
+        self._files = list[IFileInfo]
         self._size = 0
         self._size_by_ext = {}
         self._start = datetime.now()
@@ -19,35 +21,28 @@ class TransferState:
         self._duration = self._stop - self._start
         return self._duration.seconds
 
-    def add(self, filename: str, size: int) -> None:
-        self._filenames.append(filename)
-        self._size += size
-        _, ext = os.path.splitext(filename)
-
-        if ext not in self._size_by_ext:
-            self._size_by_ext[ext] = 0
-
-        self._size_by_ext[ext] += size
-
     def duration(self) -> timedelta:
         return self._duration
 
+    def add(self, file: IFileInfo) -> None:
+        self._files.append(file)
+
     def files_count(self) -> int:
-        return len(self._filenames)
+        return len(self._files)
 
     def files_ext(self) -> str:
-        return ' '.join([ ext.lstrip(".") for ext in self._size_by_ext ])
+        extensions = set([f.ext for f in self._files])
+        return ' '.join(extensions)
 
     def files_size(self) -> int:
-        return self._size
+        return sum([f.size for f in self._files])
 
     def files_size_mb(self) -> float:
         return round(self.files_size() / 1024 / 1024, 2) 
 
     def __str__(self):
-        result = ""
-        result += f" Files: {self.files_count()} "
+        result = f" Files: {self.files_count()} "
         result += f" Size: {(self._size / 1024 / 1024):.1f} Mb"
         result += " Extension: "
-        result += ', '.join([ ext for ext in self._size_by_ext ])
+        result += self.files_ext()
         return result
