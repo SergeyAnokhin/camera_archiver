@@ -1,5 +1,7 @@
 from datetime import datetime
 import os, logging
+from ..TransferState import TransferState
+from ..const import CONF_FROM, CONF_FTP, CONF_PATH
 
 from .FtpConn import FtpConn
 from .FtpItem import FtpItem
@@ -14,21 +16,23 @@ class FtpTransfer:
     def OnFileTransferCallback(self, callback):
         self.OnFileTransferCall = callback
 
-    def State(self):
-        cfrom = self.config["from"]
+    def state(self) -> TransferState:
+        cfrom = self.config[CONF_FROM]
+        state = TransferState()
 
-        with FtpConn(cfrom["ftp"]) as srcFtp:
-            srcFtp.cd(cfrom["ftp"]["path"])
+        with FtpConn(cfrom[CONF_FTP]) as srcFtp:
+            srcFtp.cd(cfrom[CONF_FTP][CONF_PATH])
             fs_items = srcFtp.GetFtpItems()
-            files_counter = 0
             for fs in fs_items:
                 subitems = srcFtp.GetFtpItems(fs.name)
 
                 for f in subitems:
-                    files_counter = files_counter + 1
+                    state.add(f.relname(), f.size())
+                    # _LOGGER.debug(f"Found: {f}")
 
-        _LOGGER.info(f"🆗 Files check done. Found: {files_counter} files")
-        return files_counter
+        _LOGGER.info(f"🆗 Files check done. Found: {state}")
+        state.stop()
+        return state
 
     def Copy(self, max=100):
         cfrom = self.config["from"]

@@ -32,7 +32,7 @@ class FtpConn:
         else:
             self.ftp.cwd(fullpath)
 
-    def GetFtpItems(self, dir: str = None) -> list:
+    def GetFtpItems(self, dir: str = None) -> list[FtpItem]:
         filelist = []
         newpath = self.config["path"]
         current_path = self.ftp.pwd()

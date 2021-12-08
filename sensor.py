@@ -1,10 +1,11 @@
 from datetime import timedelta
 import logging
-from typing import Any
+from typing import Any, cast
 import voluptuous as vol
+
+from .TransferState import TransferState
 from .lib_directory.DirectoryTransfer import DirectoryTransfer
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-
 from homeassistant.helpers.event import async_track_time_change
 from .lib_ftp.FtpTransfer import FtpTransfer
 from homeassistant.config_entries import ConfigEntry
@@ -29,17 +30,23 @@ DIRECTORY_SCHEMA = vol.Schema({
         vol.Required(CONF_PATH): cv.string,
     })
 
-PLACE_SCHEMA = vol.Schema({
+FROM_SCHEMA = vol.Schema({
         vol.Optional(CONF_FTP): FTP_SCHEMA,
         vol.Optional(CONF_DIRECTORY): DIRECTORY_SCHEMA,
         vol.Required(CONF_DATETIME_PARSER): cv.string
     })
 
+TO_SCHEMA = vol.Schema({
+        vol.Optional(CONF_FTP): FTP_SCHEMA,
+        vol.Optional(CONF_DIRECTORY): DIRECTORY_SCHEMA,
+        vol.Required(CONF_DATETIME_PATTERN): cv.string
+    })
+
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
         vol.Required(CONF_NAME): cv.string,
         vol.Required(CONF_LOCAL_STORAGE): cv.string,
-        vol.Required(CONF_FROM): PLACE_SCHEMA,
-    vol.Optional(CONF_TO): PLACE_SCHEMA,
+        vol.Required(CONF_FROM): FROM_SCHEMA,
+        vol.Optional(CONF_TO): TO_SCHEMA,
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_TIME_INTERVAL): cv.time_period,
         vol.Optional(CONF_MAX_FILES): cv.positive_int,
         vol.Optional(CONF_TRIGGERS): vol.Any(cv.entity_ids, None),
@@ -69,10 +76,17 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
     async def async_get_status():
         _LOGGER.info(f"#{instanceName}# Call Callback sensor.py:get_coordinator.async_get_status() ")
         data = hass.data[DOMAIN][instanceName].data
-        tr = DirectoryTransfer(config)
-        state = tr.state()
-        data[sensor1] = state.files_count()
-        data[sensor2] = state.files_size()
+
+        state: TransferState = None
+        if CONF_DIRECTORY in config[CONF_FROM]:
+            tr = DirectoryTransfer(config)
+            state = tr.state()
+        else:
+            tr = FtpTransfer(config)
+            state = tr.state()
+
+        data[sensor1] = state
+        data[sensor2] = state
         # if sensor1 not in data:
         #     data[sensor1] = 1000
         # data[sensor1] = data[sensor1] - 1
@@ -82,14 +96,12 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
         # data[sensor1] = files
         return data
 
-    interval = 5 if instanceName == "Yi1080pWoodSouth" else 10
-
     coordinator = DataUpdateCoordinator(
         hass,
         logging.getLogger(__name__),
         name=DOMAIN,
         update_method=async_get_status,
-        update_interval=timedelta(seconds=interval),
+        update_interval=timedelta(seconds=10),
     )
     coordinator.data = {}
     coordinator.last_update_success = False
@@ -103,7 +115,8 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
     coordinator = get_coordinator(hass, config)
 
     add_entities([
-        ToCopyFilesSensor(coordinator, config)
+        ToCopyFilesSensor(coordinator, config),
+        ToCopyMegabytesSensor(coordinator, config)
     ])
 
 class TransferSensor(SensorEntity):
@@ -131,11 +144,14 @@ class TransferSensor(SensorEntity):
 
 class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
 
-    def __init__(self, coordinator, config, name, icon, unit=""):
+    def __init__(self, coordinator, config: ConfigEntry, name, icon, unit=""):
         """Initialize the sensor."""
         CoordinatorEntity.__init__(self, coordinator)
         TransferSensor.__init__(self, config, name, icon, unit)
-        nn = self._name
+        self._coordinator_data = None
+        self._attr_extra_state_attributes = {
+            "from": config[CONF_FROM][CONF_FTP][CONF_HOST]
+        }
 
     @property
     def available(self):
@@ -155,14 +171,12 @@ class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
         """Call when the coordinator has an update."""
         self._available = self.coordinator.last_update_success
         if self._available:
-            self._state = self.coordinator.data[self._name]
-        _LOGGER.info(f"#{self._name}# Call Callback TransferSensor._state_update() STATE={self._state}")
+            self._coordinator_data = self.coordinator.data[self._name]
         self.async_write_ha_state()
 
     async def async_added_to_hass(self):
         """Subscribe to updates."""
         await super().async_added_to_hass()
-        _LOGGER.info(f"#{self._name}# Call TransferSensor.async_added_to_hass() STATE={self._state}")
         self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
 
         # If the background update finished before
@@ -179,6 +193,18 @@ class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
         #     self._available = True
         #     _LOGGER.info(f"#{self._name}# NEW_STATE={self._state}")
 
+class ToCopyMegabytesSensor(TransferCoordinatorSensor):
+    def __init__(self, coordinator, config):
+        name = get_sensor_unique_id(config, SENSOR_NAME_MEGABYTES_TO_COPY)
+        icon = ICON_TO_COPY
+        super().__init__(coordinator, config, name, icon, unit="Mb")
+
+    @property
+    def native_value(self):
+        data = cast(TransferState, self._coordinator_data)
+        self._attr_extra_state_attributes["Extensions"] = data.files_ext()
+        self._attr_extra_state_attributes["Duration"] = data.duration()
+        return data.files_size_mb()
 
 class ToCopyFilesSensor(TransferCoordinatorSensor):
     def __init__(self, coordinator, config):
@@ -186,6 +212,12 @@ class ToCopyFilesSensor(TransferCoordinatorSensor):
         icon = ICON_TO_COPY
         super().__init__(coordinator, config, name, icon)
 
+    @property
+    def native_value(self):
+        data = cast(TransferState, self._coordinator_data)
+        self._attr_extra_state_attributes["Extensions"] = data.files_ext()
+        self._attr_extra_state_attributes["Duration"] = data.duration()
+        return data.files_count()
 
 # class CopiedFilesSensor(TransferRestoreSensor):
 #     def __init__(self, coordinator, config):

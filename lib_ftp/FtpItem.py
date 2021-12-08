@@ -12,11 +12,14 @@ class FtpItem:
         self.is_dir = self.parts[0].startswith('d')
         self.is_file = self.parts[0].startswith('-')
         self.icon = '📁' if self.is_dir else '🖼️'
-        self.size = self.parts[4]
+        self._size = int(self.parts[4])
         self.extension = self.name.split('.')[-1]
     
-    def relname(self):
+    def relname(self) -> str:
         return self.fullname.lstrip(self.ftp_root).lstrip("/")
+
+    def size(self) -> int:
+        return self._size
 
     def subitems(self, ftp: FTP):
         fs = []
@@ -25,4 +28,4 @@ class FtpItem:
         return fs
     
     def __str__(self):
-         return f"{self.icon} {self.name}"
+         return f"{self.relname()} {self.size()}"
