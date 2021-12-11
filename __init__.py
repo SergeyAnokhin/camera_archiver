@@ -1,5 +1,7 @@
 from datetime import timedelta
 import logging, os
+
+from .transfer_runner import TransferRunner
 from .TransferState import TransferState
 from .lib_directory.DirectoryTransfer import DirectoryTransfer
 from .lib_ftp.FtpTransfer import FtpTransfer
@@ -33,19 +35,9 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
 
     async def async_get_status():
         _LOGGER.info(f"#{instanceName}# Call Callback sensor.py:get_coordinator.async_get_status() ")
-        data = hass.data[DOMAIN][instanceName].data
-
-        state: TransferState = None
-        cfrom = config[CONF_FROM]
-        if CONF_DIRECTORY in cfrom:
-            tr = DirectoryTransfer(config[CONF_DIRECTORY])
-            state = tr.state()
-        elif CONF_FTP in cfrom:
-            tr = FtpTransfer(cfrom[CONF_FTP])
-            state = tr.state()
-
-        data[SENSOR_NAME_TO_COPY_FILES] = state
-        return data
+        coordinatorInst = hass.data[DOMAIN][instanceName]
+        runner = TransferRunner(config, coordinatorInst)
+        return runner.stat()
 
     coordinator = DataUpdateCoordinator(
         hass,

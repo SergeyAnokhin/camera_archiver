@@ -1,10 +1,10 @@
 from datetime import datetime
 import os, logging
-from ..TransferState import TransferState
+from ..transfer_state import TransferState
 from ..const import CONF_FROM, CONF_FTP, CONF_PATH
 
 from .FtpConn import FtpConn
-from .FtpItem import FtpItem
+from .ftp_file_info import FtpFileInfo
 from .FtpTransferStat import FtpTransferStat
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class FtpTransfer:
 
         _LOGGER.info(f"🆗 Files transferring done. Copied: {files_copied} / {files_counter}")
 
-    def datetime(self, item: FtpItem):
+    def datetime(self, item: FtpFileInfo):
         #p = re.compile(".*(?P<year>\d{4})Y(?P<month>\d\d)M(?P<day>\d\d)D(?P<hour>\d\d)H/E1(?P<min>\d\d)M(?P<sec>\d\d)S(?P<msec>\d\d).*")
         #m = p.match(self.fullname())
         #d = m.groupdict()
@@ -75,7 +75,7 @@ class FtpTransfer:
         except Exception as e:
             _LOGGER.warn(f"❗ Can't parse datetime from: '{item.fullname}' pattern: '{pattern}' ❗ \n {e}")
     
-    def localFileStorage(self, file: FtpItem) -> str:
+    def localFileStorage(self, file: FtpFileInfo) -> str:
         return f'{self.config["local_storage"]}/camera.{self.config["camera"]["name"]}.{file.extension}'
 
     def Upload(self, localfile: str, dt: datetime):

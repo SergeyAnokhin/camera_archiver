@@ -56,7 +56,7 @@ class FtpConn:
         file = open(localfile, 'rb')
         self.ftp.storbinary('STOR ' + filename, file)
 
-    def Download(self, fileFtp: FtpItem, localfilename: str):
+    def Download(self, fileFtp: FtpFileInfo, localfilename: str):
         with open(localfilename, 'wb') as localfile:
             self.ftp.retrbinary(f'RETR {fileFtp.fullname}', localfile.write)
         filesize = os.path.getsize(localfilename)
