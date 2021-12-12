@@ -1,6 +1,8 @@
 from datetime import timedelta
 import logging, os
 
+from homeassistant.helpers.entity import generate_entity_id
+
 from .common.transfer_runner import TransferRunner
 from .lib_directory.DirectoryTransfer import DirectoryTransfer
 from .lib_ftp.FtpTransfer import FtpTransfer
@@ -23,7 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 
 def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
     instanceName = config[CONF_NAME]
-    _LOGGER.debug(f"#{instanceName}# Call sensor.py:get_coordinator() {instanceName}")
+    _LOGGER.debug(f"|{instanceName}| Call sensor.py:get_coordinator() {instanceName}")
 
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
@@ -32,10 +34,10 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
         return hass.data[DOMAIN][instanceName]
 
     async def async_get_status():
-        _LOGGER.info(f"#{instanceName}# Call Callback sensor.py:get_coordinator.async_get_status() ")
+        _LOGGER.info(f"|{instanceName}| Call Callback sensor.py:get_coordinator.async_get_status() ")
         coordinatorInst = hass.data[DOMAIN][instanceName]
-        runner = TransferRunner(config, coordinatorInst)
-        return runner.stat()
+        runner = TransferRunner(config, coordinatorInst, hass)
+        return runner.run()
 
     coordinator = DataUpdateCoordinator(
         hass,

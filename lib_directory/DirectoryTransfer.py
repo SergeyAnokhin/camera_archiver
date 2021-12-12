@@ -5,8 +5,8 @@ from .file_info import FileInfo
 from ..common.transfer_component import TransferComponent
 from ..common.transfer_state import TransferState
 from ..const import CONF_DATETIME_PATTERN, CONF_PATH
-import os
-import logging
+import os, logging, shutil
+from pathlib import Path
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class DirectoryTransfer(TransferComponent):
         path = self._config[CONF_PATH]
         return self.list_files(path)
 
-    def list_files(self, startpath: str, local_path: str) -> TransferState:
+    def list_files(self, startpath: str, local_path: str = None) -> TransferState:
         _LOGGER.debug(f"Stat from [{startpath}]: START")
         state = TransferState()
         for root, dirs, files in os.walk(startpath):
@@ -37,7 +37,7 @@ class DirectoryTransfer(TransferComponent):
                     localfile = self.download(fileInfo, local_path)
                     self._on_file_transfer(localfile)
 
-        _LOGGER.debug(f"Stat from [{startpath}]: END, {state}")
+        _LOGGER.debug(f"Stat from 📁[{startpath}]: END, {state}")
         return state
 
     def run(self, local_path: str) -> TransferState:
@@ -45,7 +45,7 @@ class DirectoryTransfer(TransferComponent):
         return self.list_files(path, local_path)
 
     def download(self, file: IFileInfo, local_path: str) -> IFileInfo:
-        pass
-
-     def create_local_filename(self, file: IFileInfo, local_path: str) -> str:
-        return f'{local_path}/camera.{self.config["camera"]["name"]}.{file.extension}'
+        local_file = f"{local_path}.{file.ext}"
+        _LOGGER.debug(f"Copy file: [{file.fullname}] => [{local_file}]")
+        shutil.copyfile(file.fullname, local_file)
+        return FileInfo(local_file)

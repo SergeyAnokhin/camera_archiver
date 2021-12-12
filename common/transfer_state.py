@@ -41,7 +41,7 @@ class TransferState:
         return round(self.files_size() / 1024 / 1024, 2) 
 
     def __str__(self):
-        result = f" Files: {self.files_count()} "
+        result = f"[Stat] Files: {self.files_count()} "
         result += f" Size: {(self._size / 1024 / 1024):.1f} Mb"
         result += " Extension: "
         result += self.files_ext()
