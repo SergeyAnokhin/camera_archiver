@@ -5,8 +5,7 @@ import voluptuous as vol
 
 from . import get_coordinator
 
-from .TransferState import TransferState
-from .lib_directory.DirectoryTransfer import DirectoryTransfer
+from .common.transfer_state import TransferState
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.event import async_track_time_change
 from homeassistant.config_entries import ConfigEntry
@@ -14,10 +13,9 @@ from homeassistant.core import HomeAssistant, callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_PATH, CONF_SCAN_INTERVAL
-from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
-from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ATTR_DURATION, ATTR_EXTENSIONS, ATTR_FROM, ATTR_SIZE, CONF_DATETIME_PARSER, CONF_DATETIME_PATTERN, CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MAX_FILES, CONF_MQTT, CONF_TO, CONF_TRIGGERS, CONF_USER, DEFAULT_TIME_INTERVAL, DOMAIN, \
+from .const import ATTR_DURATION, ATTR_EXTENSIONS, ATTR_FROM, ATTR_SIZE, CONF_DATETIME_PATTERN, CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MAX_FILES, CONF_MQTT, CONF_TO, CONF_TRIGGERS, CONF_USER, DEFAULT_TIME_INTERVAL, DOMAIN, \
                     ICON_TO_COPY, SENSOR_NAME_TO_COPY_FILES
 
 FTP_SCHEMA = vol.Schema({
@@ -25,12 +23,12 @@ FTP_SCHEMA = vol.Schema({
         vol.Required(CONF_USER): cv.string,
         vol.Required(CONF_PASSWORD): cv.string,
         vol.Required(CONF_PATH): cv.string,
-        vol.Required(CONF_DATETIME_PARSER): cv.string
+        vol.Required(CONF_DATETIME_PATTERN): cv.string
 })
 
 DIRECTORY_SCHEMA = vol.Schema({
         vol.Required(CONF_PATH): cv.string,
-        vol.Required(CONF_DATETIME_PARSER): cv.string
+        vol.Required(CONF_DATETIME_PATTERN): cv.string
     })
 
 MQTT_SCHEMA = vol.Schema({
@@ -46,7 +44,7 @@ FROM_SCHEMA = vol.Schema({
 TO_SCHEMA = vol.Schema({
         vol.Optional(CONF_FTP): FTP_SCHEMA,
         vol.Optional(CONF_DIRECTORY): DIRECTORY_SCHEMA,
-        vol.Required(CONF_DATETIME_PATTERN): cv.string
+        vol.Optional(CONF_MQTT): MQTT_SCHEMA,
     })
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -119,18 +117,18 @@ class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
         from_attr = cfrom[CONF_FTP][CONF_HOST] if CONF_FTP in cfrom else cfrom[CONF_DIRECTORY][CONF_PATH]
         self.add_attr(ATTR_FROM, from_attr)
 
-    @callback
-    def _state_update(self):
-        """Call when the coordinator has an update."""
-        self._available = self.coordinator.last_update_success
-        if self._available:
-            self._coordinator_data = self.coordinator.data[self._name]
-        self.async_write_ha_state()
+    # @callback
+    # def _state_update(self):
+    #     """Call when the coordinator has an update."""
+    #     self._available = self.coordinator.last_update_success
+    #     if self._available:
+    #         self._coordinator_data = self.coordinator.data[self._name]
+    #     self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
-        """Subscribe to updates."""
-        await super().async_added_to_hass()
-        self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
+    # async def async_added_to_hass(self):
+    #     """Subscribe to updates."""
+    #     await super().async_added_to_hass()
+    #     self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
 
 class ToCopyFilesSensor(TransferCoordinatorSensor):
     def __init__(self, coordinator, config):
@@ -140,13 +138,13 @@ class ToCopyFilesSensor(TransferCoordinatorSensor):
 
     @property
     def native_value(self):
-        data = cast(TransferState, self._coordinator_data)
+        state: TransferState = cast(TransferState, self.coordinator.data[self._name])
         self.add_attrs({
-            ATTR_EXTENSIONS: data.files_ext(),
-            ATTR_DURATION: data.duration().seconds,
-            ATTR_SIZE: f"{data.files_size_mb()} Mb" 
+            ATTR_EXTENSIONS: state.files_ext(),
+            ATTR_DURATION: state.duration().seconds,
+            ATTR_SIZE: f"{state.files_size_mb()} Mb" 
         })
-        return data.files_count()
+        return state.files_count()
 
         # If the background update finished before
         # we added the entity, there is no need to restore

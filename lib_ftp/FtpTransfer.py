@@ -7,7 +7,6 @@ from ..const import CONF_FROM, CONF_FTP, CONF_PATH
 
 from .FtpConn import FtpConn
 from .ftp_file_info import FtpFileInfo
-from .FtpTransferStat import FtpTransferStat
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,15 +49,16 @@ class FtpTransfer(TransferComponent):
                         continue
 
                     files_copied = files_copied + 1
-                    stat = FtpTransferStat(f, self.config)
+                    stat = TransferState()
+                    stat.add(f)
                     localfile = self.localFileStorage(f)
 
                     srcFtp.Download(f, localfile)
-                    dstFtpFile = self.Upload(localfile, self.datetime(f))
+                    # dstFtpFile = self.Upload(localfile, self.datetime(f))
 
-                    stat.info["path"] = dstFtpFile
-                    stat.info["path_source"] = f.fullname
-                    stat.info["value"] = os.path.getsize(localfile)
+                    # stat.info["path"] = dstFtpFile
+                    # stat.info["path_source"] = f.fullname
+                    # stat.info["value"] = os.path.getsize(localfile)
                     self.OnFileTransferCall(stat)
 
         _LOGGER.info(f"🆗 Files transferring done. Copied: {files_copied} / {files_counter}")

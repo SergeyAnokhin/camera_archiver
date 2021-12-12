@@ -6,21 +6,27 @@ Copy files to /config/custom_components/camera_archiver
 
 Add to your configuration.yaml file:
 ```yaml
-camera_archiver:
-  local_storage: ./config/www/snapshot # intermediate storage can be used for display 'last' record
-  name: CAMERA NAME
-  from:
-    ftp: 
-      host: YOUR_FTP_HOST
-      user: YOUR_FTP_USERNAME
-      password: YOUR_FTP_PASSWORD
-      path: FTP_PATH_TO_RECORDED_FILES
-    datetime_parser: "%YY%mM%dD%HH/E1%MM%SS%f.mp4" # use python datetime format here
-  to:
-    ftp:
-      host: YOUR_FTP_HOST
-      user: YOUR_FTP_USERNAME
-      password: YOUR_FTP_PASSWORD
-      path: FTP_PATH_TO_ARCHIVE_FILES
-    datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S.mp4" # use python datetime format here
+sensor:
+  - platform: camera_archiver
+    local_storage: ./config/www/snapshot # intermediate storage can be used for display 'last' record
+    name: Yi1080pWoodSouth Camera
+    from:
+      directory:
+        path: ../home-assistant-core-data/input
+        datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f.mp4" # use python datetime format here
+      # ftp: 
+      #   host: 192.168.1.58
+      #   user: root
+      #   password: !secret main
+      #   path: /tmp/sd/record
+      #   datetime_parser: "%YY%mM%dD%HH/E1%MM%SS%f.mp4" # use python datetime format here
+    to:
+      directory:
+        path: ../home-assistant-core-data/
+        datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S.mp4" # use python datetime format here
+      # ftp:
+      #   host: 192.168.1.16
+      #   user: camera
+      #   password: !secret main
+      #   path: /Camera/Yi1080pWoodSouth
 ```

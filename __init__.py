@@ -1,11 +1,9 @@
 from datetime import timedelta
 import logging, os
 
-from .transfer_runner import TransferRunner
-from .TransferState import TransferState
+from .common.transfer_runner import TransferRunner
 from .lib_directory.DirectoryTransfer import DirectoryTransfer
 from .lib_ftp.FtpTransfer import FtpTransfer
-from homeassistant.helpers.config_validation import string
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 

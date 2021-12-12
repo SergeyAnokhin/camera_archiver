@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 import os
 
-from .common.ifile_info import IFileInfo
+from .ifile_info import IFileInfo
 
 class TransferState:
 
     def __init__(self) -> None:
-        self._files = list[IFileInfo]
+        self._files: list[IFileInfo] = []
         self._size = 0
         self._size_by_ext = {}
         self._start = datetime.now()

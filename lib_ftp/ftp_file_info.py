@@ -14,12 +14,11 @@ class FtpFileInfo(IFileInfo):
         self.path = path
         self._name = self.parts[-1]
         self._time_str = self.parts[5] + " " + self.parts[6] + " " + self.parts[7]
-        self.fullname = f'{self.path}/{self.parts[-1]}'
+        self._fullname = f'{self.path}/{self.parts[-1]}'
         self.is_dir = self.parts[0].startswith('d')
         self.is_file = self.parts[0].startswith('-')
         self.icon = '📁' if self.is_dir else '🖼️'
         self._size = int(self.parts[4])
-        self.extension = self._name.split('.')[-1]
     
     @property
     def size(self) -> int:
@@ -40,7 +39,7 @@ class FtpFileInfo(IFileInfo):
         return ext
 
     def relname(self, root: str) -> str:
-        return self.fullname.lstrip(root).lstrip("/")
+        return self._fullname.lstrip(root).lstrip("/")
 
     def __str__(self):
          return f"{self._name} {self.size()}"
