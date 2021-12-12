@@ -1,6 +1,8 @@
 from datetime import datetime
 import os, logging
-from ..transfer_state import TransferState
+
+from ..common.transfer_component import TransferComponent
+from ..common.transfer_state import TransferState
 from ..const import CONF_FROM, CONF_FTP, CONF_PATH
 
 from .FtpConn import FtpConn
@@ -9,12 +11,9 @@ from .FtpTransferStat import FtpTransferStat
 
 _LOGGER = logging.getLogger(__name__)
 
-class FtpTransfer:
+class FtpTransfer(TransferComponent):
     def __init__(self, config: dict):
         self._config = config
-
-    def OnFileTransferCallback(self, callback):
-        self.OnFileTransferCall = callback
 
     def state(self) -> TransferState:
         cftp = self._config

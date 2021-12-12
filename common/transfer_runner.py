@@ -28,6 +28,7 @@ class TransferRunner:
         #     self._to_components.append(transfer)
         if CONF_FTP in tfrom:
             transfer = FtpTransfer(tfrom[CONF_FTP])
+            self._from_components.set_from(self._from_components)
             self._to_components.append(transfer)
 
 
