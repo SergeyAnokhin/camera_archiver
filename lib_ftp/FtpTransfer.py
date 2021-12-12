@@ -63,17 +63,7 @@ class FtpTransfer(TransferComponent):
 
         _LOGGER.info(f"🆗 Files transferring done. Copied: {files_copied} / {files_counter}")
 
-    def datetime(self, item: FtpFileInfo):
-        #p = re.compile(".*(?P<year>\d{4})Y(?P<month>\d\d)M(?P<day>\d\d)D(?P<hour>\d\d)H/E1(?P<min>\d\d)M(?P<sec>\d\d)S(?P<msec>\d\d).*")
-        #m = p.match(self.fullname())
-        #d = m.groupdict()
-        cfrom = self.config["from"]
-        pattern = f'{cfrom["ftp"]["path"]}/{cfrom["datetime_parser"]}'
-        try:
-            return datetime.strptime(item.fullname, pattern)
-        except Exception as e:
-            _LOGGER.warn(f"❗ Can't parse datetime from: '{item.fullname}' pattern: '{pattern}' ❗ \n {e}")
-    
+
     def localFileStorage(self, file: FtpFileInfo) -> str:
         return f'{self.config["local_storage"]}/camera.{self.config["camera"]["name"]}.{file.extension}'
 

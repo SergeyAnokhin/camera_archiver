@@ -18,7 +18,7 @@ class DirectoryTransfer(TransferComponent):
         path = self._config[CONF_PATH]
         return self.list_files(path)
 
-    def list_files(self, startpath) -> TransferState:
+    def list_files(self, startpath: str, local_path: str) -> TransferState:
         _LOGGER.debug(f"Stat from [{startpath}]: START")
         state = TransferState()
         for root, dirs, files in os.walk(startpath):
@@ -28,13 +28,24 @@ class DirectoryTransfer(TransferComponent):
                 full_path = f"{root}/{f}"
                 fileInfo = FileInfo(full_path)
                 dt = self.filename_datetime(fileInfo)
+                if dt == None:
+                    continue # ignore file
                 fileInfo.datetime = dt
 
                 state.add(fileInfo)
-                # TODO self._on_file_transfer(fileInfo)
+                if local_path:
+                    localfile = self.download(fileInfo, local_path)
+                    self._on_file_transfer(localfile)
 
         _LOGGER.debug(f"Stat from [{startpath}]: END, {state}")
         return state
 
-    def run(self) -> TransferState:
-        return self.state()
+    def run(self, local_path: str) -> TransferState:
+        path = self._config[CONF_PATH]
+        return self.list_files(path, local_path)
+
+    def download(self, file: IFileInfo, local_path: str) -> IFileInfo:
+        pass
+
+     def create_local_filename(self, file: IFileInfo, local_path: str) -> str:
+        return f'{local_path}/camera.{self.config["camera"]["name"]}.{file.extension}'

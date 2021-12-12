@@ -22,6 +22,9 @@ class TransferComponent:
     def OnFileTransferSetCallback(self, callback):
         self._on_file_transfer = callback
 
+    def state(self):
+        pass # TO OVERRIDE
+
     def run(self):
         pass # TO OVERRIDE
 
