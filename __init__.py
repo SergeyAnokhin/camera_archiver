@@ -44,7 +44,7 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
         logging.getLogger(__name__),
         name=DOMAIN,
         update_method=async_get_status,
-        update_interval=timedelta(seconds=5),
+        update_interval=timedelta(seconds=600),
     )
     coordinator.data = {}
     coordinator.last_update_success = False

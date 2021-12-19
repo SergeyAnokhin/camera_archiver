@@ -37,7 +37,7 @@ class DirectoryTransfer(TransferComponent):
                     localfile = self.download(fileInfo, local_path)
                     self._on_file_transfer(localfile)
 
-        _LOGGER.debug(f"Stat from 📁[{startpath}]: END, {state}")
+        _LOGGER.debug(f"Stat from [{startpath}]: END, {state}")
         return state
 
     def run(self, local_path: str) -> TransferState:
