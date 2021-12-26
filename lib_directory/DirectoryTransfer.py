@@ -4,7 +4,7 @@ from ..common.ifile_info import IFileInfo
 from .file_info import FileInfo
 from ..common.transfer_component import TransferComponent
 from ..common.transfer_state import TransferState
-from ..const import ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED, CONF_DATETIME_PATTERN, CONF_PATH
+from ..const import ATTR_DESTINATION_FILE, ATTR_LOCAL_FILE, ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED, CONF_DATETIME_PATTERN, CONF_PATH
 import os, logging, shutil
 from pathlib import Path
 
@@ -62,6 +62,11 @@ class DirectoryTransfer(TransferComponent):
         self.mkdir(filename)
         _LOGGER.debug(f"Copy file: [{callbackObject.fullname}] => [{filename}]")
         shutil.copyfile(callbackObject.fullname, filename)
+        if self.copiedFileCallback:
+            self.copiedFileCallback({
+                ATTR_LOCAL_FILE: callbackObject,
+                ATTR_DESTINATION_FILE: filename
+            })
 
     def mkdir(self, filename: str):
         path = Path(Path(filename).parent)

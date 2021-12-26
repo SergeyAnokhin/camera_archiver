@@ -1,10 +1,12 @@
+from typing import cast
+from .ifile_info import IFileInfo
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import generate_entity_id
 from .transfer_component import TransferComponent
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from .transfer_state import TransferState
-from ..const import CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_TO, EVENT_CAMERA_ARCHIVER_FILE_COPIED
+from ..const import ATTR_CAMERA, ATTR_DESTINATION_FILE, ATTR_EXT, ATTR_LOCAL_FILE, ATTR_PATH, ATTR_TIMESTAMP, CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_TO, EVENT_CAMERA_ARCHIVER_FILE_COPIED
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 
@@ -48,5 +50,15 @@ class TransferRunner:
         component_from = self._from_components[0]
         return component_from.run(local_path_without_ext)
 
-    def fire_event(self, entry):
-        self._hass.bus.fire(EVENT_CAMERA_ARCHIVER_FILE_COPIED, entry.to_dict())
+    def fire_event(self, data):
+        localFile = cast(IFileInfo, data[ATTR_LOCAL_FILE])
+        destFile = data[ATTR_DESTINATION_FILE]
+
+        entry = localFile.metadata | {
+            ATTR_TIMESTAMP: localFile.modif_datetime,
+            ATTR_CAMERA: self._config[CONF_NAME],
+            ATTR_EXT: localFile.ext,
+            ATTR_PATH: destFile,
+        }
+
+        self._hass.bus.fire(EVENT_CAMERA_ARCHIVER_FILE_COPIED, entry)

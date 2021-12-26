@@ -42,6 +42,12 @@ ATTR_EXTENSIONS = "Extensions"
 ATTR_SIZE = "Size"
 ATTR_SOURCE_FILE = "SourceFile"
 ATTR_SOURCE_FILE_CREATED = "SourceFileCreated"
+ATTR_LOCAL_FILE = "LocalFile"
+ATTR_DESTINATION_FILE = "DestinationFile"
+ATTR_TIMESTAMP = "@timestamp"
+ATTR_CAMERA = "camera"
+ATTR_EXT = "ext"
+ATTR_PATH = "path"
 
 EVENT_CAMERA_ARCHIVER_FILE_COPIED = "CameraArchiverFileCopied"
 
