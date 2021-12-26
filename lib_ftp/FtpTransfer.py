@@ -1,6 +1,7 @@
 from datetime import datetime
 import os, logging
 
+from ..common.ifile_info import IFileInfo
 from ..common.transfer_component import TransferComponent
 from ..common.transfer_state import TransferState
 from ..const import CONF_FROM, CONF_FTP, CONF_PATH
@@ -61,7 +62,7 @@ class FtpTransfer(TransferComponent):
                     # stat.info["value"] = os.path.getsize(localfile)
                     self.OnFileTransferCall(stat)
 
-        _LOGGER.info(f"🆗 Files transferring done. Copied: {files_copied} / {files_counter}")
+        _LOGGER.info(f"Files transferring done. Copied: {files_copied} / {files_counter}")
 
 
     def localFileStorage(self, file: FtpFileInfo) -> str:
@@ -75,3 +76,6 @@ class FtpTransfer(TransferComponent):
             ftp.Upload(localfile, fullpath)
 
         return fullpath
+
+    def from_component_download_to_local_finished_callback(self, callbackObject: IFileInfo) -> None:
+        print(callbackObject)

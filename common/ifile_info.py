@@ -5,6 +5,7 @@ class IFileInfo:
     def __init__(self) -> None:
         self._fullname: str = None
         self._datetime: datetime = None
+        self.metadata = {}
 
     @property
     def size(self) -> int:
@@ -32,6 +33,10 @@ class IFileInfo:
 
     @property
     def ext(self) -> str:
+        pass
+
+    @property
+    def fullnameWithoutExt(self) -> str:
         pass
 
     @property

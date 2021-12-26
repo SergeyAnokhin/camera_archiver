@@ -10,6 +10,7 @@ class FtpFileInfo(IFileInfo):
     def __init__(self, path: str, dirline: str):
         # -rw-r--r-- 1 user group           4467 Mar 27  2018  file1.zip
         # -rw-r--r-- 1 user group         124529 Jun 18 15: 31 file2.zip
+        super().__init__()
         self.parts = dirline.split(maxsplit=9)
         self.path = path
         self._name = self.parts[-1]
@@ -17,7 +18,7 @@ class FtpFileInfo(IFileInfo):
         self._fullname = f'{self.path}/{self.parts[-1]}'
         self.is_dir = self.parts[0].startswith('d')
         self.is_file = self.parts[0].startswith('-')
-        self.icon = '📁' if self.is_dir else '🖼️'
+        self.icon = '' if self.is_dir else ''
         self._size = int(self.parts[4])
     
     @property
@@ -37,6 +38,11 @@ class FtpFileInfo(IFileInfo):
     def ext(self) -> str:
         _, ext = os.path.splitext(self._name)
         return ext
+
+    @property
+    def fullnameWithoutExt(self) -> str:
+        withoutExt, _ = os.path.splitext(self._name)
+        return withoutExt
 
     def relname(self, root: str) -> str:
         return self._fullname.lstrip(root).lstrip("/")

@@ -49,7 +49,7 @@ def get_coordinator(hass: HomeAssistant, instanceName: str, config: ConfigEntry 
                 hass,
                 logging.getLogger(__name__),
                 name=DOMAIN,
-                update_interval=timedelta(seconds=600)
+                update_interval=timedelta(seconds=10)
             )
             _LOGGER.debug(f"|{instanceName}| Coordinator created: ID# {id(coordinatorInst)}")
             coordinatorInst.last_update_success = False

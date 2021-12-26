@@ -33,8 +33,8 @@ class TransferComponent:
         #m = p.match(self.fullname())
         #d = m.groupdict()
         try:
-            path = file.fullname.replace(self._config[CONF_PATH], '').lstrip('\\').lstrip('/')
+            path = file.fullnameWithoutExt.replace(self._config[CONF_PATH], '').lstrip('\\').lstrip('/')
             pattern = self._config[CONF_DATETIME_PATTERN]
             return datetime.strptime(path, pattern)
         except Exception as e:
-            _LOGGER.warn(f"❗ Can't parse datetime from: '{path}' pattern: '{pattern}' ❗ \n {e}")
+            _LOGGER.warn(f"Can't parse datetime from: '{path}' pattern: '{pattern}' \n {e}")

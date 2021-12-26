@@ -1,20 +1,14 @@
-#import asyncio
 import logging
 
 from homeassistant.helpers.restore_state import RestoreEntity
 from . import get_coordinator
 
-from homeassistant.components.switch import DEVICE_CLASS_SWITCH, SwitchEntity
+from homeassistant.components.switch import DEVICE_CLASS_SWITCH
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (CONF_NAME, STATE_OFF, STATE_ON)
-from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers.entity import DeviceInfo, ToggleEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-# from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
-
-# from .common import (get_privacy, set_power_off_in_progress,
-#                      set_power_on_in_progress, set_privacy)
-from .const import DOMAIN, CONF_ENABLE
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import ToggleEntity
+from .const import CONF_ENABLE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +18,6 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
     add_entities([
         CameraArchiverEnabler(coordinator, config),
     ])
-
 
 class CameraArchiverEnabler(RestoreEntity, ToggleEntity):
     """Representation of a Yi Camera Switch."""

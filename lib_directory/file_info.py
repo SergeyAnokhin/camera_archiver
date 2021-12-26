@@ -5,6 +5,7 @@ from ..common.ifile_info import IFileInfo
 class FileInfo(IFileInfo):
 
     def __init__(self, fullname: str) -> None:
+        super().__init__()
         self._fullname = fullname
         self._fullname_without_ext, self._ext = os.path.splitext(self._fullname)
 
@@ -18,9 +19,12 @@ class FileInfo(IFileInfo):
 
     @property
     def modif_datetime(self) -> datetime:
-        return datetime(os.path.getmtime(self._fullname))
+        return datetime.fromtimestamp(os.path.getmtime(self._fullname))
 
     @property
     def ext(self) -> str:
         return self._ext.lstrip(".")
 
+    @property
+    def fullnameWithoutExt(self) -> str:
+        return self._fullname_without_ext

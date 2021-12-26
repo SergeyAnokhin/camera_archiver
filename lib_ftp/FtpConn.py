@@ -27,7 +27,7 @@ class FtpConn:
             for p in parts[1:-1]:
                 if not self.directory_exists(p):
                     self.ftp.mkd(p)
-                    print(f"➕📁 Directory created: {p}")
+                    print(f"Directory created: {p}")
                 self.ftp.cwd(p)
         else:
             self.ftp.cwd(fullpath)

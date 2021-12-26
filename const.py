@@ -40,6 +40,8 @@ ATTR_FROM = "From"
 ATTR_DURATION = "Duration"
 ATTR_EXTENSIONS = "Extensions"
 ATTR_SIZE = "Size"
+ATTR_SOURCE_FILE = "SourceFile"
+ATTR_SOURCE_FILE_CREATED = "SourceFileCreated"
 
 # ICONS_MAPPING = {
 #     HA_LAST_VIDEO: ICON_VIDEO,

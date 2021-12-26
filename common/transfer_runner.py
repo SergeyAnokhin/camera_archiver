@@ -1,13 +1,11 @@
-from homeassistant.components.sensor import ENTITY_ID_FORMAT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import generate_entity_id
 from .transfer_component import TransferComponent
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from .transfer_state import TransferState
-from ..const import CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_TO, SENSOR_NAME_TO_COPY_FILES
+from ..const import CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_TO
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.const import CONF_NAME
 
 class TransferRunner:
