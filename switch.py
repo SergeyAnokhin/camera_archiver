@@ -26,58 +26,40 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
     ])
 
 
-class CameraArchiverEnabler(RestoreEntity, SwitchEntity):
+class CameraArchiverEnabler(RestoreEntity, SwitchEntity, CoordinatorEntity):
     """Representation of a Yi Camera Switch."""
 
     def __init__(self, coordinator, config):
-        # super().__init__(coordinator)
         self._state = None
+        self._attr_is_on = False
+        self.coordinator = coordinator
         self._device_name = config[CONF_NAME]
         self._name = self._device_name + " Enabler"
-        # _LOGGER.debug(f"|{self._name}| Switch created: with coordinator ID# {id(self.coordinator)}")
-
-    def update(self):
-        """Return the state of the switch."""
-        pass
-
 
     async def async_turn_on(self, **kwargs):
         """Turn the light on."""
         self._attr_is_on = True
         self._state = 'on'
         self.schedule_update_ha_state()
-        # self.coordinator.data[CONF_ENABLE] = True
-        #_LOGGER.debug(f"|{self._name}| Switch ON: with coordinator ID# {id(self.coordinator)}")
-        # await self.coordinator.async_request_refresh()
+        self.coordinator.data[CONF_ENABLE] = True
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         self._attr_is_on = False
         self._state = 'off'
         self.schedule_update_ha_state()
-        # self.coordinator.data[CONF_ENABLE] = False
-        # _LOGGER.debug(f"|{self._name}| Switch OFF: with coordinator ID# {id(self.coordinator)}")
-        # await self.coordinator.async_request_refresh()
+        self.coordinator.data[CONF_ENABLE] = False
+        await self.coordinator.async_request_refresh()
 
-    # def turn_off(self):
-    #     """Turn the device off."""
-    #     self._attr_is_on = False
-    #     self._state = False
-    #     self.coordinator.data[CONF_ENABLE] = False
-    #     self.schedule_update_ha_state()
-
-    # def turn_on(self):
-    #     """Turn the switch on."""
-    #     self._attr_is_on = True
-    #     self._state = True
-    #     self.coordinator.data[CONF_ENABLE] = True
-    #     self.schedule_update_ha_state()
+    @property
+    def is_on(self):
+        """Return true if the switch is on."""
+        return self._attr_is_on
 
     @property
     def device_class(self):
         """Return the class of this device, from component DEVICE_CLASSES."""
-        # if self.module.device == "plug":
-        #     return DEVICE_CLASS_OUTLET
         return DEVICE_CLASS_SWITCH
 
     @property
@@ -85,22 +67,14 @@ class CameraArchiverEnabler(RestoreEntity, SwitchEntity):
         return True
 
     @property
-    def is_on(self):
-        """Return true if the switch is on."""
-        return self._state == 'on'
-        # _LOGGER.debug(f"|{self._name}| Switch CHECK: with coordinator ID# {id(self.coordinator)}")
-        # if self.coordinator.data.get(CONF_ENABLE):
-        #     return True
-        # return False
+    def should_poll(self) -> bool:
+        """No need to poll. Coordinator notifies entity of updates."""
+        return False
 
     @property
     def name(self):
         """Return the name of the device."""
         return self._name
-
-    def switch(self, new_state):
-        self._state = new_state
-        # self.coordinator.data[CONF_ENABLE] = on
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -123,12 +97,3 @@ class CameraArchiverEnabler(RestoreEntity, SwitchEntity):
         if last_state and last_state.state:
             self._state = last_state.state
             _LOGGER.info(f"#{self._name}# NEW_STATE={self._state}")
-
-    # async def async_turn_on(self, **kwargs):
-    #     """Turn the switch on."""
-    #     await self.hass.async_add_executor_job(self._api.wifi.set_wifi, True)
-
-    # async def async_turn_off(self, **kwargs):
-    #     """Turn the switch off."""
-    #     # parameters = {"Enable": "false", "Status": "false"}
-    #     await self.hass.async_add_executor_job(self._api.wifi.set_wifi, False)
