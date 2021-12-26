@@ -1,64 +1,67 @@
 from datetime import timedelta
-import logging
+import logging, threading
 
+from .common.transfer_state import TransferState
 from .common.transfer_runner import TransferRunner
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC, CONF_NAME
 from homeassistant.core import Config, HomeAssistant, ServiceCall
 
-from .const import (DOMAIN, CONF_ENABLE)
+from .const import (DOMAIN, CONF_ENABLE, SENSOR_NAME_TO_COPY_FILES)
 
 PLATFORMS = ["sensor", "binary_sensor", "switch"]
 
 _LOGGER = logging.getLogger(__name__)
 
+lock = threading.Lock()
+
 # def setup_platform(hass, config, add_devices, discovery_info=None):
 #     """Setup the sensor platform."""
 #     _LOGGER.info("Start setup_platform")
 
-def get_coordinator(hass: HomeAssistant, config: ConfigEntry, set_update_method=False):
-    instanceName = config[CONF_NAME]
-    _LOGGER.debug(f"|{instanceName}| Call sensor.py:get_coordinator() {instanceName}")
+def get_coordinator(hass: HomeAssistant, instanceName: str, config: ConfigEntry = None, set_update_method=False):
+    async def async_get_status():
 
-    conf_all: Config = hass.config
-    cdict = conf_all.as_dict()
-    comps = conf_all.components
+        _LOGGER.info(f"|{instanceName}| Call Callback sensor.py:get_coordinator.async_get_status() ")
+        coordinatorInst = hass.data[DOMAIN][instanceName]
+        runner = TransferRunner(config, hass)
+        result: TransferState = None
+        if not coordinatorInst.data.get(CONF_ENABLE, False):
+            result = runner.stat()
+        else:
+            result = runner.run()
+        coordinatorInst.data[SENSOR_NAME_TO_COPY_FILES] = result
+        return coordinatorInst.data
 
-    if DOMAIN in hass.config.components:
-        comp = hass.components.sensor
+    _LOGGER.debug(f"|{instanceName}| Call sensor.py:get_coordinator() {instanceName} HasConfig:{'Yes' if config else 'No'}")
 
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
 
-    if instanceName in hass.data[DOMAIN]:
-        return hass.data[DOMAIN][instanceName]
+    with lock:
+        _LOGGER.debug(f"|{instanceName}| Check coordinator existing")
+        if instanceName in hass.data[DOMAIN]:
+            coordinatorInst = hass.data[DOMAIN][instanceName]
+            _LOGGER.debug(f"|{instanceName}| Coordinator reuse Succes: ID# {id(coordinatorInst)}")
+        else:
+            coordinatorInst = DataUpdateCoordinator(
+                hass,
+                logging.getLogger(__name__),
+                name=DOMAIN,
+                update_interval=timedelta(seconds=600)
+            )
+            _LOGGER.debug(f"|{instanceName}| Coordinator created: ID# {id(coordinatorInst)}")
+            coordinatorInst.last_update_success = False
+            coordinatorInst.data = {
+                    CONF_ENABLE: True,
+                }
+            hass.data[DOMAIN][instanceName] = coordinatorInst
 
-    async def async_get_status():
-        _LOGGER.info(f"|{instanceName}| Call Callback sensor.py:get_coordinator.async_get_status() ")
-        coordinatorInst = hass.data[DOMAIN][instanceName]
-        runner = TransferRunner(config, coordinatorInst, hass)
-        if not coordinatorInst.data.get(CONF_ENABLE):
-            return runner.stat()
-        return runner.run()
+    if config: # only sensor has right config for async_get_status
+        coordinatorInst.update_method = async_get_status
 
-    coordinator = DataUpdateCoordinator(
-        hass,
-        logging.getLogger(__name__),
-        name=DOMAIN,
-        update_method=async_get_status,
-        update_interval=timedelta(seconds=10),
-    )
-    coordinator.data = {
-        CONF_ENABLE: True
-    }
-    coordinator.last_update_success = False
-
-    hass.data[DOMAIN][instanceName] = coordinator
-
-    return coordinator
-
-
+    return coordinatorInst
 
 async def async_setup(hass: HomeAssistant, global_config: Config):
     """Set up this integration using YAML."""

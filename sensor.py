@@ -62,7 +62,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
-    coordinator = get_coordinator(hass, config)
+    coordinator = get_coordinator(hass, config[CONF_NAME], config)
 
     add_entities([
         ToCopyFilesSensor(coordinator, config),

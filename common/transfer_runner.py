@@ -12,10 +12,9 @@ from homeassistant.const import CONF_NAME
 
 class TransferRunner:
 
-    def __init__(self, config: ConfigEntry, coordinator: DataUpdateCoordinator, hass: HomeAssistant):
+    def __init__(self, config: ConfigEntry, hass: HomeAssistant):
         self._config = config
         self._hass = hass
-        self._coordinator = coordinator
         self._from_components: list[TransferComponent] = []
         self._to_components: list[TransferComponent] = []
 
@@ -38,27 +37,13 @@ class TransferRunner:
             self._to_components.append(transfer)
 
 
-    def stat(self):
-        state: TransferState = None
-        data = {}
-
+    def stat(self) -> TransferState:
         component_from = self._from_components[0]
-        state = component_from.state()
+        return component_from.state()
 
-        data[SENSOR_NAME_TO_COPY_FILES] = state
-
-        return data
-
-    def run(self):
-        state: TransferState = None
-        data = {}
-
+    def run(self) -> TransferState:
         entity_id = generate_entity_id("archiver_{}", self._config[CONF_NAME], current_ids=None, hass=self._hass)
         local_path_without_ext = f"{self._config[CONF_LOCAL_STORAGE]}/{entity_id}"
 
         component_from = self._from_components[0]
-        state = component_from.run(local_path_without_ext)
-
-        data[SENSOR_NAME_TO_COPY_FILES] = state
-
-        return data
+        return component_from.run(local_path_without_ext)
