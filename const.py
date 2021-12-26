@@ -14,6 +14,7 @@ CONF_PATH = "path"
 CONF_DATETIME_PATTERN = "datetime_pattern"
 CONF_MAX_FILES = "max_files"
 CONF_TRIGGERS = "triggers"
+CONF_ENABLE = "enable"
 
 # Sensors:
 SENSOR_NAME_LAST_VIDEO = "Last video"

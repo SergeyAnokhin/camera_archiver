@@ -3,6 +3,8 @@ import logging, sys
 from typing import Any, cast
 import voluptuous as vol
 
+from .switch import CameraArchiverEnabler
+
 from . import get_coordinator
 
 from .common.transfer_state import TransferState
@@ -64,6 +66,7 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
 
     add_entities([
         ToCopyFilesSensor(coordinator, config),
+        # CameraArchiverEnabler(coordinator, config),
     ])
 
 class TransferSensor(SensorEntity):

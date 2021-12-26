@@ -1,19 +1,13 @@
 from datetime import timedelta
-import logging, os
-
-from homeassistant.helpers.entity import generate_entity_id
+import logging
 
 from .common.transfer_runner import TransferRunner
-from .lib_directory.DirectoryTransfer import DirectoryTransfer
-from .lib_ftp.FtpTransfer import FtpTransfer
-
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC, CONF_NAME
 from homeassistant.core import Config, HomeAssistant, ServiceCall
 
-from .const import (CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_MQTT, DOMAIN, SENSOR_NAME_TO_COPY_FILES)
+from .const import (DOMAIN, CONF_ENABLE)
 
 PLATFORMS = ["sensor", "binary_sensor", "switch"]
 
@@ -23,9 +17,16 @@ _LOGGER = logging.getLogger(__name__)
 #     """Setup the sensor platform."""
 #     _LOGGER.info("Start setup_platform")
 
-def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
+def get_coordinator(hass: HomeAssistant, config: ConfigEntry, set_update_method=False):
     instanceName = config[CONF_NAME]
     _LOGGER.debug(f"|{instanceName}| Call sensor.py:get_coordinator() {instanceName}")
+
+    conf_all: Config = hass.config
+    cdict = conf_all.as_dict()
+    comps = conf_all.components
+
+    if DOMAIN in hass.config.components:
+        comp = hass.components.sensor
 
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
@@ -37,6 +38,8 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
         _LOGGER.info(f"|{instanceName}| Call Callback sensor.py:get_coordinator.async_get_status() ")
         coordinatorInst = hass.data[DOMAIN][instanceName]
         runner = TransferRunner(config, coordinatorInst, hass)
+        if not coordinatorInst.data.get(CONF_ENABLE):
+            return runner.stat()
         return runner.run()
 
     coordinator = DataUpdateCoordinator(
@@ -44,9 +47,11 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
         logging.getLogger(__name__),
         name=DOMAIN,
         update_method=async_get_status,
-        update_interval=timedelta(seconds=600),
+        update_interval=timedelta(seconds=10),
     )
-    coordinator.data = {}
+    coordinator.data = {
+        CONF_ENABLE: True
+    }
     coordinator.last_update_success = False
 
     hass.data[DOMAIN][instanceName] = coordinator
@@ -57,6 +62,7 @@ def get_coordinator(hass: HomeAssistant, config: ConfigEntry):
 
 async def async_setup(hass: HomeAssistant, global_config: Config):
     """Set up this integration using YAML."""
+    
     # config = global_config[DOMAIN]
     
     # archiver = CameraArchive(hass, config)
