@@ -4,7 +4,7 @@ from .transfer_component import TransferComponent
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from .transfer_state import TransferState
-from ..const import CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_TO
+from ..const import CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_TO, EVENT_CAMERA_ARCHIVER_FILE_COPIED
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 
@@ -34,6 +34,8 @@ class TransferRunner:
             transfer.set_from(self._from_components)
             self._to_components.append(transfer)
 
+        for c in self._to_components:
+            c.copiedFileCallback = self.fire_event
 
     def stat(self) -> TransferState:
         component_from = self._from_components[0]
@@ -45,3 +47,6 @@ class TransferRunner:
 
         component_from = self._from_components[0]
         return component_from.run(local_path_without_ext)
+
+    def fire_event(self, entry):
+        self._hass.bus.fire(EVENT_CAMERA_ARCHIVER_FILE_COPIED, entry.to_dict())

@@ -11,6 +11,7 @@ class TransferComponent:
     def __init__(self, config: config_entries) -> None:
         self._on_file_transfer = None
         self._config = config
+        self.copiedFileCallback = None
 
     def set_from(self, from_components: list['TransferComponent']) -> None:
         for c in from_components:
