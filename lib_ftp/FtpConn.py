@@ -1,3 +1,4 @@
+from io import BytesIO
 import os, logging
 
 from ftplib import FTP
@@ -56,9 +57,15 @@ class FtpConn:
         file = open(localfile, 'rb')
         self.ftp.storbinary('STOR ' + filename, file)
 
-    def Download(self, fileFtp: FtpFileInfo, localfilename: str):
-        with open(localfilename, 'wb') as localfile:
-            self.ftp.retrbinary(f'RETR {fileFtp.fullname}', localfile.write)
-        filesize = os.path.getsize(localfilename)
-        _LOGGER.debug(f'🗄️⏬ File downloaded : {fileFtp.fullname} ==> {localfilename} ({filesize}b)')
-
+    def Download(self, fileFtp: FtpFileInfo, localfilename: str = None):
+        if localfilename:
+            with open(localfilename, 'wb') as localfile:
+                self.ftp.retrbinary(f'RETR {fileFtp.fullname}', localfile.write)
+            filesize = os.path.getsize(localfilename)
+            _LOGGER.debug(f'File downloaded : {fileFtp.fullname} ==> {localfilename} ({filesize}b)')
+        else:
+            fileFtp.Content = BytesIO()
+            self.ftp.retrbinary('RETR {fileFtp.fullname}', fileFtp.Content.write)
+            filesize = fileFtp.Content.getbuffer().nbytes
+            fileFtp.Content.seek(0)
+            _LOGGER.debug(f'File downloaded : [{fileFtp.fullname}] ==> [memory] ({filesize}b)')

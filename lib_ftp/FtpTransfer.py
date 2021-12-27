@@ -54,13 +54,13 @@ class FtpTransfer(TransferComponent):
                     stat.add(f)
                     localfile = self.localFileStorage(f)
 
-                    srcFtp.Download(f, localfile)
+                    srcFtp.Download(f)
                     # dstFtpFile = self.Upload(localfile, self.datetime(f))
 
                     # stat.info["path"] = dstFtpFile
                     # stat.info["path_source"] = f.fullname
                     # stat.info["value"] = os.path.getsize(localfile)
-                    self.OnFileTransferCall(stat)
+                    self._on_file_transfer(f)
 
         _LOGGER.info(f"Files transferring done. Copied: {files_copied} / {files_counter}")
 

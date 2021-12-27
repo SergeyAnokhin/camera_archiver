@@ -1,4 +1,5 @@
 from datetime import datetime
+from io import BytesIO
 
 class IFileInfo:
 
@@ -6,6 +7,7 @@ class IFileInfo:
         self._fullname: str = None
         self._datetime: datetime = None
         self.metadata = {}
+        self.Content: BytesIO = None
 
     @property
     def size(self) -> int:
@@ -42,3 +44,4 @@ class IFileInfo:
     @property
     def files_size_mb(self) -> float:
         return round(self.size / 1024 / 1024, 2)
+
