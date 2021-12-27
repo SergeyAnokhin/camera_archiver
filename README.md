@@ -46,7 +46,7 @@ automation:
   - service: notify.elastic_input
     data_template:
       message: >
-          "url": "http://192.168.1.31:3192/cameraarchive-{{ trigger.event.data.ModifDateTimeUtc.strftime("%Y.%m") }}/_doc/"
+          "url": "http://192.168.1.XX:9200/cameraarchive-{{ trigger.event.data.ModifDateTimeUtc.strftime("%Y.%m") }}/_create/{{ trigger.event.data.id }}"
           "doc": "event",
           "source_type": "ftp",
           "tags": "camera_archiver synology_cameraarchive"
@@ -57,7 +57,8 @@ automation:
           "@timestamp": "{{ trigger.event.data.ModifDateTimestampStrUtc }}",
           "event_start": "{{ trigger.event.data.ModifDateTimestampStr }}",
           "ext": "{{ trigger.event.data.ext }}",
-          "SourceFileCreated": "{{ trigger.event.data.SourceFileCreated }}",
+          "source_file_created": "{{ trigger.event.data.SourceFileCreated }}",
+          "execution_time": "{{ as_timestamp(now()) | timestamp_custom('%Y-%m-%dT%H:%M:%S.000+00:00', False) }}",
           "camera": "{{ trigger.event.data.camera }}",
           "ext": "{{ trigger.event.data.ext }}",
           "path": "{{ trigger.event.data.path }}"
