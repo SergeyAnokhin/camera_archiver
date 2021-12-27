@@ -4,8 +4,11 @@ from ..common.ifile_info import IFileInfo
 from .file_info import FileInfo
 from ..common.transfer_component import TransferComponent
 from ..common.transfer_state import TransferState
-from ..const import ATTR_DESTINATION_FILE, ATTR_LOCAL_FILE, ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED, CONF_DATETIME_PATTERN, CONF_PATH
-import os, logging, shutil
+from ..const import ATTR_DESTINATION_FILE, ATTR_LOCAL_FILE, ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED, ATTR_SOURCE_HOST, CONF_DATETIME_PATTERN, CONF_PATH
+import os
+import logging
+import shutil
+import socket
 from pathlib import Path
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,6 +56,11 @@ class DirectoryTransfer(TransferComponent):
         new_file.datetime = file.datetime
         new_file.metadata[ATTR_SOURCE_FILE] = file.fullname
         new_file.metadata[ATTR_SOURCE_FILE_CREATED] = file.modif_datetime
+
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        new_file.metadata[ATTR_SOURCE_HOST] = local_ip
+
         return new_file
 
     def from_component_download_to_local_finished_callback(self, callbackObject: IFileInfo) -> None:
@@ -71,3 +79,12 @@ class DirectoryTransfer(TransferComponent):
     def mkdir(self, filename: str):
         path = Path(Path(filename).parent)
         path.mkdir(parents=True, exist_ok=True)
+
+
+# import io
+
+# with open("/config/www/snapshot/camera.Yi1080pWoodSouth.mp4",'rb') as infile:
+#     buffer=io.BytesIO(infile.read())
+# print(buffer)
+# with open("/config/www/snapshot/camera.Yi1080pWoodSouth_2.mp4",'wb') as outfile: ## Open temporary file as bytes
+#     outfile.write(buffer.read())                ## Read bytes into file

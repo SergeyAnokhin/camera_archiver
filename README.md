@@ -9,24 +9,58 @@ Add to your configuration.yaml file:
 sensor:
   - platform: camera_archiver
     local_storage: ./config/www/snapshot # intermediate storage can be used for display 'last' record
-    name: Yi1080pWoodSouth Camera
+    name: Yi1080pWoodSouth
     from:
       directory:
         path: ../home-assistant-core-data/input
-        datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f.mp4" # use python datetime format here
+        datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
       # ftp: 
-      #   host: 192.168.1.58
-      #   user: root
+      #   host: 192.168.1.XX
+      #   user: USER
       #   password: !secret main
       #   path: /tmp/sd/record
       #   datetime_parser: "%YY%mM%dD%HH/E1%MM%SS%f.mp4" # use python datetime format here
     to:
       directory:
-        path: ../home-assistant-core-data/
-        datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S.mp4" # use python datetime format here
+        path: ../home-assistant-core-data
+        datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
       # ftp:
-      #   host: 192.168.1.16
-      #   user: camera
+      #   host: 192.168.1.XX
+      #   user: USER
       #   password: !secret main
       #   path: /Camera/Yi1080pWoodSouth
+
+
+switch:
+  - platform: camera_archiver
+    name: Yi1080pWoodSouth
+
+
+automation:
+- alias: auto_CameraArchiverFileCopied
+  mode: queued
+  trigger:
+    - platform: event
+      event_type: CameraArchiverFileCopied
+  action:
+  - service: notify.elastic_input
+    data_template:
+      message: >
+          "url": "http://192.168.1.31:3192/cameraarchive-{{ trigger.event.data.ModifDateTimeUtc.strftime("%Y.%m") }}/_doc/"
+          "doc": "event",
+          "source_type": "ftp",
+          "tags": "camera_archiver synology_cameraarchive"
+          "volume": "/volume2"
+          "_id": "{{ trigger.event.data.id }}",
+
+          "path_source": "{{ trigger.event.data.SourceFile }}",
+          "@timestamp": "{{ trigger.event.data.ModifDateTimestampStrUtc }}",
+          "event_start": "{{ trigger.event.data.ModifDateTimestampStr }}",
+          "ext": "{{ trigger.event.data.ext }}",
+          "SourceFileCreated": "{{ trigger.event.data.SourceFileCreated }}",
+          "camera": "{{ trigger.event.data.camera }}",
+          "ext": "{{ trigger.event.data.ext }}",
+          "path": "{{ trigger.event.data.path }}"
+          "value": "{{ trigger.event.data.size }}"
+
 ```

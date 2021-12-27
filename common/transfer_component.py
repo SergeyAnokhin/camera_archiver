@@ -39,3 +39,4 @@ class TransferComponent:
             return datetime.strptime(path, pattern)
         except Exception as e:
             _LOGGER.warn(f"Can't parse datetime from: '{path}' pattern: '{pattern}' \n {e}")
+            return None

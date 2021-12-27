@@ -79,3 +79,18 @@ class FtpTransfer(TransferComponent):
 
     def from_component_download_to_local_finished_callback(self, callbackObject: IFileInfo) -> None:
         print(callbackObject)
+
+
+# # https://stackoverflow.com/questions/16991819/ftp-sending-python-bytesio-stream
+# import ftplib as ftp
+# from io import BytesIO
+
+# with ftp.FTP("192.168.1.XX", "", "") as ftp_one:
+#     with ftp.FTP("192.168.1.XX", "", "") as ftp_two:
+#         with BytesIO() as myfile:
+#             ftp_one.retrbinary ('RETR /tmp/sd/record/2021Y11M16D17H/E155M42S18.mp4', myfile.write)
+#             myfile.seek(0)
+#             ftp_two.storbinary('STOR /CameraArchive/virtualtest.mp4', myfile)
+#             ftp_one.close()
+#             ftp_two.close()
+#             myfile.close()
