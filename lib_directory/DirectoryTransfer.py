@@ -31,7 +31,7 @@ class DirectoryTransfer(TransferComponent):
                     continue # ignore file
                 fileInfo.datetime = dt
 
-                state.add(fileInfo)
+                state.append(fileInfo)
                 if onfileCallback:
                     onfileCallback(fileInfo)
                 

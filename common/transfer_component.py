@@ -30,6 +30,16 @@ class TransferComponent:
     def run(self):
         pass # TO OVERRIDE
 
+    def get_files(self) -> list[IFileInfo]:
+        pass # TO OVERRIDE
+
+    def validate_file(self, file: IFileInfo) -> bool:
+        dt = self.filename_datetime(file)
+        if dt == None:
+            return False # ignore file
+        file.datetime = dt
+        return True
+
     def filename_datetime(self, file: IFileInfo):
         #p = re.compile(".*(?P<year>\d{4})Y(?P<month>\d\d)M(?P<day>\d\d)D(?P<hour>\d\d)H/E1(?P<min>\d\d)M(?P<sec>\d\d)S(?P<msec>\d\d).*")
         #m = p.match(self.fullname())
@@ -39,5 +49,5 @@ class TransferComponent:
             pattern = self._config[CONF_DATETIME_PATTERN]
             return datetime.strptime(path, pattern)
         except Exception as e:
-            _LOGGER.warn(f"Can't parse datetime from: '{path}' pattern: '{pattern}' \n {e}")
+            _LOGGER.warn(f"Can't parse datetime from: '{path}' pattern: '{pattern}' Exception: {e}")
             return None

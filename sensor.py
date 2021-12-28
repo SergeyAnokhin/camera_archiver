@@ -19,13 +19,13 @@ FTP_SCHEMA = vol.Schema({
         vol.Required(CONF_PASSWORD): cv.string,
         vol.Required(CONF_PATH): cv.string,
         vol.Required(CONF_DATETIME_PATTERN): cv.string,
-        vol.Required(CONF_COPIED_PER_RUN): cv.positive_int,
+        vol.Optional(CONF_COPIED_PER_RUN, default=100): cv.positive_int,
 })
 
 DIRECTORY_SCHEMA = vol.Schema({
         vol.Required(CONF_PATH): cv.string,
         vol.Required(CONF_DATETIME_PATTERN): cv.string,
-        vol.Required(CONF_COPIED_PER_RUN): cv.positive_int,
+        vol.Optional(CONF_COPIED_PER_RUN, default=100): cv.positive_int,
     })
 
 MQTT_SCHEMA = vol.Schema({

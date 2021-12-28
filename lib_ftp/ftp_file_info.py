@@ -1,8 +1,7 @@
 from datetime import datetime
 from ftplib import FTP
 import os
-from dateutil import parser
-
+from .FtpDirLine import FtpDirLine
 from ..common.ifile_info import IFileInfo
 
 class FtpFileInfo(IFileInfo):
@@ -11,15 +10,14 @@ class FtpFileInfo(IFileInfo):
         # -rw-r--r-- 1 user group           4467 Mar 27  2018  file1.zip
         # -rw-r--r-- 1 user group         124529 Jun 18 15: 31 file2.zip
         super().__init__()
-        self.parts = dirline.split(maxsplit=9)
+        self._ftpDirLine = FtpDirLine(dirline)
         self.path = path
-        self._name = self.parts[-1]
-        self._time_str = self.parts[5] + " " + self.parts[6] + " " + self.parts[7]
-        self._fullname = f'{self.path}/{self.parts[-1]}'
-        self.is_dir = self.parts[0].startswith('d')
-        self.is_file = self.parts[0].startswith('-')
-        self.icon = '' if self.is_dir else ''
-        self._size = int(self.parts[4])
+        self._name = self._ftpDirLine.name
+        self._fullname = f'{self.path}/{self._name}'
+        self.is_dir = self._ftpDirLine.is_dir
+        self.is_file = self._ftpDirLine.is_file
+        self._size = self._ftpDirLine.size
+        self.metadata['ftp_date'] = self._ftpDirLine.modif_datetime_source
     
     @property
     def size(self) -> int:
@@ -31,8 +29,7 @@ class FtpFileInfo(IFileInfo):
 
     @property
     def modif_datetime(self) -> datetime:
-        # https://stackoverflow.com/questions/29026709/how-to-get-ftp-files-modify-time-using-python-ftplib
-        parser.parse(self._time_str)
+        return self._ftpDirLine.modif_datetime
 
     @property
     def ext(self) -> str:
@@ -41,11 +38,8 @@ class FtpFileInfo(IFileInfo):
 
     @property
     def fullnameWithoutExt(self) -> str:
-        withoutExt, _ = os.path.splitext(self._name)
+        withoutExt, _ = os.path.splitext(self.fullname)
         return withoutExt
 
     def relname(self, root: str) -> str:
         return self._fullname.lstrip(root).lstrip("/")
-
-    def __str__(self):
-         return f"{self._name} {self.size()}"

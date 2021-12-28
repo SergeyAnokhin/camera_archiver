@@ -2,7 +2,9 @@ from io import BytesIO
 import os, logging
 
 from ftplib import FTP
-from .ftp_file_info import FtpFileInfo
+from .FtpDirLine import FtpDirLine
+
+from homeassistant.const import CONF_PATH
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,21 +35,18 @@ class FtpConn:
         else:
             self.ftp.cwd(fullpath)
 
-    def GetFtpItems(self, dir: str = None) -> list[FtpFileInfo]:
-        filelist = []
-        newpath = self.config["path"]
-        current_path = self.ftp.pwd()
+    def GetFtpDir(self, dir: str = None) -> list[str]:
+        fileline: list[str] = []
         if dir:
-            newpath = self.config["path"] + "/" + dir
-            self.ftp.dir(dir, filelist.append)
+            self.ftp.dir(dir, fileline.append)
         else:
-            self.ftp.dir(filelist.append)
-        return [FtpFileInfo(newpath, x) for x in filelist]
+            self.ftp.dir(fileline.append)
+        return fileline
 
     def directory_exists(self, directory: str) -> bool:
-        filelist = self.GetFtpItems()
-        for f in filelist:
-            if f.name == directory and f.is_dir:
+        for line in self.GetFtpDir():
+            ftpLine = FtpDirLine(line)
+            if ftpLine.name == directory and ftpLine.is_dir:
                 return True
         return False
 
@@ -57,21 +56,23 @@ class FtpConn:
         file = open(localfile, 'rb')
         self.ftp.storbinary('STOR ' + filename, file)
 
+    def Download(self, from_file: str, to_file: str) -> BytesIO:
+        with open(to_file, 'wb') as localfile:
+            self.ftp.retrbinary(f'RETR {from_file}', localfile.write)
+        filesize = os.path.getsize(to_file)
+        _LOGGER.debug(f'File downloaded : {from_file} ==> {to_file} ({filesize}b)')
+
     def UploadBytes(self, bytesIo: BytesIO, fullFtpPath: str):
         self.cd(fullFtpPath, withDirectoryCreation=True)
         filename = fullFtpPath.split('/')[-1]
         bytesIo.seek(0)
-        self.ftp.storbinary('STOR ' + filename, bytesIo)
+        self.ftp.storbinary(f'STOR {filename}', bytesIo)
 
-    def Download(self, fileFtp: FtpFileInfo, localfilename: str = None):
-        if localfilename:
-            with open(localfilename, 'wb') as localfile:
-                self.ftp.retrbinary(f'RETR {fileFtp.fullname}', localfile.write)
-            filesize = os.path.getsize(localfilename)
-            _LOGGER.debug(f'File downloaded : {fileFtp.fullname} ==> {localfilename} ({filesize}b)')
-        else:
-            fileFtp.Content = BytesIO()
-            self.ftp.retrbinary('RETR {fileFtp.fullname}', fileFtp.Content.write)
-            filesize = fileFtp.Content.getbuffer().nbytes
-            fileFtp.Content.seek(0)
-            _LOGGER.debug(f'File downloaded : [{fileFtp.fullname}] ==> [memory] ({filesize}b)')
+    def DownloadBytes(self, fullname: str) -> BytesIO:
+        buffer = BytesIO()
+        self.ftp.retrbinary(f"RETR {fullname}", buffer.write)
+        filesize = buffer.getbuffer().nbytes
+        buffer.seek(0)
+        _LOGGER.debug(f'File downloaded : [{fullname}] ==> [memory] ({filesize}b)')
+        return buffer
+

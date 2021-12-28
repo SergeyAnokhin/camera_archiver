@@ -1,5 +1,6 @@
 from datetime import datetime
 from io import BytesIO
+from pathlib import Path
 
 class IFileInfo:
 
@@ -16,6 +17,11 @@ class IFileInfo:
     @property
     def basename(self) -> str:
         pass
+
+    @property
+    def dirname(self) -> str:
+        path = Path(self.fullname)
+        return path.parent
 
     @property
     def fullname(self) -> str:
@@ -45,3 +51,5 @@ class IFileInfo:
     def files_size_mb(self) -> float:
         return round(self.size / 1024 / 1024, 2)
 
+    def __str__(self):
+         return f"{self.basename} @{self.dirname} {self.files_size_mb}Mb"

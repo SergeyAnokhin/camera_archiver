@@ -21,12 +21,15 @@ class TransferState:
         self._duration = self._stop - self._start
         return self._duration.seconds
 
-    def add(self, file: IFileInfo) -> None:
+    def append(self, file: IFileInfo) -> None:
         self._files.append(file.fullname)
         self._size += file.size
         if file.ext not in self._size_by_ext:
             self._size_by_ext[file.ext] = 0
         self._size_by_ext[file.ext] += file.size
+
+    def extend(self, files: list[IFileInfo]) -> None:
+        [self.append(f) for f in files]
 
     @property
     def duration(self) -> timedelta:

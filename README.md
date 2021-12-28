@@ -14,12 +14,14 @@ sensor:
       directory:
         path: ../home-assistant-core-data/input
         datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
+        copied_per_run: 2
       # ftp: 
       #   host: 192.168.1.XX
       #   user: USER
       #   password: !secret main
       #   path: /tmp/sd/record
       #   datetime_parser: "%YY%mM%dD%HH/E1%MM%SS%f.mp4" # use python datetime format here
+        # copied_per_run: 2
     to:
       directory:
         path: ../home-assistant-core-data
@@ -30,11 +32,9 @@ sensor:
       #   password: !secret main
       #   path: /Camera/Yi1080pWoodSouth
 
-
 switch:
   - platform: camera_archiver
     name: Yi1080pWoodSouth
-
 
 automation:
 - alias: auto_CameraArchiverFileCopied
@@ -46,7 +46,7 @@ automation:
   - service: notify.elastic_input
     data_template:
       message: >
-          "url": "http://192.168.1.XX:9200/cameraarchive-{{ trigger.event.data.ModifDateTimeUtc.strftime("%Y.%m") }}/_create/{{ trigger.event.data.id }}"
+          "url": "http://192.168.1.XX:9200/cameraarchive-{{ trigger.event.data.DateTimeUtc.strftime("%Y.%m") }}/_create/{{ trigger.event.data.id }}"
           "doc": "event",
           "source_type": "ftp",
           "tags": "camera_archiver synology_cameraarchive"
@@ -54,8 +54,8 @@ automation:
           "_id": "{{ trigger.event.data.id }}",
 
           "path_source": "{{ trigger.event.data.SourceFile }}",
-          "@timestamp": "{{ trigger.event.data.ModifDateTimestampStrUtc }}",
-          "event_start": "{{ trigger.event.data.ModifDateTimestampStr }}",
+          "@timestamp": "{{ trigger.event.data.DateTimestampStrUtc }}",
+          "event_start": "{{ trigger.event.data.DateTimestampStr }}",
           "ext": "{{ trigger.event.data.ext }}",
           "source_file_created": "{{ trigger.event.data.SourceFileCreated }}",
           "execution_time": "{{ as_timestamp(now()) | timestamp_custom('%Y-%m-%dT%H:%M:%S.000+00:00', False) }}",
@@ -64,4 +64,9 @@ automation:
           "path": "{{ trigger.event.data.path }}"
           "value": "{{ trigger.event.data.size }}"
 
+notify:
+  - name: elastic_input
+    platform: file
+    timestamp: True
+    filename: elastic_input.log
 ```
