@@ -20,6 +20,8 @@ lock = threading.Lock()
 #     """Setup the sensor platform."""
 #     _LOGGER.info("Start setup_platform")
 
+# HISTORY EXAMPLE : homeassistant\components\history_stats\sensor.py 228
+
 def get_coordinator(hass: HomeAssistant, instanceName: str, config: ConfigEntry = None, set_update_method=False):
     async def async_get_status():
         _LOGGER.info(f"|{instanceName}| Call Callback sensor.py:get_coordinator.async_get_status() ")
