@@ -57,6 +57,12 @@ class FtpConn:
         file = open(localfile, 'rb')
         self.ftp.storbinary('STOR ' + filename, file)
 
+    def UploadBytes(self, bytesIo: BytesIO, fullFtpPath: str):
+        self.cd(fullFtpPath, withDirectoryCreation=True)
+        filename = fullFtpPath.split('/')[-1]
+        bytesIo.seek(0)
+        self.ftp.storbinary('STOR ' + filename, bytesIo)
+
     def Download(self, fileFtp: FtpFileInfo, localfilename: str = None):
         if localfilename:
             with open(localfilename, 'wb') as localfile:

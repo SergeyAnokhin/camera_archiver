@@ -1,6 +1,7 @@
 import logging
 
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from . import get_coordinator
 
 from homeassistant.components.switch import DEVICE_CLASS_SWITCH
@@ -22,10 +23,10 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
 class CameraArchiverEnabler(RestoreEntity, ToggleEntity):
     """Representation of a Yi Camera Switch."""
 
-    def __init__(self, coordinator, config):
+    def __init__(self, coordinator: DataUpdateCoordinator, config):
         self._attr_state = None
         self._attr_is_on = False
-        self.coordinator = coordinator
+        self.coordinator: DataUpdateCoordinator = coordinator
         self._device_name = config[CONF_NAME]
         self._attr_name = self._device_name + " Enabler"
         self._attr_available = True
@@ -44,7 +45,8 @@ class CameraArchiverEnabler(RestoreEntity, ToggleEntity):
         self._attr_is_on = self._attr_state == STATE_ON
         # self.schedule_update_ha_state()
         self.coordinator.data[CONF_ENABLE] = self._attr_is_on
-        await self.coordinator.async_request_refresh()
+        if self.coordinator.update_method: # check if already initialized
+            await self.coordinator.async_request_refresh()
 
     async def async_added_to_hass(self):
         last_state = await self.async_get_last_state()

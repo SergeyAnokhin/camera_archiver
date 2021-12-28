@@ -1,36 +1,31 @@
-from datetime import timedelta
-import logging, sys
-from typing import Any, cast
+import logging
+from typing import cast
 import voluptuous as vol
-
-from .switch import CameraArchiverEnabler
-
 from . import get_coordinator
-
 from .common.transfer_state import TransferState
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.event import async_track_time_change
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_PATH, CONF_SCAN_INTERVAL
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
-from .const import ATTR_DURATION, ATTR_EXTENSIONS, ATTR_FROM, ATTR_SIZE, CONF_DATETIME_PATTERN, CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MAX_FILES, CONF_MQTT, CONF_TO, CONF_TRIGGERS, CONF_USER, DEFAULT_TIME_INTERVAL, DOMAIN, \
-                    ICON_TO_COPY, SENSOR_NAME_TO_COPY_FILES
+from .const import ATTR_DURATION, ATTR_EXTENSIONS, ATTR_FROM, ATTR_SIZE, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_DIRECTORY, \
+        CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MQTT, CONF_TO, CONF_TRIGGERS, CONF_USER, DEFAULT_TIME_INTERVAL, \
+        ICON_TO_COPY, SENSOR_NAME_TO_COPY_FILES
 
 FTP_SCHEMA = vol.Schema({
         vol.Required(CONF_HOST): cv.string,
         vol.Required(CONF_USER): cv.string,
         vol.Required(CONF_PASSWORD): cv.string,
         vol.Required(CONF_PATH): cv.string,
-        vol.Required(CONF_DATETIME_PATTERN): cv.string
+        vol.Required(CONF_DATETIME_PATTERN): cv.string,
+        vol.Required(CONF_COPIED_PER_RUN): cv.positive_int,
 })
 
 DIRECTORY_SCHEMA = vol.Schema({
         vol.Required(CONF_PATH): cv.string,
-        vol.Required(CONF_DATETIME_PATTERN): cv.string
+        vol.Required(CONF_DATETIME_PATTERN): cv.string,
+        vol.Required(CONF_COPIED_PER_RUN): cv.positive_int,
     })
 
 MQTT_SCHEMA = vol.Schema({
@@ -55,7 +50,6 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
         vol.Required(CONF_FROM): FROM_SCHEMA,
         vol.Optional(CONF_TO): TO_SCHEMA,
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_TIME_INTERVAL): cv.time_period,
-        vol.Optional(CONF_MAX_FILES): cv.positive_int,
         vol.Optional(CONF_TRIGGERS): vol.Any(cv.entity_ids, None),
     })
 
@@ -115,7 +109,6 @@ class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
         """Initialize the sensor."""
         CoordinatorEntity.__init__(self, coordinator)
         TransferSensor.__init__(self, config, name, icon, unit)
-        self._coordinator_data = None
         cfrom = config[CONF_FROM]
         from_attr = cfrom[CONF_FTP][CONF_HOST] if CONF_FTP in cfrom else cfrom[CONF_DIRECTORY][CONF_PATH]
         self.add_attr(ATTR_FROM, from_attr)
@@ -143,11 +136,11 @@ class ToCopyFilesSensor(TransferCoordinatorSensor):
     def native_value(self):
         state: TransferState = cast(TransferState, self.coordinator.data[self._name])
         self.add_attrs({
-            ATTR_EXTENSIONS: state.files_ext(),
-            ATTR_DURATION: state.duration().seconds,
-            ATTR_SIZE: f"{state.files_size_mb()} Mb" 
+            ATTR_EXTENSIONS: state.files_ext,
+            ATTR_DURATION: state.duration.seconds,
+            ATTR_SIZE: f"{state.files_size_mb} Mb" 
         })
-        return state.files_count()
+        return state.files_count
 
         # If the background update finished before
         # we added the entity, there is no need to restore

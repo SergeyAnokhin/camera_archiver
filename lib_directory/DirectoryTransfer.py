@@ -4,7 +4,7 @@ from ..common.ifile_info import IFileInfo
 from .file_info import FileInfo
 from ..common.transfer_component import TransferComponent
 from ..common.transfer_state import TransferState
-from ..const import ATTR_DESTINATION_FILE, ATTR_LOCAL_FILE, ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED, ATTR_SOURCE_HOST, CONF_DATETIME_PATTERN, CONF_PATH
+from ..const import ATTR_DESTINATION_FILE, ATTR_LOCAL_FILE, ATTR_SOURCE_HOST, CONF_DATETIME_PATTERN, CONF_PATH
 import os, io, logging, shutil, socket
 from pathlib import Path
 
@@ -15,16 +15,14 @@ class DirectoryTransfer(TransferComponent):
         super().__init__(config)
 
     def state(self) -> TransferState:
-        path = self._config[CONF_PATH]
-        return self.list_files(path)
+        return self.list_files()
 
-    def list_files(self, startpath: str, local_path: str = None) -> TransferState:
+    def list_files(self, onfileCallback = None) -> TransferState:
+        startpath = self._config[CONF_PATH]
         _LOGGER.debug(f"Stat from [{startpath}]: START")
         state = TransferState()
-        for root, dirs, files in os.walk(startpath):
-            # os.path.basename(root)
+        for root, _, files in os.walk(startpath):
             for f in files:
-                # rel_path = root.replace(startpath, '').lstrip('/').lstrip('\\')  # .count(os.sep)
                 root = root.replace('\\', '/')
                 full_path = f"{root}/{f}"
                 fileInfo = FileInfo(full_path)
@@ -34,35 +32,32 @@ class DirectoryTransfer(TransferComponent):
                 fileInfo.datetime = dt
 
                 state.add(fileInfo)
-                if local_path:
-                    localfile = self.download(fileInfo, local_path)
-                    self._on_file_transfer(localfile)
+                if onfileCallback:
+                    onfileCallback(fileInfo)
+                
+                if state.files_count >= self._copied_per_run:
+                    break
+            if state.files_count >= self._copied_per_run:
+                break
 
         _LOGGER.debug(f"Stat from [{startpath}]: END, {state}")
         return state
 
-    def run(self, local_path: str) -> TransferState:
-        path = self._config[CONF_PATH]
-        return self.list_files(path, local_path)
+    def run(self) -> TransferState:
+        def onfile(fileInfo: IFileInfo):
+            self.download(fileInfo)
+            self._on_file_transfer(fileInfo)
 
-    def download(self, file: IFileInfo, local_path: str) -> IFileInfo:
-        local_file = f"{local_path}.{file.ext}"
+        return self.list_files(onfile)
+
+    def download(self, file: IFileInfo) -> None:
         _LOGGER.debug(f"Read file: [{file.fullname}] => [memory]")
-        #_LOGGER.debug(f"Copy file: [{file.fullname}] => [{local_file}]")
-        # shutil.copyfile(file.fullname, local_file)
-        new_file = FileInfo(local_file)
-        new_file.datetime = file.datetime
-        new_file.metadata[ATTR_SOURCE_FILE] = file.fullname
-        new_file.metadata[ATTR_SOURCE_FILE_CREATED] = file.modif_datetime
-
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
-        new_file.metadata[ATTR_SOURCE_HOST] = local_ip
+        file.metadata[ATTR_SOURCE_HOST] = local_ip
 
         with open(file.fullname, 'rb') as infile:
-            new_file.Content=io.BytesIO(infile.read())
-
-        return new_file
+            file.Content=io.BytesIO(infile.read())
 
     def from_component_download_to_local_finished_callback(self, callbackObject: IFileInfo) -> None:
         print(callbackObject)
@@ -89,12 +84,3 @@ class DirectoryTransfer(TransferComponent):
     def mkdir(self, filename: str):
         path = Path(Path(filename).parent)
         path.mkdir(parents=True, exist_ok=True)
-
-
-# import io
-
-# with open("/config/www/snapshot/camera.Yi1080pWoodSouth.mp4",'rb') as infile:
-#     buffer=io.BytesIO(infile.read())
-# print(buffer)
-# with open("/config/www/snapshot/camera.Yi1080pWoodSouth_2.mp4",'wb') as outfile: ## Open temporary file as bytes
-#     outfile.write(buffer.read())                ## Read bytes into file

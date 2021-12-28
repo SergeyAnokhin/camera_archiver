@@ -8,8 +8,8 @@ from .transfer_component import TransferComponent
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from .transfer_state import TransferState
-from ..const import ATTR_CAMERA, ATTR_DESTINATION_FILE, ATTR_EXT, ATTR_ID, ATTR_LOCAL_FILE, ATTR_MODIF_DATETIME, ATTR_MODIF_DATETIME_UTC, \
-            ATTR_MODIF_TIMESTAMP_STR, ATTR_MODIF_TIMESTAMP_STR_UTC, ATTR_PATH, ATTR_SIZE, CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, \
+from ..const import ATTR_CAMERA, ATTR_DATETIME, ATTR_DATETIME_UTC, ATTR_DESTINATION_FILE, ATTR_EXT, ATTR_ID, ATTR_LOCAL_FILE, \
+            ATTR_PATH, ATTR_SIZE, ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED, ATTR_TIMESTAMP_STR, ATTR_TIMESTAMP_STR_UTC, CONF_DIRECTORY, CONF_FROM, CONF_FTP, \
             CONF_TO, EVENT_CAMERA_ARCHIVER_FILE_COPIED
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
@@ -49,32 +49,33 @@ class TransferRunner:
         return component_from.state()
 
     def run(self) -> TransferState:
-        entity_id = generate_entity_id("archiver_{}", self._config[CONF_NAME], current_ids=None, hass=self._hass)
-        local_path_without_ext = f"{self._config[CONF_LOCAL_STORAGE]}/{entity_id}"
-
+        # entity_id = generate_entity_id("archiver_{}", self._config[CONF_NAME], current_ids=None, hass=self._hass)
         component_from = self._from_components[0]
-        return component_from.run(local_path_without_ext)
+        return component_from.run()
 
     def fire_event(self, data):
         localFile = cast(IFileInfo, data[ATTR_LOCAL_FILE])
         destFile = data[ATTR_DESTINATION_FILE]
 
-        modif_datetime = localFile.datetime.replace(year=2031)  # TODO: remove replace
-        modif_datetime_utc = self.to_utc(modif_datetime)
-        modif_timestamp_str_utc = self.to_str_timestamp(modif_datetime_utc)
-        modif_timestamp_str = self.to_str_timestamp(modif_datetime)
+        dt = localFile.datetime.replace(year=2031)  # TODO: remove replace
+        dt_utc = self.to_utc(dt)
+        timestamp_str_utc = self.to_str_timestamp(dt_utc)
+        timestamp_str = self.to_str_timestamp(dt)
 
         entry = localFile.metadata | {
-            ATTR_MODIF_DATETIME: modif_datetime,  # "2021-12-27T14:24:40.417330"
-            ATTR_MODIF_DATETIME_UTC: modif_datetime_utc,
-            ATTR_MODIF_TIMESTAMP_STR: modif_timestamp_str,
-            ATTR_MODIF_TIMESTAMP_STR_UTC: modif_timestamp_str_utc,
+            ATTR_DATETIME: dt,  # "2021-12-27T14:24:40.417330"
+            ATTR_DATETIME_UTC: dt_utc,
+            ATTR_TIMESTAMP_STR: timestamp_str,
+            ATTR_TIMESTAMP_STR_UTC: timestamp_str_utc,
+
+            ATTR_SOURCE_FILE_CREATED: localFile.modif_datetime,
+            ATTR_SOURCE_FILE: localFile.fullname,
 
             ATTR_CAMERA: self._config[CONF_NAME],
             ATTR_EXT: localFile.ext,
             ATTR_PATH: destFile,
             ATTR_SIZE: localFile.size,
-            ATTR_ID: f"{self._config[CONF_NAME]}@{modif_timestamp_str_utc}",
+            ATTR_ID: f"{self._config[CONF_NAME]}@{timestamp_str_utc}",
         }
 
         # "SourceFile": "../home-assistant-core-data/input/2021Y11M30D15H/E152M00S60.mp4",

@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 from homeassistant import config_entries
 from .ifile_info import IFileInfo
-from ..const import CONF_DATETIME_PATTERN, CONF_PATH
+from ..const import CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_PATH
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -11,6 +11,7 @@ class TransferComponent:
     def __init__(self, config: config_entries) -> None:
         self._on_file_transfer = None
         self._config = config
+        self._copied_per_run = config.get(CONF_COPIED_PER_RUN, 100)
         self.copiedFileCallback = None
 
     def set_from(self, from_components: list['TransferComponent']) -> None:
