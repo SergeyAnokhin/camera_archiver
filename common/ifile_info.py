@@ -11,7 +11,7 @@ class IFileInfo:
 
     @property
     def size(self) -> int:
-        pass
+        return self._size
 
     @property
     def basename(self) -> str:

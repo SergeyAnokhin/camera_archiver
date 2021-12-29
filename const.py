@@ -16,6 +16,9 @@ CONF_PATH = "path"
 CONF_DATETIME_PATTERN = "datetime_pattern"
 CONF_TRIGGERS = "triggers"
 CONF_ENABLE = "enable"
+CONF_CLEAN = "clean"
+CONF_EMPTY_DIRECTORIES = "empty_directories"
+CONF_FILES = "files"
 
 # Sensors:
 SENSOR_NAME_FILES_COPIED = "Files copied"

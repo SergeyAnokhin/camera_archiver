@@ -16,6 +16,11 @@ sensor:
         path: ../home-assistant-core-data/input
         datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
         copied_per_run: 2
+        clean:
+          empty_directories: True
+          files:
+            - index.dat
+            - ".*\\.tmp"
       # ftp: 
       #   host: 192.168.1.XX
       #   user: USER
@@ -45,27 +50,56 @@ automation:
   trigger:
     - platform: event
       event_type: CameraArchiverFileCopied
+      id: Yi1080pWoodSouth
+      event_data:
+        camera: Yi1080pWoodSouth
+    - platform: event
+      event_type: CameraArchiverFileCopied
+      id: Yi1080pWoodNorth
+      event_data:
+        camera: Yi1080pWoodNorth
   action:
   - service: notify.elastic_input
     data_template:
       message: >
+
           "url": "http://192.168.1.XX:9200/cameraarchive-{{ trigger.event.data.DateTimeUtc.strftime("%Y.%m") }}/_create/{{ trigger.event.data.id }}"
+
           "doc": "event",
+
           "source_type": "ftp",
+
           "tags": "camera_archiver synology_cameraarchive"
+
           "volume": "/volume2"
+
           "_id": "{{ trigger.event.data.id }}",
 
           "path_source": "{{ trigger.event.data.SourceFile }}",
+
           "@timestamp": "{{ trigger.event.data.DateTimestampStrUtc }}",
+
           "event_start": "{{ trigger.event.data.DateTimestampStr }}",
+
           "ext": "{{ trigger.event.data.ext }}",
+
           "source_file_created": "{{ trigger.event.data.SourceFileCreated }}",
+
           "execution_time": "{{ as_timestamp(now()) | timestamp_custom('%Y-%m-%dT%H:%M:%S.000+00:00', False) }}",
+
           "camera": "{{ trigger.event.data.camera }}",
+
           "ext": "{{ trigger.event.data.ext }}",
+
           "path": "{{ trigger.event.data.path }}"
+
           "value": "{{ trigger.event.data.size }}"
+
+          "sensor.type": "CameraArchive"
+
+          "sensor.unit": "bytes"
+
+          "trigger.id": "{{ trigger.id }}"
 
 notify:
   - name: elastic_input

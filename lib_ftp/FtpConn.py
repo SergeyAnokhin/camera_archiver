@@ -2,9 +2,11 @@ from io import BytesIO
 import os, logging
 
 from ftplib import FTP
+
+from ..const import CONF_USER
 from .FtpDirLine import FtpDirLine
 
-from homeassistant.const import CONF_PATH
+from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PATH
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,9 +14,9 @@ class FtpConn:
 
     def __init__(self, config: dict) -> None:
         self.config = config
-        self.host = config["host"]
-        self.user = config["user"]
-        self.passwd = config["password"]
+        self.host = config[CONF_HOST]
+        self.user = config[CONF_USER]
+        self.passwd = config[CONF_PASSWORD]
 
     def __enter__(self):
         self.ftp = FTP(self.host, self.user, self.passwd)
@@ -61,6 +63,12 @@ class FtpConn:
             self.ftp.retrbinary(f'RETR {from_file}', localfile.write)
         filesize = os.path.getsize(to_file)
         _LOGGER.debug(f'File downloaded : {from_file} ==> {to_file} ({filesize}b)')
+
+    def Delete(self, filename: str):
+        self.ftp.delete(filename)
+
+    def DeleteDir(self, dirname: str):
+        self.ftp.rmd(dirname)
 
     def UploadBytes(self, bytesIo: BytesIO, fullFtpPath: str):
         self.cd(fullFtpPath, withDirectoryCreation=True)

@@ -8,10 +8,9 @@ class FileInfo(IFileInfo):
         super().__init__()
         self._fullname = fullname
         self._fullname_without_ext, self._ext = os.path.splitext(self._fullname)
-
-    @property
-    def size(self) -> int:
-        return os.path.getsize(self._fullname)
+        self._stat = os.stat(self._fullname)
+        self._size = self._stat.st_size
+        self._modif_datetime = self._stat.st_mtime
 
     @property
     def basename(self) -> str:
@@ -19,7 +18,7 @@ class FileInfo(IFileInfo):
 
     @property
     def modif_datetime(self) -> datetime:
-        return datetime.fromtimestamp(os.path.getmtime(self._fullname))
+        return datetime.fromtimestamp(self._modif_datetime)
 
     @property
     def ext(self) -> str:

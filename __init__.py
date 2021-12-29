@@ -46,12 +46,10 @@ def get_coordinator(hass: HomeAssistant, instanceName: str, config: ConfigEntry 
             coordinatorInst = hass.data[DOMAIN][instanceName]
             _LOGGER.debug(f"|{instanceName}| Coordinator reuse Succes: ID# {id(coordinatorInst)}")
         else:
-            update_interval= config[CONF_SCAN_INTERVAL]
             coordinatorInst = DataUpdateCoordinator(
                 hass,
                 logging.getLogger(__name__),
-                name=DOMAIN,
-                update_interval=update_interval
+                name=DOMAIN
             )
             _LOGGER.debug(f"|{instanceName}| Coordinator created: ID# {id(coordinatorInst)}")
             coordinatorInst.last_update_success = False
@@ -61,6 +59,7 @@ def get_coordinator(hass: HomeAssistant, instanceName: str, config: ConfigEntry 
             hass.data[DOMAIN][instanceName] = coordinatorInst
 
     if config: # only sensor has right config for async_get_status
+        coordinatorInst.update_interval = config[CONF_SCAN_INTERVAL]
         coordinatorInst.update_method = async_get_status
 
     return coordinatorInst

@@ -6,7 +6,7 @@ from voluptuous.validators import Any
 from .transfer_state import TransferState
 from homeassistant.config_entries import ConfigEntry
 from .ifile_info import IFileInfo
-from ..const import ATTR_PATH, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_PATH
+from ..const import ATTR_PATH, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,9 +18,16 @@ class TransferComponent:
         self._copied_per_run = config.get(CONF_COPIED_PER_RUN, 100)
         self._path = config[CONF_PATH]
         self.copiedFileCallback = None
+        self._clean = config.get(CONF_CLEAN, {})
+        self._clean_dirs = self._clean.get(CONF_EMPTY_DIRECTORIES, False)
+        self._clean_files = self._clean.get(CONF_FILES, list[str])
 
     @abstractmethod
     def file_read(self, file: IFileInfo) -> Any:
+        NotImplementedError()
+
+    @abstractmethod
+    def file_delete(self, file: IFileInfo) -> Any:
         NotImplementedError()
 
     @abstractmethod
@@ -31,7 +38,11 @@ class TransferComponent:
     def file_save(self, file: IFileInfo, content):
         NotImplementedError()
 
-    def file_save_internal(self, file: IFileInfo, content):
+    def _file_delete(self, file: IFileInfo):
+        _LOGGER.debug(f"Delete: [{file.basename}] @ {file.dirname}")
+        self.file_delete(file)
+
+    def _file_save(self, file: IFileInfo, content):
         if not content:
             raise Exception('Content is empty')
         file.metadata[ATTR_PATH] = self.file_save(file, content)
@@ -40,7 +51,7 @@ class TransferComponent:
 
     def set_from(self, from_components: list['TransferComponent']) -> None:
         for c in from_components:
-            c.SetTransferFileCallback(self.file_save_internal)
+            c.SetTransferFileCallback(self._file_save)
 
     def SetTransferFileCallback(self, callback):
         self._transfer_file = callback
@@ -49,20 +60,24 @@ class TransferComponent:
         action_log = "Copy" if with_transfer else "Stat"
         _LOGGER.debug(f"{action_log} from [{self._path}]: START")
         state = TransferState()
-        files = self.get_files()
-        state.Read.extend(files)
-        state.Read.stop()
-        _LOGGER.debug(f"Found: {state.Read}")
 
-        for file in files:
-            if with_transfer and state.Copy.files_count < self._copied_per_run:
+        if with_transfer:
+            files = self.get_files(self._copied_per_run)
+            _LOGGER.debug(f"Found files for copy: {len(files)}")
+            for file in files:
                 _LOGGER.debug(f"Read: [{file.fullname}]")
                 content = self.file_read(file)
                 self._transfer_file(file, content)
+                self.file_delete(file)
                 state.Copy.append(file)
 
+        state.Read.start()
+        files = self.get_files(max=100)
+        state.Read.extend(files)
+        state.Read.stop()
         state.Copy.stop()
-        _LOGGER.debug(f"{action_log} from [{self._path}]: END, {state}")
+        _LOGGER.debug(f"Found: {state.Read}")
+        _LOGGER.debug(f"{action_log} from [{self._path}]: END, {state.Read}")
         return state
 
     def state(self) -> TransferState:

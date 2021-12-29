@@ -14,14 +14,22 @@ class DirectoryTransfer(TransferComponent):
     def __init__(self, config: ConfigEntry):
         super().__init__(config)
 
-    def get_files(self) -> list[IFileInfo]:
+    def get_files(self, max=None) -> list[IFileInfo]:
         ''' OVERRIDE '''
         files: list[IFileInfo] = []
-        for root, _, walk_files in os.walk(self._path):
+        for root, dirs, walk_files in os.walk(self._path):
+            if self._clean_dirs and len(dirs) == len(walk_files) == 0 and root != self._path:
+                _LOGGER.debug(f"Remove empty directory: {root}")
+                os.rmdir(root)
             for walk_file in walk_files:
                 file = FileInfo(f"{root}/{walk_file}")
                 if self.validate_file(file):
                     files.append(file)
+                if max and len(files) >= max:
+                    break
+            if max and len(files) >= max:
+                break
+
         return files
 
     def file_read(self, file: IFileInfo) -> Any:
@@ -32,6 +40,10 @@ class DirectoryTransfer(TransferComponent):
 
         with open(file.fullname, 'rb') as infile:
             return io.BytesIO(infile.read())
+
+    def file_delete(self, file: IFileInfo):
+        ''' OVERRIDE '''
+        os.remove(file.fullname)
 
     def file_save(self, file: IFileInfo, content) -> str:
         ''' OVERRIDE '''

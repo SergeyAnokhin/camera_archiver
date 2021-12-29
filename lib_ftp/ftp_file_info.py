@@ -18,10 +18,6 @@ class FtpFileInfo(IFileInfo):
         self.is_file = self._ftpDirLine.is_file
         self._size = self._ftpDirLine.size
         self.metadata['ftp_date'] = self._ftpDirLine.modif_datetime_source
-    
-    @property
-    def size(self) -> int:
-        return self._size
 
     @property
     def basename(self) -> str:

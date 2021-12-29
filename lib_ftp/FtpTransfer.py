@@ -16,26 +16,35 @@ class FtpTransfer(TransferComponent):
     def __init__(self, config: ConfigEntry):
         super().__init__(config)
 
-    def get_files(self) -> list[IFileInfo]:
+    def get_files(self, max=None) -> list[IFileInfo]:
         ''' OVERRIDE '''
         files: list[IFileInfo] = []
         with FtpConn(self._config) as ftp:
             # ftp.cd(self._config[CONF_PATH])
-            self.get_items(ftp, self._path, files)
+            self.get_items(ftp, self._path, files, max)
         return files
 
-    def get_items(self, ftp: FtpConn, path: str, files: list[IFileInfo]):
+    def get_items(self, ftp: FtpConn, path: str, files: list[IFileInfo], max):
         items = self.get_file_infos(ftp, path)
+        if self._clean_dirs and path != self._path and len(items) == 0:
+            ftp.DeleteDir(path)
         for i in items:
             if i.is_dir:
-                self.get_items(ftp, path + '/' + i.basename, files)
+                self.get_items(ftp, path + '/' + i.basename, files, max)
             elif self.validate_file(i):
                 files.append(i)
+            if max and len(files) >= max:
+                break
 
     def get_file_infos(self, ftp: FtpConn, path: str) -> list[IFileInfo]:
         lines = ftp.GetFtpDir(path)
         return [FtpFileInfo(path, line) for line in lines]
 
+    def file_delete(self, file: IFileInfo):
+        ''' OVERRIDE '''
+        with FtpConn(self._config) as ftp:
+            ftp.Delete(file.fullname)
+        
     def file_read(self, file: IFileInfo) -> Any:
         ''' OVERRIDE '''
         with FtpConn(self._config) as ftp:

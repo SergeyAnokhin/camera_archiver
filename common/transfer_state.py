@@ -68,6 +68,10 @@ class RunState:
         return ' '.join(self._size_by_ext.keys())
 
     @property
+    def files_exts(self) -> list[str]:
+        return list(self._size_by_ext.keys())
+
+    @property
     def files_size(self) -> int:
         return self._size
 

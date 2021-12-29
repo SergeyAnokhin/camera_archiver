@@ -10,9 +10,16 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA, STATE_CLASS_TOTAL_INCREASING, SensorEntity
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_PATH, CONF_SCAN_INTERVAL
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from .const import ATTR_DURATION, ATTR_EXTENSIONS, ATTR_FROM, ATTR_LAST, ATTR_SIZE, ATTR_TRANSFER_RESULT, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_DIRECTORY, \
+from .const import ATTR_DURATION, ATTR_EXTENSIONS, ATTR_FROM, ATTR_LAST, ATTR_SIZE, ATTR_TRANSFER_RESULT, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_DIRECTORY, CONF_EMPTY_DIRECTORIES, CONF_FILES, \
         CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MQTT, CONF_TO, CONF_TOPIC, CONF_TRIGGERS, CONF_USER, DEFAULT_TIME_INTERVAL, ICON_COPIED, ICON_DEFAULT, \
         ICON_TO_COPY, SENSOR_NAME_FILES_COPIED, SENSOR_NAME_FILES_COPIED_LAST, SENSOR_NAME_TO_COPY_FILES
+
+CLEAN_SCHEMA = vol.Schema({
+    vol.Required(CONF_EMPTY_DIRECTORIES): cv.boolean,
+    vol.Optional(CONF_FILES, default=[]): vol.All(
+        cv.ensure_list, [cv.string]
+    ),
+})
 
 FTP_SCHEMA = vol.Schema({
         vol.Required(CONF_HOST): cv.string,
@@ -27,6 +34,7 @@ DIRECTORY_SCHEMA = vol.Schema({
         vol.Required(CONF_PATH): cv.string,
         vol.Required(CONF_DATETIME_PATTERN): cv.string,
         vol.Optional(CONF_COPIED_PER_RUN, default=100): cv.positive_int,
+        vol.Optional(CONF_CLEAN): CLEAN_SCHEMA,
     })
 
 MQTT_SCHEMA = vol.Schema({
@@ -83,6 +91,15 @@ class TransferSensor(SensorEntity):
             **self._attr_extra_state_attributes,
             **keyvalues
         }
+
+    def attr_add_float(self, key: str, new_value: float):
+        old_value = self._attr_extra_state_attributes.get(key, 0.0)
+        result = round(old_value + new_value, 2)
+        self.add_attr(key, result)
+
+    def attr_add_set(self, key: str, new_value: list):
+        old_value: dict = self._attr_extra_state_attributes.get(key, set())
+        self.add_attr(key, set(list(old_value) + new_value))
 
 class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
 
@@ -164,12 +181,9 @@ class CopiedFilesSensor(TransferCoordinatorSensor):
 
 
     def coordinator_updated(self, state: TransferState):
-        self.add_attrs({
-            ATTR_EXTENSIONS: state.Copy.files_ext,
-            ATTR_DURATION: state.Copy.duration.seconds,
-            ATTR_SIZE: f"{state.Copy.files_size_mb}Mb",
-            ATTR_LAST: state.Copy.last
-        })
+        self.attr_add_set(ATTR_EXTENSIONS, state.Copy.files_exts)
+        self.attr_add_float(ATTR_DURATION, state.Copy.duration.seconds)
+        self.attr_add_float(ATTR_SIZE, state.Copy.files_size_mb)
         if not self._attr_native_value:
             self._attr_native_value = 0
         self._attr_native_value = int(self._attr_native_value) + state.Copy.files_count
