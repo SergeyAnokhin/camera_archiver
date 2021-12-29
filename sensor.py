@@ -1,17 +1,18 @@
+from abc import abstractmethod, abstractproperty
 import logging
 from typing import cast
 import voluptuous as vol
 from . import get_coordinator
 from .common.transfer_state import TransferState
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
+from homeassistant.components.sensor import PLATFORM_SCHEMA, STATE_CLASS_TOTAL_INCREASING, SensorEntity
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_PATH, CONF_SCAN_INTERVAL
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from .const import ATTR_DURATION, ATTR_EXTENSIONS, ATTR_FROM, ATTR_SIZE, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_DIRECTORY, \
-        CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MQTT, CONF_TO, CONF_TRIGGERS, CONF_USER, DEFAULT_TIME_INTERVAL, \
-        ICON_TO_COPY, SENSOR_NAME_TO_COPY_FILES
+from .const import ATTR_DURATION, ATTR_EXTENSIONS, ATTR_FROM, ATTR_LAST, ATTR_SIZE, ATTR_TRANSFER_RESULT, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_DIRECTORY, \
+        CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MQTT, CONF_TO, CONF_TOPIC, CONF_TRIGGERS, CONF_USER, DEFAULT_TIME_INTERVAL, ICON_COPIED, ICON_DEFAULT, \
+        ICON_TO_COPY, SENSOR_NAME_FILES_COPIED, SENSOR_NAME_FILES_COPIED_LAST, SENSOR_NAME_TO_COPY_FILES
 
 FTP_SCHEMA = vol.Schema({
         vol.Required(CONF_HOST): cv.string,
@@ -29,7 +30,7 @@ DIRECTORY_SCHEMA = vol.Schema({
     })
 
 MQTT_SCHEMA = vol.Schema({
-        vol.Required(CONF_MQTT): cv.string,
+        vol.Required(CONF_TOPIC): cv.string,
     })
 
 FROM_SCHEMA = vol.Schema({
@@ -60,39 +61,19 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
 
     add_entities([
         ToCopyFilesSensor(coordinator, config),
-        # CameraArchiverEnabler(coordinator, config),
+        CopiedFilesSensor(coordinator, config),
+        LastFilesCopiedSensor(coordinator, config),
     ])
 
 class TransferSensor(SensorEntity):
     def __init__(self, config, name, icon, unit=""):
         self._config = config
-        self._full_name = f"{config[CONF_NAME]} {name}"
-        self._name = name
-        self._unit = unit
-        self._icon = icon
-        self._state = None
-        self._available = False
+        self._attr_name = f"{config[CONF_NAME]} {name}"
+        self._attr_unit_of_measurement = unit
+        self._attr_icon = icon
+        self._attr_native_value = None
+        self._attr_available = False
         self._attr_extra_state_attributes = {}
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def unit_of_measurement(self):
-        return self._unit
-
-    @property
-    def icon(self):
-        return self._icon
-
-    @property
-    def available(self):
-        return self._available
-
-    @property
-    def native_value(self):
-        return self._state
 
     def add_attr(self, key: str, value) -> None:
         self._attr_extra_state_attributes[key] = value
@@ -105,26 +86,27 @@ class TransferSensor(SensorEntity):
 
 class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
 
-    def __init__(self, coordinator, config: ConfigEntry, name, icon, unit=""):
+    def __init__(self, coordinator, config: ConfigEntry, name, icon=ICON_DEFAULT, unit=""):
         """Initialize the sensor."""
         CoordinatorEntity.__init__(self, coordinator)
         TransferSensor.__init__(self, config, name, icon, unit)
         cfrom = config[CONF_FROM]
         from_attr = cfrom[CONF_FTP][CONF_HOST] if CONF_FTP in cfrom else cfrom[CONF_DIRECTORY][CONF_PATH]
         self.add_attr(ATTR_FROM, from_attr)
+        self._coordinator_data: TransferState = None
 
-    # @callback
-    # def _state_update(self):
-    #     """Call when the coordinator has an update."""
-    #     self._available = self.coordinator.last_update_success
-    #     if self._available:
-    #         self._coordinator_data = self.coordinator.data[self._name]
-    #     self.async_write_ha_state()
+    @callback
+    def _handle_coordinator_update(self):
+        """Call when the coordinator has an update."""
+        if not self.available:
+            return
+        self._data = self.coordinator.data[ATTR_TRANSFER_RESULT]
+        self.coordinator_updated(self._data)
+        self.async_write_ha_state()
 
-    # async def async_added_to_hass(self):
-    #     """Subscribe to updates."""
-    #     await super().async_added_to_hass()
-    #     self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
+    @abstractmethod
+    def coordinator_updated(self, state: TransferState):
+        NotImplementedError()
 
 class ToCopyFilesSensor(TransferCoordinatorSensor):
     def __init__(self, coordinator, config):
@@ -132,15 +114,14 @@ class ToCopyFilesSensor(TransferCoordinatorSensor):
         icon = ICON_TO_COPY
         super().__init__(coordinator, config, name, icon)
 
-    @property
-    def native_value(self):
-        state: TransferState = cast(TransferState, self.coordinator.data[self._name])
+    def coordinator_updated(self, state: TransferState):
         self.add_attrs({
-            ATTR_EXTENSIONS: state.files_ext,
-            ATTR_DURATION: state.duration.seconds,
-            ATTR_SIZE: f"{state.files_size_mb} Mb" 
+            ATTR_EXTENSIONS: state.Read.files_ext,
+            ATTR_DURATION: state.Read.duration.seconds,
+            ATTR_SIZE: f"{state.Read.files_size_mb}Mb",
+            ATTR_LAST: state.Read.last
         })
-        return state.files_count
+        self._attr_native_value = state.Read.files_count
 
         # If the background update finished before
         # we added the entity, there is no need to restore
@@ -157,14 +138,41 @@ class ToCopyFilesSensor(TransferCoordinatorSensor):
         #     _LOGGER.info(f"#{self._name}# NEW_STATE={self._state}")
 
 
-# class CopiedFilesSensor(TransferRestoreSensor):
-#     def __init__(self, coordinator, config):
-#         name = get_sensor_unique_id(config, SENSOR_NAME_FILES_COPIED)
-#         icon = ICON_COPIED
-#         super().__init__(coordinator, config, name, icon)
-#         self._attr_state_class = STATE_CLASS_TOTAL_INCREASING
+class LastFilesCopiedSensor(TransferCoordinatorSensor):
+    def __init__(self, coordinator, config):
+        name = SENSOR_NAME_FILES_COPIED_LAST
+        super().__init__(coordinator, config, name)
+
+    def coordinator_updated(self, state: TransferState):
+        self.add_attrs({
+            ATTR_EXTENSIONS: state.Copy.files_ext,
+            ATTR_DURATION: state.Copy.duration.seconds,
+            ATTR_SIZE: f"{state.Copy.files_size_mb}Mb",
+            ATTR_LAST: state.Copy.last
+        })
+        self._attr_native_value = state.Copy.files_count
 
 
+class CopiedFilesSensor(TransferCoordinatorSensor):
+    def __init__(self, coordinator, config):
+        # name = get_sensor_unique_id(config, SENSOR_NAME_FILES_COPIED)
+        name = SENSOR_NAME_FILES_COPIED
+        icon = ICON_COPIED
+        self._attr_native_value = 0
+        super().__init__(coordinator, config, name, icon)
+        self._attr_state_class = STATE_CLASS_TOTAL_INCREASING
+
+
+    def coordinator_updated(self, state: TransferState):
+        self.add_attrs({
+            ATTR_EXTENSIONS: state.Copy.files_ext,
+            ATTR_DURATION: state.Copy.duration.seconds,
+            ATTR_SIZE: f"{state.Copy.files_size_mb}Mb",
+            ATTR_LAST: state.Copy.last
+        })
+        if not self._attr_native_value:
+            self._attr_native_value = 0
+        self._attr_native_value = int(self._attr_native_value) + state.Copy.files_count
 
 # class TransferRestoreSensor(CoordinatorEntity, TransferSensor):
 #     def __init__(self, coordinator, config, name, icon, unit=""):

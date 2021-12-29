@@ -8,7 +8,6 @@ class IFileInfo:
         self._fullname: str = None
         self._datetime: datetime = None
         self.metadata = {}
-        self.Content: BytesIO = None
 
     @property
     def size(self) -> int:
@@ -53,3 +52,6 @@ class IFileInfo:
 
     def __str__(self):
          return f"{self.basename} @{self.dirname} {self.files_size_mb}Mb"
+
+    def __repr__(self):
+        return self.__str__()

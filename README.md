@@ -9,6 +9,7 @@ Add to your configuration.yaml file:
 sensor:
   - platform: camera_archiver
     local_storage: ./config/www/snapshot # intermediate storage can be used for display 'last' record
+    scan_interval: "00:01:00"
     name: Yi1080pWoodSouth
     from:
       directory:
@@ -22,6 +23,8 @@ sensor:
       #   path: /tmp/sd/record
       #   datetime_parser: "%YY%mM%dD%HH/E1%MM%SS%f.mp4" # use python datetime format here
         # copied_per_run: 2
+      mqtt:
+        topic: /Yi1080p/motion_image
     to:
       directory:
         path: ../home-assistant-core-data

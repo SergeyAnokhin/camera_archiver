@@ -53,38 +53,34 @@ class TransferRunner:
         component_from = self._from_components[0]
         return component_from.run()
 
-    def fire_event(self, data):
-        localFile = cast(IFileInfo, data[ATTR_LOCAL_FILE])
-        destFile = data[ATTR_DESTINATION_FILE]
-
-        dt = localFile.datetime.replace(year=2031)  # TODO: remove replace
+    def fire_event(self, file: IFileInfo):
+        dt = file.datetime.replace(year=2031)  # TODO: remove replace
         dt_utc = self.to_utc(dt)
         timestamp_str_utc = self.to_str_timestamp(dt_utc)
         timestamp_str = self.to_str_timestamp(dt)
 
-        entry = localFile.metadata | {
+        entry = file.metadata | {
             ATTR_DATETIME: dt,  # "2021-12-27T14:24:40.417330"
             ATTR_DATETIME_UTC: dt_utc,
             ATTR_TIMESTAMP_STR: timestamp_str,
             ATTR_TIMESTAMP_STR_UTC: timestamp_str_utc,
 
-            ATTR_SOURCE_FILE_CREATED: localFile.modif_datetime,
-            ATTR_SOURCE_FILE: localFile.fullname,
+            ATTR_SOURCE_FILE_CREATED: file._datetime,
+            ATTR_SOURCE_FILE: file.fullname,
 
             ATTR_CAMERA: self._config[CONF_NAME],
-            ATTR_EXT: localFile.ext,
-            ATTR_PATH: destFile,
-            ATTR_SIZE: localFile.size,
+            ATTR_EXT: file.ext,
+            ATTR_SIZE: file.size,
             ATTR_ID: f"{self._config[CONF_NAME]}@{timestamp_str_utc}",
         }
 
         # "SourceFile": "../home-assistant-core-data/input/2021Y11M30D15H/E152M00S60.mp4",
         # "SourceFileCreated": "2021-11-30T23:29:22.485693",
         # "SourceHost": "10.11.118.238",
-        # "ModifDateTime": "2031-11-30T15:52:00.600000",
-        # "ModifDateTimeUtc": "2031-11-30T14:52:00.600000+00:00",
-        # "ModifDateTimestampStr": "2031-11-30T15:52:00.000Z",
-        # "ModifDateTimestampStrUtc": "2031-11-30T14:52:00.000Z",
+        # "DateTime": "2031-11-30T15:52:00.600000",
+        # "DateTimeUtc": "2031-11-30T14:52:00.600000+00:00",
+        # "DateTimestampStr": "2031-11-30T15:52:00.000Z",
+        # "DateTimestampStrUtc": "2031-11-30T14:52:00.000Z",
         # "camera": "Yi1080pWoodSouth",
         # "ext": "mp4",
         # "path": "../home-assistant-core-data/2021-11/30/Yi1080pWoodSouth_2021-11-30_15-52-00.mp4",
