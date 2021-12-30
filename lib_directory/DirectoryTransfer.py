@@ -43,7 +43,8 @@ class DirectoryTransfer(TransferComponent):
 
     def file_delete(self, file: IFileInfo):
         ''' OVERRIDE '''
-        os.remove(file.fullname)
+        # os.remove(file.fullname)
+        pass
 
     def file_save(self, file: IFileInfo, content) -> str:
         ''' OVERRIDE '''

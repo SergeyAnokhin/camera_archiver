@@ -28,6 +28,7 @@ FTP_SCHEMA = vol.Schema({
         vol.Required(CONF_PATH): cv.string,
         vol.Required(CONF_DATETIME_PATTERN): cv.string,
         vol.Optional(CONF_COPIED_PER_RUN, default=100): cv.positive_int,
+        vol.Optional(CONF_CLEAN): CLEAN_SCHEMA,
 })
 
 DIRECTORY_SCHEMA = vol.Schema({

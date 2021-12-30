@@ -1,5 +1,5 @@
 from datetime import timedelta
-import logging, threading
+import logging, threading, json, ast
 
 from .common.transfer_state import TransferState
 from .common.transfer_runner import TransferRunner
@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC, CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import Config, HomeAssistant, ServiceCall
 
-from .const import (ATTR_TRANSFER_RESULT, DOMAIN, CONF_ENABLE, SENSOR_NAME_TO_COPY_FILES)
+from .const import (ATTR_TRANSFER_RESULT, DOMAIN, CONF_ENABLE, SENSOR_NAME_TO_COPY_FILES, SERVICE_RUN)
 
 PLATFORMS = ["sensor", "binary_sensor", "switch"]
 
@@ -72,11 +72,15 @@ async def async_setup(hass: HomeAssistant, global_config: Config):
     # archiver = CameraArchive(hass, config)
     # archiver.FileCopiedCallBack = FileTransferCallback
 
-    # async def service_archive_private(call: ServiceCall) -> None:
-    #     _LOGGER.info("service camera archive call")
-    #     archiver.run(call)
+    async def _service_run(call: ServiceCall) -> None:
+        _LOGGER.info("service camera archive call")
+        data = dict(call.data)
+        description = data['description']
+        js = ast.literal_eval(description)
+        name = data['name']
+        id = description.id
 
-    # hass.services.async_register(DOMAIN, 'archive', service_archive_private)
+    hass.services.async_register(DOMAIN, SERVICE_RUN, _service_run)
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

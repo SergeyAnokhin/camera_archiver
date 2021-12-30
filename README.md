@@ -29,7 +29,7 @@ sensor:
       #   datetime_parser: "%YY%mM%dD%HH/E1%MM%SS%f.mp4" # use python datetime format here
         # copied_per_run: 2
       mqtt:
-        topic: /Yi1080p/motion_image
+        topic: /yicam_1080p/motion_detection_image
     to:
       directory:
         path: ../home-assistant-core-data
