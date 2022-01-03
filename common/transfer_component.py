@@ -6,7 +6,7 @@ from voluptuous.validators import Any
 from .transfer_state import TransferState
 from homeassistant.config_entries import ConfigEntry
 from .ifile_info import IFileInfo
-from ..const import ATTR_PATH, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH
+from ..const import ATTR_DESTINATION_FILE, ATTR_PATH, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,8 +45,8 @@ class TransferComponent:
     def _file_save(self, file: IFileInfo, content):
         if not content:
             raise Exception('Content is empty')
-        file.metadata[ATTR_PATH] = self.file_save(file, content)
-        _LOGGER.debug(f"Saved: [{file.metadata[ATTR_PATH]}] content type: {type(content)}")
+        file.metadata[ATTR_DESTINATION_FILE] = self.file_save(file, content)
+        _LOGGER.debug(f"Saved: [{file.metadata[ATTR_DESTINATION_FILE]}] content type: {type(content)}")
         self.copiedFileCallback(file)
 
     def set_from(self, from_components: list['TransferComponent']) -> None:

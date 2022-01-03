@@ -3,7 +3,7 @@ import logging, threading, json, ast
 
 from .common.transfer_state import TransferState
 from .common.transfer_runner import TransferRunner
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC, CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import Config, HomeAssistant, ServiceCall
@@ -26,6 +26,9 @@ def get_coordinator(hass: HomeAssistant, instanceName: str, config: ConfigEntry 
     async def async_get_status():
         _LOGGER.info(f"|{instanceName}| Call Callback sensor.py:get_coordinator.async_get_status() ")
         coordinatorInst = hass.data[DOMAIN][instanceName]
+        if not hass.is_running:
+            raise UpdateFailed(f"|{instanceName}| Hass starting in progress")
+
         runner = TransferRunner(config, hass)
         result: TransferState = None
         if not coordinatorInst.data.get(CONF_ENABLE, False):
@@ -75,10 +78,7 @@ async def async_setup(hass: HomeAssistant, global_config: Config):
     async def _service_run(call: ServiceCall) -> None:
         _LOGGER.info("service camera archive call")
         data = dict(call.data)
-        description = data['description']
-        js = ast.literal_eval(description)
-        name = data['name']
-        id = description.id
+        return
 
     hass.services.async_register(DOMAIN, SERVICE_RUN, _service_run)
     return True

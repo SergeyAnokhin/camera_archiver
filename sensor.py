@@ -248,8 +248,31 @@ class CopiedFilesSensor(TransferCoordinatorSensor):
 #         #     start_refresh()
 #         #     return
 
-#         # # Delay first refresh to keep startup fast
-#         # self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, start_refresh)
+    # async def async_added_to_hass(self):
+    #     """Create listeners when the entity is added."""
+
+    #     @callback
+    #     def start_refresh(*args):
+    #         """Register state tracking."""
+
+    #         @callback
+    #         def force_refresh(*args):
+    #             """Force the component to refresh."""
+    #             self.async_schedule_update_ha_state(True)
+
+    #         force_refresh()
+    #         self.async_on_remove(
+    #             async_track_state_change_event(
+    #                 self.hass, [self._entity_id], force_refresh
+    #             )
+    #         )
+
+    #     if self.hass.state == CoreState.running:
+    #         start_refresh()
+    #         return
+
+    #     # Delay first refresh to keep startup fast
+    #     self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, start_refresh)
 
 
 #         last_state = await self.async_get_last_state()

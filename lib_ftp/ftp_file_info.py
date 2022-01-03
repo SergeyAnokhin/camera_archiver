@@ -30,7 +30,7 @@ class FtpFileInfo(IFileInfo):
     @property
     def ext(self) -> str:
         _, ext = os.path.splitext(self._name)
-        return ext
+        return ext.lstrip(".")
 
     @property
     def fullnameWithoutExt(self) -> str:

@@ -3,9 +3,10 @@ import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_HOST
 from ..common.ifile_info import IFileInfo
 from ..common.transfer_component import TransferComponent
-from ..const import ATTR_PATH, CONF_DATETIME_PATTERN
+from ..const import ATTR_PATH, ATTR_SOURCE_FILE, ATTR_SOURCE_HOST, ATTR_SOURCE_TYPE, CONF_DATETIME_PATTERN
 
 from .FtpConn import FtpConn
 from .ftp_file_info import FtpFileInfo
@@ -47,13 +48,15 @@ class FtpTransfer(TransferComponent):
         
     def file_read(self, file: IFileInfo) -> Any:
         ''' OVERRIDE '''
+        file.metadata[ATTR_SOURCE_TYPE] = "ftp"
+        file.metadata[ATTR_SOURCE_HOST] = self._config[CONF_HOST]
         with FtpConn(self._config) as ftp:
             return ftp.DownloadBytes(file.fullname)
 
     def file_save(self, file: IFileInfo, content) -> None:
         ''' OVERRIDE '''
         rel_path = file.datetime.strftime(self._config[CONF_DATETIME_PATTERN])
-        filename = f"{self._path}/{rel_path}{file.ext}"
+        filename = f"{self._path}/{rel_path}.{file.ext}"
 
         if isinstance(content, io.BytesIO): 
             with content:

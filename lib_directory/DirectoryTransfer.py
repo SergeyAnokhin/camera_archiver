@@ -4,7 +4,7 @@ from homeassistant.config_entries import ConfigEntry
 from ..common.ifile_info import IFileInfo
 from .file_info import FileInfo
 from ..common.transfer_component import TransferComponent
-from ..const import ATTR_PATH, ATTR_SOURCE_HOST, CONF_DATETIME_PATTERN
+from ..const import ATTR_SOURCE_HOST, ATTR_SOURCE_TYPE, CONF_DATETIME_PATTERN
 import os, io, logging, socket
 from pathlib import Path
 
@@ -37,6 +37,7 @@ class DirectoryTransfer(TransferComponent):
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         file.metadata[ATTR_SOURCE_HOST] = local_ip
+        file.metadata[ATTR_SOURCE_TYPE] = "os"
 
         with open(file.fullname, 'rb') as infile:
             return io.BytesIO(infile.read())
