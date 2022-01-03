@@ -86,6 +86,7 @@ automation:
       tags: 'camera_archiver activity motion camera archive webcam wifi'
       ftp_date: '{{ trigger.event.data.ftp_date | default }}'
       trigger: '{{ this.entity_id }}'
+      elasticsearch_point: !secret elasticsearch_point
       data_nature: >-
         {{ trigger.event.data }}
       customize_data: 
@@ -105,7 +106,7 @@ automation:
 
 rest_command:
   elastic_cameraarchive:
-    url: 'http://192.168.1.XX:9200/cameraarchivetest-{{ index }}/_create/{{ data_nature.id }}'
+    url: 'http://{{ elasticsearch_point }}/cameraarchive-{{ index }}/_create/{{ data_nature.id }}'
     method: POST
     content_type: "application/json; charset=utf-8"
     headers:
