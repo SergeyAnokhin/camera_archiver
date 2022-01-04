@@ -1,0 +1,34 @@
+  - platform: camera_archiver
+    local_storage: ./config/www/snapshot # intermediate storage can be used for display 'last' record
+    name: Yi1080pWoodSouth
+    scan_interval: 
+      days: 10
+    from:
+      # directory:
+      #   path: ../home-assistant-core-data/input
+      #   datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
+      #   copied_per_run: 2
+      # ftp: 
+      #   host: !secret Yi1080pWoodSouth_ip
+      #   user: !secret Yi1080pWoodSouth_user
+      #   password: !secret Yi1080pWoodSouth_pass
+      #   path: /tmp/sd/record
+      #   datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
+      #   copied_per_run: 2
+      #   clean:
+      #     empty_directories: True
+      #     files:
+      #       - index.dat
+      #       - ".*\\.tmp"
+      mqtt:
+        topic: /yicam_1080p/#
+    to:
+      # directory:
+      #   path: ../home-assistant-core-data
+      #   datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
+      ftp:
+        host: !secret server_ip
+        user: !secret server_user
+        password: !secret server_pass
+        path: /CameraArchive/Yi1080pWoodSouth
+        datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here

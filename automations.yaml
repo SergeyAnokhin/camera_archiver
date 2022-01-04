@@ -1,0 +1,110 @@
+- alias: auto_CameraArchiverFileCopied
+  mode: queued
+  trigger:
+  - platform: event
+    event_type: CameraArchiverFileCopied
+    id: Yi1080pWoodSouth
+    event_data:
+      camera: Yi1080pWoodSouth
+  action:
+  #- service: camera_archiver.run
+  #- service: script.variable_test
+  - service: rest_command.elastic_cameraarchive
+    data_template:
+      index: '{{ trigger.event.data.timestamp | timestamp_custom("%Y.%m", False) }}'
+      tags: 'camera_archiver activity motion camera archive webcam wifi'
+      ftp_date: '{{ trigger.event.data.ftp_date | default }}'
+      trigger: '{{ this.entity_id }}'
+      elasticsearch_point: !secret elasticsearch_point
+      data_nature: >-
+        {{ trigger.event.data }}
+      customize_data: 
+        position: 
+          detail: cupboard
+          floor: 2
+          room: WoodSouth
+          is_external: false
+        sensor: 
+          emoji: "🎥"
+          icon: mdi:webcam
+          type: CameraArchive
+          unit: bytes
+          is_external: false
+          display: "{{ trigger.event.data.camera }} CameraArchive"
+          id: "CameraArchive_{{ trigger.event.data.camera }}"
+      # customize_json: >
+      #   "position": {
+      #     "detail": "cupboard",
+      #     "floor": 2,
+      #     "room": "WoodSouth",
+      #     "is_external": false
+      #   },
+      #   "sensor": {
+      #     "emoji": "🎥",
+      #     "icon": "mdi:webcam",
+      #     "type": "CameraArchive",
+      #     "unit": "bytes",
+      #     "is_external": false,
+      #     "display": "{{ trigger.event.data.camera }} CameraArchive",
+      #     "id": "CameraArchive_{{ trigger.event.data.camera }}"
+      #   },
+      # data_dict_value: >-
+      #   {{ {'a':trigger.event.data,'b':1, 'c':1} }}
+      # float: >-
+      #   {{ 1.0 }}
+      # int: >-
+      #   {{ 10 }}
+      # bool: >-
+      #   {{ true }}
+      # list: >-
+      #   {{ [1, 2, 3, 4, 5] }}
+      # dict: >-
+      #   {{ {'a':1,'b':1, 'c':1} }}
+      # complex: >-
+      #   {{ [{'a':1,'b':1, 'c':1}, 1, true, 1.0] }}
+      # string: >-
+      #   {{ "Native stringy thingy" }}
+      # none: >-
+      #   {{ None }}
+
+  # - service: notify.elastic_input
+  #   data_template:
+  #     message: >
+
+  #         "url": "http://{{ elasticsearch_point }}/cameraarchive-{{ trigger.event.data.DateTimeUtc.strftime("%Y.%m") }}/_create/{{ trigger.event.data.id }}"
+
+  #         "doc": "event",
+
+  #         "source_type": "ftp",
+
+  #         "tags": "camera_archiver synology_cameraarchive"
+
+  #         "volume": "/volume2"
+
+  #         "_id": "{{ trigger.event.data.id }}",
+
+  #         "path_source": "{{ trigger.event.data.SourceFile }}",
+
+  #         "@timestamp": "{{ trigger.event.data.DateTimestampStrUtc }}",
+
+  #         "event_start": "{{ trigger.event.data.DateTimestampStr }}",
+
+  #         "ext": "{{ trigger.event.data.ext }}",
+
+  #         "source_file_created": "{{ trigger.event.data.SourceFileCreated }}",
+
+  #         "execution_time": "{{ as_timestamp(now()) | timestamp_custom('%Y-%m-%dT%H:%M:%S.000+00:00', False) }}",
+
+  #         "camera": "{{ trigger.event.data.camera }}",
+
+  #         "ext": "{{ trigger.event.data.ext }}",
+
+  #         "path": "{{ trigger.event.data.path }}"
+
+  #         "value": "{{ trigger.event.data.size }}"
+
+  #         "sensor.type": "CameraArchive"
+
+  #         "sensor.unit": "bytes"
+
+  #         "trigger.id": "{{ trigger.id }}"

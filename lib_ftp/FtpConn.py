@@ -65,7 +65,8 @@ class FtpConn:
         _LOGGER.debug(f'File downloaded : {from_file} ==> {to_file} ({filesize}b)')
 
     def Delete(self, filename: str):
-        self.ftp.delete(filename)
+        # self.ftp.delete(filename)
+        return
 
     def DeleteDir(self, dirname: str):
         self.ftp.rmd(dirname)

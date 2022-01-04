@@ -16,7 +16,7 @@ class TransferComponent:
         self._transfer_file = None
         self._config = config
         self._copied_per_run = config.get(CONF_COPIED_PER_RUN, 100)
-        self._path = config[CONF_PATH]
+        self._path = config.get(CONF_PATH, "")
         self.copiedFileCallback = None
         self._clean = config.get(CONF_CLEAN, {})
         self._clean_dirs = self._clean.get(CONF_EMPTY_DIRECTORIES, False)

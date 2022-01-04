@@ -1,6 +1,8 @@
 import pytz, mimetypes, logging
 from datetime import datetime, timedelta
 from typing import cast
+
+from ..lib_mqtt.MqttTransfer import MqttTransfer
 from .ifile_info import IFileInfo
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import generate_entity_id
@@ -9,7 +11,7 @@ from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from .transfer_state import TransferState
 from ..const import ATTR_CAMERA, ATTR_EXT, ATTR_ID, ATTR_MIMETYPE, \
-            ATTR_SIZE, ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED, ATTR_TIMESTAMP, ATTR_TIMESTAMP_STR, ATTR_TIMESTAMP_STR_UTC, CONF_DIRECTORY, CONF_FROM, CONF_FTP, \
+            ATTR_SIZE, ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED, ATTR_TIMESTAMP, ATTR_TIMESTAMP_STR, ATTR_TIMESTAMP_STR_UTC, CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_MQTT, \
             CONF_TO, EVENT_CAMERA_ARCHIVER_FILE_COPIED
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
@@ -33,6 +35,9 @@ class TransferRunner:
             self._from_components.append(transfer)
         if CONF_FTP in cfrom:
             transfer = FtpTransfer(cfrom[CONF_FTP])
+            self._from_components.append(transfer)
+        if CONF_MQTT in cfrom:
+            transfer = MqttTransfer(cfrom[CONF_MQTT], hass)
             self._from_components.append(transfer)
 
         tfrom = config[CONF_TO]

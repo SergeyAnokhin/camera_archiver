@@ -109,8 +109,8 @@ class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
         CoordinatorEntity.__init__(self, coordinator)
         TransferSensor.__init__(self, config, name, icon, unit)
         cfrom = config[CONF_FROM]
-        from_attr = cfrom[CONF_FTP][CONF_HOST] if CONF_FTP in cfrom else cfrom[CONF_DIRECTORY][CONF_PATH]
-        self.add_attr(ATTR_FROM, from_attr)
+        # from_attr = cfrom[CONF_FTP][CONF_HOST] if CONF_FTP in cfrom else cfrom[CONF_DIRECTORY][CONF_PATH]
+        # self.add_attr(ATTR_FROM, from_attr)
         self._coordinator_data: TransferState = None
 
     @callback
@@ -120,7 +120,7 @@ class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
             return
         self._data = self.coordinator.data[ATTR_TRANSFER_RESULT]
         self.coordinator_updated(self._data)
-        self.async_write_ha_state()
+        # self.async_write_ha_state()
 
     @abstractmethod
     def coordinator_updated(self, state: TransferState):

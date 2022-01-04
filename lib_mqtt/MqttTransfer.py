@@ -1,7 +1,11 @@
+from datetime import datetime
 import logging
 from typing import Any
+
+from ..const import CONF_TOPIC
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.components import mqtt
 from ..common.ifile_info import IFileInfo
 from ..common.transfer_component import TransferComponent
 
@@ -9,22 +13,24 @@ _LOGGER = logging.getLogger(__name__)
 
 class MqttTransfer(TransferComponent):
 
-    def __init__(self, config: ConfigEntry):
+    def __init__(self, config: ConfigEntry, hass: HomeAssistant):
         super().__init__(config)
         #self._state_topic = config.data[CONF_MQTT_PREFIX] + "/" + config.data[CONF_TOPIC_MOTION_DETECTION_IMAGE]
+        self._state_topic = config[CONF_TOPIC]
         self._mqtt_subscription = None
         self._last_image = None
+        self._last_updated = None
 
         @callback
         def message_received(msg):
             """Handle new MQTT messages."""
             data = msg.payload
-
+            self._last_updated = datetime.now()
             self._last_image = data
 
-        # self._mqtt_subscription = await mqtt.async_subscribe(
-        #     self.hass, self._state_topic, message_received, 1, None
-        # )
+        self._mqtt_subscription = mqtt.subscribe(
+            hass, self._state_topic, message_received, 1, None
+        )
 
 
     def get_files(self, max=None) -> list[IFileInfo]:

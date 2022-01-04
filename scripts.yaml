@@ -1,0 +1,32 @@
+  variable_test:
+    alias: variable_test
+    # variables:
+    #   trig1: '{'
+    #   trig2: '}'
+    sequence:
+    - service: camera_archiver.run
+      data_template:
+        url: 'http://{{ elasticsearch_point }}/cameraarchivetest-{{ index }}/_create/{{ data_nature.id }}'
+        id: '{{ data_nature.id }}'
+        data_nature: '{{ data_nature }}'
+        payload: >
+          {
+            "@timestamp": "{{ data_nature.timestamp_str_utc }}",
+            "camera": "{{ data_nature.camera }}",
+            "doc": "event",
+            "event_start": "{{ data_nature.timestamp_str }}",
+            "ext": "{{ data_nature.ext }}",
+            "path": "{{ data_nature.destination_file }}",
+            "source": {
+              "type": "{{ data_nature.source_type }}",
+              {% if ftp_date and ftp_date != '' %}"ftp_date": "{{ ftp_date }}",{% endif %}
+              "modif_time": "{{ data_nature.source_file_created }}",
+              "host": "{{ data_nature.source_host }}",
+              "filename": "{{ data_nature.source_file }}"
+            },
+            "mimitype": "{{ data_nature.mimetype }}",
+            {{ (customize_data | to_json | trim())[1:-1] }},
+            "tags": "synology_cameraarchive hassio {{ tags }}",
+            "value": {{ data_nature.size }},
+            "volume": "/volume2"
+          }            
