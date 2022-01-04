@@ -1,4 +1,4 @@
 default: warn
 logs:
   custom_components.camera_archiver: debug
-  homeassistant.components.mqtt: debug
+  #homeassistant.components.mqtt: debug

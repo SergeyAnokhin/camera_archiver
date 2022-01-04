@@ -28,13 +28,14 @@ class MqttTransfer(TransferComponent):
     @callback
     def message_received(self, msg):
         """Handle new MQTT messages."""
+        _LOGGER.debug(f"|{self._state_topic}| MQTT : {msg.topic}")
         data = msg.payload
         self._last_updated = datetime.now()
         self._last_image = data
 
     async def subscribe_to_mqtt(self):
         self._subscription = await mqtt.async_subscribe(
-            self._hass, self._state_topic, self.message_received
+            self._hass, self._state_topic, self.message_received, 0, None
         )
         return
 

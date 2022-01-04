@@ -21,7 +21,7 @@
       #       - index.dat
       #       - ".*\\.tmp"
       mqtt:
-        topic: yicam_1080p/#
+        topic: yicam_1080p/motion_detection_image
     to:
       # directory:
       #   path: ../home-assistant-core-data
