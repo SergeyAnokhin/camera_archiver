@@ -1,5 +1,6 @@
 from datetime import timedelta
 import logging, threading, json, ast
+from homeassistant.components import mqtt
 
 from homeassistant.helpers.debounce import Debouncer
 
@@ -8,7 +9,7 @@ from .common.transfer_runner import TransferRunner
 from homeassistant.helpers.update_coordinator import REQUEST_REFRESH_DEFAULT_COOLDOWN, DataUpdateCoordinator, UpdateFailed
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC, CONF_NAME, CONF_SCAN_INTERVAL, EVENT_HOMEASSISTANT_STARTED
-from homeassistant.core import Config, CoreState, HomeAssistant, ServiceCall
+from homeassistant.core import Config, CoreState, HomeAssistant, ServiceCall, callback
 
 from .const import (ATTR_TRANSFER_RESULT, DOMAIN, CONF_ENABLE, SENSOR_NAME_TO_COPY_FILES, SERVICE_RUN)
 
@@ -59,7 +60,7 @@ def get_coordinator(hass: HomeAssistant, instanceName: str, config: ConfigEntry 
                 hass,
                 logging.getLogger(__name__),
                 name=DOMAIN,
-                update_interval = timedelta(days=10),
+                #update_interval = timedelta(days=10),
                 request_refresh_debouncer=Debouncer(
                     hass, _LOGGER, cooldown=600, immediate=False
                 )
@@ -77,7 +78,7 @@ def get_coordinator(hass: HomeAssistant, instanceName: str, config: ConfigEntry 
     #     coordinatorInst.update_interval = timedelta(days = 10)
 
     if config: # only sensor has right config for async_get_status
-        # coordinatorInst.update_interval = config[CONF_SCAN_INTERVAL]
+        coordinatorInst.update_interval = config[CONF_SCAN_INTERVAL]
         coordinatorInst.update_method = async_get_status
 
     # if hass.state == CoreState.running:
@@ -102,6 +103,15 @@ async def async_setup(hass: HomeAssistant, global_config: Config):
     
     # archiver = CameraArchive(hass, config)
     # archiver.FileCopiedCallBack = FileTransferCallback
+
+    # @callback
+    # def message_received(msg):
+    #     """Handle new MQTT messages."""
+    #     data = msg.payload
+
+    # mqtt_subscription = await mqtt.async_subscribe(
+    #     hass, "yicam_1080p/#", message_received
+    # )
 
     async def _service_run(call: ServiceCall) -> None:
         _LOGGER.info("service camera archive call")

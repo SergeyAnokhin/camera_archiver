@@ -2,7 +2,7 @@
     local_storage: ./config/www/snapshot # intermediate storage can be used for display 'last' record
     name: Yi1080pWoodSouth
     scan_interval: 
-      days: 10
+      minutes: 1
     from:
       # directory:
       #   path: ../home-assistant-core-data/input
@@ -21,7 +21,7 @@
       #       - index.dat
       #       - ".*\\.tmp"
       mqtt:
-        topic: /yicam_1080p/#
+        topic: yicam_1080p/#
     to:
       # directory:
       #   path: ../home-assistant-core-data

@@ -2,6 +2,8 @@ from datetime import datetime
 import logging
 from typing import Any
 
+from homeassistant.util.async_ import fire_coroutine_threadsafe
+
 from ..const import CONF_TOPIC
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -20,18 +22,21 @@ class MqttTransfer(TransferComponent):
         self._mqtt_subscription = None
         self._last_image = None
         self._last_updated = None
+        self._hass = hass
+        fire_coroutine_threadsafe(self.subscribe_to_mqtt(), hass.loop)
 
-        @callback
-        def message_received(msg):
-            """Handle new MQTT messages."""
-            data = msg.payload
-            self._last_updated = datetime.now()
-            self._last_image = data
+    @callback
+    def message_received(self, msg):
+        """Handle new MQTT messages."""
+        data = msg.payload
+        self._last_updated = datetime.now()
+        self._last_image = data
 
-        self._mqtt_subscription = mqtt.subscribe(
-            hass, self._state_topic, message_received, 1, None
+    async def subscribe_to_mqtt(self):
+        self._subscription = await mqtt.async_subscribe(
+            self._hass, self._state_topic, self.message_received
         )
-
+        return
 
     def get_files(self, max=None) -> list[IFileInfo]:
         ''' OVERRIDE '''
