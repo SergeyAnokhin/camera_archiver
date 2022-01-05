@@ -1,12 +1,14 @@
 from datetime import datetime
 import logging
 from typing import Any
+from .mqtt_file_info import MqttFileInfo
 
 from homeassistant.util.async_ import fire_coroutine_threadsafe
 
 from ..const import CONF_TOPIC
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+import io
 from homeassistant.components import mqtt
 from ..common.ifile_info import IFileInfo
 from ..common.transfer_component import TransferComponent
@@ -23,6 +25,7 @@ class MqttTransfer(TransferComponent):
         self._last_image = None
         self._last_updated = None
         self._hass = hass
+        self._file: MqttFileInfo = None
         fire_coroutine_threadsafe(self.subscribe_to_mqtt(), hass.loop)
 
     @callback
@@ -32,6 +35,8 @@ class MqttTransfer(TransferComponent):
         data = msg.payload
         self._last_updated = datetime.now()
         self._last_image = data
+        self._file = MqttFileInfo(data)
+        self._run(with_transfer=True)
 
     async def subscribe_to_mqtt(self):
         self._subscription = await mqtt.async_subscribe(
@@ -41,12 +46,11 @@ class MqttTransfer(TransferComponent):
 
     def get_files(self, max=None) -> list[IFileInfo]:
         ''' OVERRIDE '''
-        files: list[IFileInfo] = []
-        return files
+        return [self._file]
 
     def file_read(self, file: IFileInfo) -> Any:
         ''' OVERRIDE '''
-        return None
+        return io.BytesIO(self._last_image)
 
     def file_delete(self, file: IFileInfo):
         ''' OVERRIDE '''
