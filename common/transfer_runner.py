@@ -2,9 +2,11 @@ import pytz, mimetypes, logging
 from datetime import datetime, timedelta
 from typing import cast
 
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
 from ..lib_mqtt.MqttTransfer import MqttTransfer
 from .ifile_info import IFileInfo
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import generate_entity_id
 from .transfer_component import TransferComponent
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
@@ -28,6 +30,7 @@ class TransferRunner:
         self.local = pytz.timezone(hass.config.time_zone)
         self._from_components: list[TransferComponent] = []
         self._to_components: list[TransferComponent] = []
+        self.coordinator: DataUpdateCoordinator = None
 
         cfrom = config[CONF_FROM]
         if CONF_DIRECTORY in cfrom:
@@ -37,21 +40,25 @@ class TransferRunner:
             transfer = FtpTransfer(cfrom[CONF_FTP])
             self._from_components.append(transfer)
         if CONF_MQTT in cfrom:
-            transfer = MqttTransfer(cfrom[CONF_MQTT], hass)
+            transfer = MqttTransfer(cfrom[CONF_MQTT], hass, self.new_data_callback)
             self._from_components.append(transfer)
 
         tfrom = config[CONF_TO]
         if CONF_DIRECTORY in tfrom:
             transfer = DirectoryTransfer(tfrom[CONF_DIRECTORY])
-            transfer.set_from(self._from_components)
+            transfer.set_source(self._from_components)
             self._to_components.append(transfer)
         if CONF_FTP in tfrom:
             transfer = FtpTransfer(tfrom[CONF_FTP])
-            transfer.set_from(self._from_components)
+            transfer.set_source(self._from_components)
             self._to_components.append(transfer)
 
         for c in self._to_components:
-            c.copiedFileCallback = self.fire_event
+            c.copiedFileCallback = self.fire_post_event
+
+    @callback
+    def new_data_callback(self, callerComponent: TransferComponent):
+        self.coordinator.async_refresh()
 
     def stat(self) -> TransferState:
         component_from = self._from_components[0]
@@ -62,7 +69,7 @@ class TransferRunner:
         component_from = self._from_components[0]
         return component_from.run()
 
-    def fire_event(self, file: IFileInfo):
+    def fire_post_event(self, file: IFileInfo):
         dt = file.datetime # .replace(year=2031)  # TODO: remove replace
         dt = self.local.localize(dt)
         dt_utc = self.to_utc(dt)

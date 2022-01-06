@@ -49,7 +49,7 @@ class TransferComponent:
         _LOGGER.debug(f"Saved: [{file.metadata[ATTR_DESTINATION_FILE]}] content type: {type(content)}")
         self.copiedFileCallback(file)
 
-    def set_from(self, from_components: list['TransferComponent']) -> None:
+    def set_source(self, from_components: list['TransferComponent']) -> None:
         for c in from_components:
             c.SetTransferFileCallback(self._file_save)
 

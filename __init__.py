@@ -72,7 +72,7 @@ def get_coordinator(hass: HomeAssistant, instanceName: str, config: ConfigEntry 
                 }
             hass.data[DOMAIN][instanceName] = coordinatorInst
             
-
+    runner.coordinator = coordinatorInst
     # def _enable_scheduled_speedtests(*_):
     #     """Activate the data update coordinator."""
     #     coordinatorInst.update_interval = timedelta(days = 10)
