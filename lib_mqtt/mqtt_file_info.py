@@ -1,5 +1,3 @@
-from io import BytesIO
-import os
 from datetime import datetime
 from ..common.ifile_info import IFileInfo
 

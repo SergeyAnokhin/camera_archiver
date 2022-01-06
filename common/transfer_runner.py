@@ -32,6 +32,27 @@ class TransferRunner:
         self._to_components: list[TransferComponent] = []
         self.coordinator: DataUpdateCoordinator = None
 
+        # Set Read & Save chain:
+        # -----------------------------------------------------
+        # FromComponent -> 1. ToComponent; 2. ToComponent
+        # Stat : 
+        #    From = { "Directory": ...; "Mqtt": ... }
+        #    To = { "Ftp": ... }
+
+        # Invoke FromComponent chan:
+        # -----------------------------------------------------
+        # Directory & Ftp => by timer (DataUpdateCoordinator?)
+        # Mqtt by topic
+        # DataUpdateCoordinatorLiseners = []
+        # DataUpdateCoordinatorLiseners += DirectoryTransfer().MethodToStart
+        # DataUpdateCoordinatorLiseners += FtpTransfer().MethodToStart
+        # AddMqttTopicLisener("yicam_1080p/image", MqttTransfer().MethodToStart)
+        # ? coordinator.async_set_updated_data(data)
+        # def MethodToStart():
+        #   stat = DoJob()
+        #   self.ReportStatCallback(stat)
+
+
         cfrom = config[CONF_FROM]
         if CONF_DIRECTORY in cfrom:
             transfer = DirectoryTransfer(cfrom[CONF_DIRECTORY])
@@ -63,6 +84,7 @@ class TransferRunner:
     def stat(self) -> TransferState:
         component_from = self._from_components[0]
         return component_from.state()
+
 
     def run(self) -> TransferState:
         # entity_id = generate_entity_id("archiver_{}", self._config[CONF_NAME], current_ids=None, hass=self._hass)

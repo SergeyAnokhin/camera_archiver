@@ -1,9 +1,13 @@
 from datetime import datetime
-import logging, queue, io,threading
+import logging
+import queue
+import io
+import threading
+import socket
 from typing import Any
 from .mqtt_file_info import MqttFileInfo
 from homeassistant.util.async_ import fire_coroutine_threadsafe
-from ..const import CONF_TOPIC
+from ..const import ATTR_SOURCE_HOST, ATTR_SOURCE_TYPE, CONF_TOPIC
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.components import mqtt
@@ -55,6 +59,10 @@ class MqttTransfer(TransferComponent):
 
     def file_read(self, file: IFileInfo) -> Any:
         ''' OVERRIDE '''
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        self._file.metadata[ATTR_SOURCE_HOST] = local_ip
+        self._file.metadata[ATTR_SOURCE_TYPE] = "mqtt"
         return io.BytesIO(self._last_image)
 
     def file_delete(self, file: IFileInfo):

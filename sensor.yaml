@@ -4,10 +4,10 @@
     scan_interval: 
       minutes: 1
     from:
-      # directory:
-      #   path: ../home-assistant-core-data/input
-      #   datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
-      #   copied_per_run: 2
+      directory:
+        path: ../home-assistant-core-data/input
+        datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
+        copied_per_run: 2
       # ftp: 
       #   host: !secret Yi1080pWoodSouth_ip
       #   user: !secret Yi1080pWoodSouth_user
