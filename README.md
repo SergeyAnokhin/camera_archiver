@@ -133,3 +133,32 @@ rest_command:
         "volume": "/volume2"
       }  
 ```
+
+## Entities
+
+- _Switch_: 
+    - Enable/Disable
+    - Copy: On=Read & Copy, Off=Read
+- _Sensors_:
+  - From "*": 
+    - Current files
+      - Attribute: Size
+      - Attribute: Extensions
+    - Copied files
+      - Attribute: Size
+    - Copied files 24 hours
+      - Attribute: Size
+    - Copied files 7 days
+      - Attribute: Size
+    - Health 24 hours (copied files > 0)
+    - Health 7 days (copied files > 0)
+  - To "*":
+    - Copied files
+      - Attribute: Size
+    - Copied files 24 hours
+      - Attribute: Size
+    - Copied files 7 days
+      - Attribute: Size
+    - Last Image (to see)
+    - Last Video (to play)
+
