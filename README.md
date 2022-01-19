@@ -137,28 +137,25 @@ rest_command:
 ## Entities
 
 - _Switch_: 
-    - Enable/Disable
-    - Copy: On=Read & Copy, Off=Read
+    - Enable/Disable Global
+    - Selector By component From: 'Off', 'Read', 'ReadCopy', 'ReadCopyDelete'
+    - Selector By component To: 'Off', 'Copy'
 - _Sensors_:
-  - From "*": 
-    - Current files
+  - For each 'From' transfer component: 
+    - In storage files
       - Attribute: Size
       - Attribute: Extensions
-    - Copied files
+    - Copied files during last exec
       - Attribute: Size
-    - Copied files 24 hours
+    - Copied files 24 hours (statistics sensor)
+    - Copied files 7 days (statistics sensor)
+    - Health 24 hours (copied files > 0) (template sensor)
+    - Health 7 days (copied files > 0) (template sensor)
+  - For each 'To' transfer component: 
+    - Copied files during last exec
       - Attribute: Size
-    - Copied files 7 days
-      - Attribute: Size
-    - Health 24 hours (copied files > 0)
-    - Health 7 days (copied files > 0)
-  - To "*":
-    - Copied files
-      - Attribute: Size
-    - Copied files 24 hours
-      - Attribute: Size
-    - Copied files 7 days
-      - Attribute: Size
+    - Copied files 24 hours (statistics sensor)
+    - Copied files 7 days (statistics sensor)
     - Last Image (to see)
     - Last Video (to play)
 
