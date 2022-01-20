@@ -1,5 +1,6 @@
 from typing import Any
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 
 from ..common.ifile_info import IFileInfo
 from .file_info import FileInfo
@@ -11,8 +12,8 @@ from pathlib import Path
 _LOGGER = logging.getLogger(__name__)
 
 class DirectoryTransfer(TransferComponent):
-    def __init__(self, config: ConfigEntry):
-        super().__init__(config)
+    def __init__(self, hass: HomeAssistant, config: ConfigEntry):
+        super().__init__(hass, config)
 
     def get_files(self, max=None) -> list[IFileInfo]:
         ''' OVERRIDE '''

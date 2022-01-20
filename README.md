@@ -138,8 +138,8 @@ rest_command:
 
 - _Switch_: 
     - Enable/Disable Global
-    - Selector By component From: 'Off', 'Read', 'ReadCopy', 'ReadCopyDelete'
-    - Selector By component To: 'Off', 'Copy'
+    - Selector By component From: 'On/Off'
+    - Selector By component To: 'On/Off'
 - _Sensors_:
   - For each 'From' transfer component: 
     - In storage files
@@ -159,3 +159,11 @@ rest_command:
     - Last Image (to see)
     - Last Video (to play)
 
+## TransferManager
+
+    1. Read config, create TransferComponents
+    2. Link components 'From'TransferComponent 1<->n 'To'TransferComponent
+    3. Attach to events (DataUpdaterCoordinator, Mqtt, Service etc)
+    4. Create Sensors and switchers 
+    5. Update sensors with TransferState
+    6. Setup platform not sensor???

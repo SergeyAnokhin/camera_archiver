@@ -1,16 +1,10 @@
-from datetime import timedelta
-import logging, threading, json, ast
-from config.custom_components.camera_archiver.transfer_manager import TransferManager
-from homeassistant.components import mqtt
+import logging
+from .transfer_manager import TransferManager
 
-from homeassistant.helpers.debounce import Debouncer
-
-from .common.transfer_state import TransferState
-from .common.transfer_runner import TransferRunner
-from homeassistant.helpers.update_coordinator import REQUEST_REFRESH_DEFAULT_COOLDOWN, DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import REQUEST_REFRESH_DEFAULT_COOLDOWN
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_MAC, CONF_NAME, CONF_SCAN_INTERVAL, EVENT_HOMEASSISTANT_STARTED
-from homeassistant.core import Config, CoreState, HomeAssistant, ServiceCall, callback
+from homeassistant.const import CONF_ENTITIES, CONF_MAC, CONF_NAME, CONF_SCAN_INTERVAL, EVENT_HOMEASSISTANT_STARTED
+from homeassistant.core import Config, HomeAssistant, ServiceCall
 
 from .const import (ATTR_TRANSFER_RESULT, DOMAIN, CONF_ENABLE, SENSOR_NAME_TO_COPY_FILES, SERVICE_RUN)
 
@@ -30,9 +24,20 @@ manager: TransferManager = None
 async def async_setup(hass: HomeAssistant, global_config: Config):
     """Set up this integration using YAML."""
 
-    manager = TransferManager(hass)
+    if DOMAIN not in hass.data:
+        hass.data[DOMAIN] = {}
 
-    # config = global_config[DOMAIN]
+    config = global_config[DOMAIN]
+    entities = config[CONF_ENTITIES]
+
+    for entity_config in entities:
+        manager = TransferManager(hass, config, entity_config)
+        manager.build_coordinator()
+        manager.build_transfer_components()
+
+        name = entity_config[CONF_NAME]
+        hass.data[DOMAIN][name] = manager
+        
     
     # archiver = CameraArchive(hass, config)
     # archiver.FileCopiedCallBack = FileTransferCallback

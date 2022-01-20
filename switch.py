@@ -13,8 +13,11 @@ from .const import CONF_ENABLE
 
 _LOGGER = logging.getLogger(__name__)
 
+async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry, async_add_entities):
+    pass
+
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
-    coordinator = get_coordinator(hass, config[CONF_NAME])
+    coordinator = None # get_coordinator(hass, config[CONF_NAME])
 
     add_entities([
         CameraArchiverEnabler(coordinator, config),

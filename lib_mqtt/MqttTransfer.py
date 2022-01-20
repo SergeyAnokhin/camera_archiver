@@ -5,6 +5,8 @@ import io
 import threading
 import socket
 from typing import Any
+
+from ..common.transfer_state import TransferState
 from .mqtt_file_info import MqttFileInfo
 from homeassistant.util.async_ import fire_coroutine_threadsafe
 from ..const import ATTR_SOURCE_HOST, ATTR_SOURCE_TYPE, CONF_TOPIC
@@ -19,8 +21,8 @@ lock = threading.Lock()
 
 class MqttTransfer(TransferComponent):
 
-    def __init__(self, config: ConfigEntry, hass: HomeAssistant, new_data_callback = None):
-        super().__init__(config)
+    def __init__(self, hass: HomeAssistant, config: ConfigEntry, new_data_callback = None):
+        super().__init__(hass, config)
         #self._state_topic = config.data[CONF_MQTT_PREFIX] + "/" + config.data[CONF_TOPIC_MOTION_DETECTION_IMAGE]
         self._state_topic = config[CONF_TOPIC]
         self._mqtt_subscription = None
@@ -48,6 +50,10 @@ class MqttTransfer(TransferComponent):
             self._hass, self._state_topic, self.message_received, 0, None
         )
         return
+
+    def run(self) -> TransferState:
+        ''' OVERRIDE '''
+        pass
 
     def get_files(self, max=None) -> list[IFileInfo]:
         ''' OVERRIDE '''
