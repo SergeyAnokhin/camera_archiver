@@ -1,14 +1,13 @@
 import logging
 
-from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from . import get_coordinator
-
 from homeassistant.components.switch import DEVICE_CLASS_SWITCH
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (CONF_NAME, STATE_OFF, STATE_ON)
+from homeassistant.const import CONF_NAME, STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import ToggleEntity
+from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
 from .const import CONF_ENABLE
 
 _LOGGER = logging.getLogger(__name__)

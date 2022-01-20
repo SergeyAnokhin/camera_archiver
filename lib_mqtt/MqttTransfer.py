@@ -9,7 +9,7 @@ from typing import Any
 from ..common.transfer_state import TransferState
 from .mqtt_file_info import MqttFileInfo
 from homeassistant.util.async_ import fire_coroutine_threadsafe
-from ..const import ATTR_SOURCE_HOST, ATTR_SOURCE_TYPE, CONF_TOPIC
+from ..const import ATTR_SOURCE_HOST, ATTR_SOURCE_TYPE, CONF_MQTT, CONF_TOPIC
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.components import mqtt
@@ -20,9 +20,10 @@ _LOGGER = logging.getLogger(__name__)
 lock = threading.Lock()
 
 class MqttTransfer(TransferComponent):
+    name = CONF_MQTT
 
-    def __init__(self, hass: HomeAssistant, config: ConfigEntry, new_data_callback = None):
-        super().__init__(hass, config)
+    def __init__(self, instName: str, hass: HomeAssistant, config: ConfigEntry):
+        super().__init__(instName, hass, config)
         #self._state_topic = config.data[CONF_MQTT_PREFIX] + "/" + config.data[CONF_TOPIC_MOTION_DETECTION_IMAGE]
         self._state_topic = config[CONF_TOPIC]
         self._mqtt_subscription = None
@@ -30,7 +31,6 @@ class MqttTransfer(TransferComponent):
         self._last_updated = None
         self._hass = hass
         self._files: queue.Queue = queue.Queue()
-        self._new_data_callback = new_data_callback
         fire_coroutine_threadsafe(self.subscribe_to_mqtt(), hass.loop)
 
     @callback
@@ -41,9 +41,8 @@ class MqttTransfer(TransferComponent):
         self._last_updated = datetime.now()
         self._last_image = data
         file = MqttFileInfo(data)
-        self._files.en.put(file)
-        self._new_data_callback(self)
-        # self._run(with_transfer=True)
+        self._files.put(file)
+        # REACTIVATE! self._run(with_transfer=True)
 
     async def subscribe_to_mqtt(self):
         self._subscription = await mqtt.async_subscribe(
@@ -53,7 +52,7 @@ class MqttTransfer(TransferComponent):
 
     def run(self) -> TransferState:
         ''' OVERRIDE '''
-        pass
+        pass # nothinf to do if in case of external call. 
 
     def get_files(self, max=None) -> list[IFileInfo]:
         ''' OVERRIDE '''

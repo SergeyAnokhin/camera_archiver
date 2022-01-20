@@ -5,19 +5,21 @@ import logging
 from voluptuous.validators import Any
 from homeassistant.const import CONF_SCAN_INTERVAL
 
-from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, ServiceCall
 from homeassistant.helpers.event import async_track_point_in_time
 from .transfer_state import TransferState
 from homeassistant.config_entries import ConfigEntry
 from .ifile_info import IFileInfo
-from ..const import ATTR_DESTINATION_FILE, ATTR_PATH, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH
+from ..const import ATTR_DESTINATION_FILE, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH, DOMAIN, SERVICE_FIELD_COMPONENT, SERVICE_FIELD_INSTANCE, SERVICE_RUN
 
 _LOGGER = logging.getLogger(__name__)
 
 class TransferComponent:
+    name: str = None
 
-    def __init__(self, hass: HomeAssistant, config: dict) -> None:
+    def __init__(self, instName: str, hass: HomeAssistant, config: dict) -> None:
         self._hass = hass
+        self._instName = instName
         self._transfer_file = None
         self._config = config
         self._copied_per_run = config.get(CONF_COPIED_PER_RUN, 100)
@@ -31,7 +33,9 @@ class TransferComponent:
 
         self._job = HassJob(self.run)
         self._unsub_refresh: CALLBACK_TYPE = None
-        self._scedule_refresh()
+        self._schedule_refresh()
+
+        self.subscribe_to_service()
 
     @abstractmethod
     def file_read(self, file: IFileInfo) -> Any:
@@ -60,7 +64,20 @@ class TransferComponent:
         _LOGGER.debug(f"Saved: [{file.metadata[ATTR_DESTINATION_FILE]}] content type: {type(content)}")
         self.copiedFileCallback(file)
 
-    def _scedule_refresh(self):
+    def subscribe_to_service(self) -> None:
+        async def _service_run(call: ServiceCall) -> None:
+            _LOGGER.info("service camera archive call")
+            data = dict(call.data)
+            if self._instName != data[SERVICE_FIELD_INSTANCE]:
+                return
+            if self.name != data[SERVICE_FIELD_COMPONENT]:
+                return
+            self.run()
+
+        self._hass.services.async_register(DOMAIN, SERVICE_RUN, _service_run)
+
+
+    def _schedule_refresh(self):
         if CONF_SCAN_INTERVAL not in self._config:
             return 
 
@@ -70,7 +87,7 @@ class TransferComponent:
             self._unsub_refresh = None
 
         self._unsub_refresh = async_track_point_in_time(
-            self.hass,
+            self._hass,
             self._job,
             datetime.now().replace(microsecond=0) + scan_interval,
         )        

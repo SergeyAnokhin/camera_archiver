@@ -1,17 +1,86 @@
 import logging
-from .transfer_manager import TransferManager
 
-from homeassistant.helpers.update_coordinator import REQUEST_REFRESH_DEFAULT_COOLDOWN
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_ENTITIES, CONF_MAC, CONF_NAME, CONF_SCAN_INTERVAL, EVENT_HOMEASSISTANT_STARTED
-from homeassistant.core import Config, HomeAssistant, ServiceCall
+from homeassistant.const import (CONF_ENTITIES, CONF_HOST, CONF_NAME,
+                                 CONF_PASSWORD, CONF_SCAN_INTERVAL)
+from homeassistant.core import Config, HomeAssistant
+from homeassistant.helpers import config_validation as cv, discovery
+from sqlalchemy import true
 
-from .const import (ATTR_TRANSFER_RESULT, DOMAIN, CONF_ENABLE, SENSOR_NAME_TO_COPY_FILES, SERVICE_RUN)
+from .const import (CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
+                    CONF_DIRECTORY, CONF_EMPTY_DIRECTORIES, CONF_FILES,
+                    CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MQTT,
+                    CONF_PATH, CONF_TO, CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
+                    DEFAULT_TIME_INTERVAL, DOMAIN)
+from .transfer_manager import TransferManager
 
 PLATFORMS = ["sensor", "binary_sensor", "switch"]
 
 _LOGGER = logging.getLogger(__name__)
 
+CLEAN_SCHEMA = vol.Schema({
+    vol.Required(CONF_EMPTY_DIRECTORIES): cv.boolean,
+    vol.Optional(CONF_FILES, default=[]): vol.All(
+        cv.ensure_list, [cv.string]
+    ),
+})
+
+FTP_SCHEMA = vol.Schema({
+    vol.Required(CONF_HOST): cv.string,
+    vol.Required(CONF_USER): cv.string,
+    vol.Required(CONF_PASSWORD): cv.string,
+    vol.Required(CONF_PATH): cv.string,
+    vol.Required(CONF_DATETIME_PATTERN): cv.string,
+    vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_TIME_INTERVAL): cv.time_period,
+    vol.Optional(CONF_COPIED_PER_RUN, default=100): cv.positive_int,
+    vol.Optional(CONF_CLEAN): CLEAN_SCHEMA,
+})
+
+DIRECTORY_SCHEMA = vol.Schema({
+    vol.Required(CONF_PATH): cv.string,
+    vol.Required(CONF_DATETIME_PATTERN): cv.string,
+    vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_TIME_INTERVAL): cv.time_period,
+    vol.Optional(CONF_COPIED_PER_RUN, default=100): cv.positive_int,
+    vol.Optional(CONF_CLEAN): CLEAN_SCHEMA,
+})
+
+MQTT_SCHEMA = vol.Schema({
+    vol.Required(CONF_TOPIC): cv.string,
+})
+
+FROM_SCHEMA = vol.Schema({
+    vol.Optional(CONF_FTP): FTP_SCHEMA,
+    vol.Optional(CONF_DIRECTORY): DIRECTORY_SCHEMA,
+    vol.Optional(CONF_MQTT): MQTT_SCHEMA,
+})
+
+TO_SCHEMA = vol.Schema({
+    vol.Optional(CONF_FTP): FTP_SCHEMA,
+    vol.Optional(CONF_DIRECTORY): DIRECTORY_SCHEMA,
+    vol.Optional(CONF_MQTT): MQTT_SCHEMA,
+})
+
+ENTITY_SCHEMA = vol.All(cv.ensure_list, [
+    {
+        vol.Required(CONF_NAME): cv.string,
+        vol.Required(CONF_FROM): FROM_SCHEMA,
+        vol.Required(CONF_TO): TO_SCHEMA,
+        vol.Optional(CONF_LOCAL_STORAGE): cv.string,
+        vol.Optional(CONF_TRIGGERS): vol.Any(cv.entity_ids, None),
+    }
+])
+
+CONFIG_SCHEMA = vol.Schema(
+    {
+        DOMAIN: vol.Schema(
+            {
+                vol.Required(CONF_NAME): cv.string,
+                vol.Required(CONF_ENTITIES): ENTITY_SCHEMA
+            }, extra=vol.ALLOW_EXTRA)
+    }, extra=vol.ALLOW_EXTRA)
+
+PLATFORMS = ["camera", "binary_sensor", "switch"] #"media_player", 
 
 # def setup_platform(hass, config, add_devices, discovery_info=None):
 #     """Setup the sensor platform."""
@@ -19,9 +88,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # HISTORY EXAMPLE : homeassistant\components\history_stats\sensor.py 228
 
-manager: TransferManager = None
-
-async def async_setup(hass: HomeAssistant, global_config: Config):
+async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
     """Set up this integration using YAML."""
 
     if DOMAIN not in hass.data:
@@ -37,26 +104,12 @@ async def async_setup(hass: HomeAssistant, global_config: Config):
 
         name = entity_config[CONF_NAME]
         hass.data[DOMAIN][name] = manager
-        
-    
-    # archiver = CameraArchive(hass, config)
-    # archiver.FileCopiedCallBack = FileTransferCallback
+        _LOGGER.info(f"Init of manager of '{name}' finished with succes")
 
-    # @callback
-    # def message_received(msg):
-    #     """Handle new MQTT messages."""
-    #     data = msg.payload
+        for component in PLATFORMS:
+            hass.async_create_task(discovery.async_load_platform(
+                hass, component, DOMAIN, {'instance_name': name}, global_config))
 
-    # mqtt_subscription = await mqtt.async_subscribe(
-    #     hass, "yicam_1080p/#", message_received
-    # )
-
-    async def _service_run(call: ServiceCall) -> None:
-        _LOGGER.info("service camera archive call")
-        data = dict(call.data)
-        return
-
-    hass.services.async_register(DOMAIN, SERVICE_RUN, _service_run)
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -64,6 +117,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.info("Start async_setup_entry")
     hass.data.setdefault(DOMAIN, {})
     return True
+
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""

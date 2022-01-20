@@ -8,10 +8,15 @@ from homeassistant.const import CONF_NAME
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from .const import ATTR_ARCHIVER_STATE, CONF_DIRECTORY, CONF_ENABLE, CONF_FROM, CONF_FTP, CONF_MQTT, CONF_TO, DOMAIN
+from .const import ATTR_ARCHIVER_STATE, CONF_ENABLE, CONF_FROM, CONF_TO, DOMAIN
 from .common.transfer_runner import TransferRunner
 from .common.transfer_state import TransferState
 
+COMPONENTS_LIST = [
+    FtpTransfer,
+    DirectoryTransfer,
+    MqttTransfer,
+]
 
 class TransferManager:
     ''' 
@@ -55,15 +60,13 @@ class TransferManager:
 
     def build_components(self, config: dict) -> list[TransferComponent]:
         components: list[TransferComponent] = []
-        if CONF_DIRECTORY in config:
-            transfer = DirectoryTransfer(self._hass, config[CONF_DIRECTORY])
+        components_by_name = {c.name: c for c in COMPONENTS_LIST}
+
+        for key, value in config.items():
+            class_type = components_by_name[key]
+            transfer = class_type(self._name, self._hass, value)
             components.append(transfer)
-        if CONF_FTP in config:
-            transfer = FtpTransfer(self._hass, config[CONF_FTP])
-            components.append(transfer)
-        if CONF_MQTT in config:
-            transfer = MqttTransfer(self._hass, config[CONF_MQTT], self.new_data_callback)
-            components.append(transfer)        
+        return components      
 
     def setup_ha_entries(self, hass: HomeAssistant, config: ConfigEntry, add_entities):
         pass
@@ -121,7 +124,7 @@ class TransferManager:
         # coordinatorInst.update_interval = config[CONF_SCAN_INTERVAL]
         # coordinatorInst.update_method = self.async_get_status
 
-        coordinatorInst.async_refresh()
+        #await coordinatorInst.async_refresh()
 
         # if hass.state == CoreState.running:
         #     _enable_scheduled_speedtests()

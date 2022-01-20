@@ -1,67 +1,19 @@
-from abc import abstractmethod, abstractproperty
 import logging
-from typing import cast
-import voluptuous as vol
-from . import get_coordinator
-from .common.transfer_state import TransferState
+from abc import abstractmethod
+
+from homeassistant.components.sensor import (STATE_CLASS_TOTAL_INCREASING,
+                                             SensorEntity)
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
-import homeassistant.helpers.config_validation as cv
-from homeassistant.components.sensor import PLATFORM_SCHEMA, STATE_CLASS_TOTAL_INCREASING, SensorEntity
-from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_PATH, CONF_SCAN_INTERVAL
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from .const import ATTR_DURATION, ATTR_EXTENSIONS, ATTR_FROM, ATTR_LAST, ATTR_SIZE, ATTR_TRANSFER_RESULT, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_DIRECTORY, CONF_EMPTY_DIRECTORIES, CONF_FILES, \
-        CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MQTT, CONF_TO, CONF_TOPIC, CONF_TRIGGERS, CONF_USER, DEFAULT_TIME_INTERVAL, ICON_COPIED, ICON_DEFAULT, \
-        ICON_TO_COPY, SENSOR_NAME_FILES_COPIED, SENSOR_NAME_FILES_COPIED_LAST, SENSOR_NAME_TO_COPY_FILES
 
-CLEAN_SCHEMA = vol.Schema({
-    vol.Required(CONF_EMPTY_DIRECTORIES): cv.boolean,
-    vol.Optional(CONF_FILES, default=[]): vol.All(
-        cv.ensure_list, [cv.string]
-    ),
-})
-
-FTP_SCHEMA = vol.Schema({
-        vol.Required(CONF_HOST): cv.string,
-        vol.Required(CONF_USER): cv.string,
-        vol.Required(CONF_PASSWORD): cv.string,
-        vol.Required(CONF_PATH): cv.string,
-        vol.Required(CONF_DATETIME_PATTERN): cv.string,
-        vol.Optional(CONF_COPIED_PER_RUN, default=100): cv.positive_int,
-        vol.Optional(CONF_CLEAN): CLEAN_SCHEMA,
-})
-
-DIRECTORY_SCHEMA = vol.Schema({
-        vol.Required(CONF_PATH): cv.string,
-        vol.Required(CONF_DATETIME_PATTERN): cv.string,
-        vol.Optional(CONF_COPIED_PER_RUN, default=100): cv.positive_int,
-        vol.Optional(CONF_CLEAN): CLEAN_SCHEMA,
-    })
-
-MQTT_SCHEMA = vol.Schema({
-        vol.Required(CONF_TOPIC): cv.string,
-    })
-
-FROM_SCHEMA = vol.Schema({
-        vol.Optional(CONF_FTP): FTP_SCHEMA,
-        vol.Optional(CONF_DIRECTORY): DIRECTORY_SCHEMA,
-        vol.Optional(CONF_MQTT): MQTT_SCHEMA,
-    })
-
-TO_SCHEMA = vol.Schema({
-        vol.Optional(CONF_FTP): FTP_SCHEMA,
-        vol.Optional(CONF_DIRECTORY): DIRECTORY_SCHEMA,
-        vol.Optional(CONF_MQTT): MQTT_SCHEMA,
-    })
-
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-        vol.Required(CONF_NAME): cv.string,
-        vol.Required(CONF_LOCAL_STORAGE): cv.string,
-        vol.Required(CONF_FROM): FROM_SCHEMA,
-        vol.Optional(CONF_TO): TO_SCHEMA,
-        vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_TIME_INTERVAL): cv.time_period,
-        vol.Optional(CONF_TRIGGERS): vol.Any(cv.entity_ids, None),
-    })
+from .common.transfer_state import TransferState
+from .const import (ATTR_DURATION, ATTR_EXTENSIONS, ATTR_LAST,
+                    ATTR_SIZE, ATTR_TRANSFER_RESULT, CONF_FROM,
+                    ICON_COPIED, ICON_DEFAULT, ICON_TO_COPY,
+                    SENSOR_NAME_FILES_COPIED, SENSOR_NAME_FILES_COPIED_LAST,
+                    SENSOR_NAME_TO_COPY_FILES)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -69,6 +21,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     pass
 
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
+    instName = discovery_info['instance_name']
     coordinator = None #get_coordinator(hass, config[CONF_NAME], config)
 
     add_entities([

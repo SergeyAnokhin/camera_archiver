@@ -1,4 +1,21 @@
 run:
   name: archive
   description: Start files archiving
-  
+  fields:
+    instance: 
+      name: instance name
+      description: Instance name in config->camera_archiver->entities->name
+      example: 'Yi1080pWoodSouth'
+      default: 'Yi1080pWoodSouth'
+      required: true
+    component:
+      name: component to run
+      description: component type in config->camera_archiver->entities->from->XXXXX
+      example: 'ftp'
+      default: 'ftp'
+      required: true
+      selector:
+        select:
+          options:
+            - "ftp"
+            - "directory"

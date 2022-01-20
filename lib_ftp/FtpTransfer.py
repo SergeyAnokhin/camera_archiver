@@ -7,7 +7,7 @@ from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from ..common.ifile_info import IFileInfo
 from ..common.transfer_component import TransferComponent
-from ..const import ATTR_PATH, ATTR_SOURCE_FILE, ATTR_SOURCE_HOST, ATTR_SOURCE_TYPE, CONF_DATETIME_PATTERN
+from ..const import ATTR_PATH, ATTR_SOURCE_FILE, ATTR_SOURCE_HOST, ATTR_SOURCE_TYPE, CONF_DATETIME_PATTERN, CONF_FTP
 
 from .FtpConn import FtpConn
 from .ftp_file_info import FtpFileInfo
@@ -15,8 +15,10 @@ from .ftp_file_info import FtpFileInfo
 _LOGGER = logging.getLogger(__name__)
 
 class FtpTransfer(TransferComponent):
-    def __init__(self, hass: HomeAssistant, config: ConfigEntry):
-        super().__init__(hass, config)
+    name = CONF_FTP
+
+    def __init__(self, instName: str, hass: HomeAssistant, config: ConfigEntry):
+        super().__init__(instName, hass, config)
 
     def get_files(self, max=None) -> list[IFileInfo]:
         ''' OVERRIDE '''
