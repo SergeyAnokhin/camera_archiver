@@ -1,3 +1,4 @@
+from sys import platform
 from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -12,7 +13,7 @@ from pathlib import Path
 _LOGGER = logging.getLogger(__name__)
 
 class DirectoryTransfer(TransferComponent):
-    name = CONF_DIRECTORY
+    platform = CONF_DIRECTORY
 
     def __init__(self, instName: str, hass: HomeAssistant, config: ConfigEntry):
         super().__init__(instName, hass, config)

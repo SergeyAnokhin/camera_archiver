@@ -15,7 +15,7 @@ from .ftp_file_info import FtpFileInfo
 _LOGGER = logging.getLogger(__name__)
 
 class FtpTransfer(TransferComponent):
-    name = CONF_FTP
+    platform = CONF_FTP
 
     def __init__(self, instName: str, hass: HomeAssistant, config: ConfigEntry):
         super().__init__(instName, hass, config)

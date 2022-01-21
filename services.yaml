@@ -10,7 +10,7 @@ run:
       required: true
     component:
       name: component to run
-      description: component type in config->camera_archiver->entities->from->XXXXX
+      description: component type in config->camera_archiver->entities->from->name (or platform)
       example: 'ftp'
       default: 'ftp'
       required: true

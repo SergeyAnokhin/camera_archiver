@@ -1,29 +1,16 @@
 from datetime import datetime, timedelta
 from enum import Enum
-import os
 
 from .ifile_info import IFileInfo
 
 
 class StateType(Enum):
-    READ = "Read"
-    COPY = "Copy"
+    REPOSITORY = "Repository"  # Read repository
+    READ = "Read"  # Read files from repository in memory
+    COPY = "Copy"  # Save file from memory to new repository
+
 
 class TransferState:
-
-    def __init__(self) -> None:
-        self.read = RunState(StateType.READ)
-        self.copy = RunState(StateType.COPY)
-
-    @property
-    def Read(self):
-        return self.read
-
-    @property
-    def Copy(self):
-        return self.copy
-
-class RunState: 
     def __init__(self, type: StateType) -> None:
         self._type = type
         self._files: list[str] = []
@@ -85,7 +72,7 @@ class RunState:
 
     @property
     def files_size_mb(self) -> float:
-        return round(self.files_size / 1024 / 1024, 2) 
+        return round(self.files_size / 1024 / 1024, 2)
 
     def __str__(self):
         result = f"[Stat:{self._type.name}] Files: {self.files_count} "

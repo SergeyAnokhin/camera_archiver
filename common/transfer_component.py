@@ -3,11 +3,11 @@ from datetime import datetime
 import logging
 
 from voluptuous.validators import Any
-from homeassistant.const import CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
 
 from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, ServiceCall
 from homeassistant.helpers.event import async_track_point_in_time
-from .transfer_state import TransferState
+from .transfer_state import StateType, TransferState
 from homeassistant.config_entries import ConfigEntry
 from .ifile_info import IFileInfo
 from ..const import ATTR_DESTINATION_FILE, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH, DOMAIN, SERVICE_FIELD_COMPONENT, SERVICE_FIELD_INSTANCE, SERVICE_RUN
@@ -15,16 +15,16 @@ from ..const import ATTR_DESTINATION_FILE, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF
 _LOGGER = logging.getLogger(__name__)
 
 class TransferComponent:
-    name: str = None
+    platform: str = None
 
     def __init__(self, instName: str, hass: HomeAssistant, config: dict) -> None:
         self._hass = hass
         self._instName = instName
+        self._name = config.get(CONF_NAME, self.platform)
         self._transfer_file = None
         self._config = config
         self._copied_per_run = config.get(CONF_COPIED_PER_RUN, 100)
         self._path = config.get(CONF_PATH, "")
-        self.copiedFileCallback = None
         self._clean = config.get(CONF_CLEAN, {})
         self._clean_dirs = self._clean.get(CONF_EMPTY_DIRECTORIES, False)
         self._clean_files = self._clean.get(CONF_FILES, list[str])
@@ -62,7 +62,7 @@ class TransferComponent:
             raise Exception('Content is empty')
         file.metadata[ATTR_DESTINATION_FILE] = self.file_save(file, content)
         _LOGGER.debug(f"Saved: [{file.metadata[ATTR_DESTINATION_FILE]}] content type: {type(content)}")
-        self.copiedFileCallback(file)
+        self._invoke_listeners(StateType.COPY, file, content)
 
     def subscribe_to_service(self) -> None:
         async def _service_run(call: ServiceCall) -> None:
@@ -70,7 +70,7 @@ class TransferComponent:
             data = dict(call.data)
             if self._instName != data[SERVICE_FIELD_INSTANCE]:
                 return
-            if self.name != data[SERVICE_FIELD_COMPONENT]:
+            if self._name != data[SERVICE_FIELD_COMPONENT]:
                 return
             self.run()
 
@@ -96,12 +96,9 @@ class TransferComponent:
         """Listen for data updates."""
         self._listeners.append(update_callback)
 
-    # def set_source(self, from_components: list['TransferComponent']) -> None:
-    #     for c in from_components:
-    #         c.SetTransferFileCallback(self._file_save)
-
-    # def SetTransferFileCallback(self, callback):
-    #     self._transfer_file = callback
+    def _invoke_listeners(self, stateType: StateType, file: IFileInfo, content) -> None:
+        for callback in self._listeners:
+            callback(stateType, file, content)
 
     def _run(self, with_transfer=False) -> TransferState:
         action_log = "Copy" if with_transfer else "Stat"
@@ -109,12 +106,12 @@ class TransferComponent:
         state = TransferState()
 
         if with_transfer:
-            files = self.get_files(self._copied_per_run)
+            files: list[IFileInfo] = self.get_files(self._copied_per_run)
             _LOGGER.debug(f"Found files for copy: {len(files)}")
             for file in files:
                 _LOGGER.debug(f"Read: [{file.fullname}]")
                 content = self.file_read(file)
-                self._transfer_file(file, content)
+                self._invoke_listeners(StateType.READ, file, content)
                 self.file_delete(file)
                 state.Copy.append(file)
 

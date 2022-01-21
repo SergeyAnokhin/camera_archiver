@@ -3,7 +3,7 @@ import logging
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (CONF_ENTITIES, CONF_HOST, CONF_NAME,
-                                 CONF_PASSWORD, CONF_SCAN_INTERVAL)
+                                 CONF_PASSWORD, CONF_PLATFORM, CONF_SCAN_INTERVAL)
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.helpers import config_validation as cv, discovery
 from sqlalchemy import true
@@ -13,7 +13,7 @@ from .const import (CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
                     CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MQTT,
                     CONF_PATH, CONF_TO, CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
                     DEFAULT_TIME_INTERVAL, DOMAIN)
-from .transfer_manager import TransferManager
+from .common.transfer_manager import TransferManager
 
 PLATFORMS = ["sensor", "binary_sensor", "switch"]
 
@@ -27,39 +27,37 @@ CLEAN_SCHEMA = vol.Schema({
 })
 
 FTP_SCHEMA = vol.Schema({
+    vol.Required(CONF_PLATFORM): CONF_FTP,
     vol.Required(CONF_HOST): cv.string,
     vol.Required(CONF_USER): cv.string,
     vol.Required(CONF_PASSWORD): cv.string,
     vol.Required(CONF_PATH): cv.string,
     vol.Required(CONF_DATETIME_PATTERN): cv.string,
+    vol.Optional(CONF_NAME): cv.string,
     vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_TIME_INTERVAL): cv.time_period,
     vol.Optional(CONF_COPIED_PER_RUN, default=100): cv.positive_int,
     vol.Optional(CONF_CLEAN): CLEAN_SCHEMA,
 })
 
 DIRECTORY_SCHEMA = vol.Schema({
+    vol.Required(CONF_PLATFORM): CONF_DIRECTORY,
     vol.Required(CONF_PATH): cv.string,
     vol.Required(CONF_DATETIME_PATTERN): cv.string,
+    vol.Optional(CONF_NAME): cv.string,
     vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_TIME_INTERVAL): cv.time_period,
     vol.Optional(CONF_COPIED_PER_RUN, default=100): cv.positive_int,
     vol.Optional(CONF_CLEAN): CLEAN_SCHEMA,
 })
 
 MQTT_SCHEMA = vol.Schema({
+    vol.Required(CONF_PLATFORM): CONF_MQTT,
     vol.Required(CONF_TOPIC): cv.string,
+    vol.Optional(CONF_NAME): cv.string,
 })
 
-FROM_SCHEMA = vol.Schema({
-    vol.Optional(CONF_FTP): FTP_SCHEMA,
-    vol.Optional(CONF_DIRECTORY): DIRECTORY_SCHEMA,
-    vol.Optional(CONF_MQTT): MQTT_SCHEMA,
-})
-
-TO_SCHEMA = vol.Schema({
-    vol.Optional(CONF_FTP): FTP_SCHEMA,
-    vol.Optional(CONF_DIRECTORY): DIRECTORY_SCHEMA,
-    vol.Optional(CONF_MQTT): MQTT_SCHEMA,
-})
+TO_SCHEMA = FROM_SCHEMA = vol.All(cv.ensure_list, [
+    vol.Any(FTP_SCHEMA, DIRECTORY_SCHEMA, MQTT_SCHEMA)
+])
 
 ENTITY_SCHEMA = vol.All(cv.ensure_list, [
     {
@@ -80,7 +78,7 @@ CONFIG_SCHEMA = vol.Schema(
             }, extra=vol.ALLOW_EXTRA)
     }, extra=vol.ALLOW_EXTRA)
 
-PLATFORMS = ["camera", "binary_sensor", "switch"] #"media_player", 
+PLATFORMS = ["sensor", "switch", "camera"] #"media_player", "binary_sensor"
 
 # def setup_platform(hass, config, add_devices, discovery_info=None):
 #     """Setup the sensor platform."""
@@ -108,7 +106,7 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
 
         for component in PLATFORMS:
             hass.async_create_task(discovery.async_load_platform(
-                hass, component, DOMAIN, {'instance_name': name}, global_config))
+                hass, component, DOMAIN, entity_config, global_config))
 
     return True
 

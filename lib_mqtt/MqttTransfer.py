@@ -20,7 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 lock = threading.Lock()
 
 class MqttTransfer(TransferComponent):
-    name = CONF_MQTT
+    platform = CONF_MQTT
 
     def __init__(self, instName: str, hass: HomeAssistant, config: ConfigEntry):
         super().__init__(instName, hass, config)
@@ -31,6 +31,7 @@ class MqttTransfer(TransferComponent):
         self._last_updated = None
         self._hass = hass
         self._files: queue.Queue = queue.Queue()
+        self._retained_message = True # ignore first message after initialisation
         fire_coroutine_threadsafe(self.subscribe_to_mqtt(), hass.loop)
 
     @callback
@@ -42,7 +43,13 @@ class MqttTransfer(TransferComponent):
         self._last_image = data
         file = MqttFileInfo(data)
         self._files.put(file)
-        # REACTIVATE! self._run(with_transfer=True)
+        # if self._retained_message:
+        #     self._retained_message = False
+        # else:
+        try:
+            self._run(with_transfer=True)
+        except Exception as ex:
+            _LOGGER.exception(ex)
 
     async def subscribe_to_mqtt(self):
         self._subscription = await mqtt.async_subscribe(
@@ -66,8 +73,8 @@ class MqttTransfer(TransferComponent):
         ''' OVERRIDE '''
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
-        self._file.metadata[ATTR_SOURCE_HOST] = local_ip
-        self._file.metadata[ATTR_SOURCE_TYPE] = "mqtt"
+        file.metadata[ATTR_SOURCE_HOST] = local_ip
+        file.metadata[ATTR_SOURCE_TYPE] = "mqtt"
         return io.BytesIO(self._last_image)
 
     def file_delete(self, file: IFileInfo):

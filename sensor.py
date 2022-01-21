@@ -9,11 +9,11 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .common.transfer_state import TransferState
-from .const import (ATTR_DURATION, ATTR_EXTENSIONS, ATTR_LAST,
-                    ATTR_SIZE, ATTR_TRANSFER_RESULT, CONF_FROM,
-                    ICON_COPIED, ICON_DEFAULT, ICON_TO_COPY,
-                    SENSOR_NAME_FILES_COPIED, SENSOR_NAME_FILES_COPIED_LAST,
-                    SENSOR_NAME_TO_COPY_FILES)
+from .const import (ATTR_DURATION, ATTR_EXTENSIONS, ATTR_LAST, ATTR_SIZE,
+                    ATTR_TRANSFER_RESULT, CONF_FROM, DOMAIN, ICON_COPIED,
+                    ICON_DEFAULT, ICON_TO_COPY, SENSOR_NAME_FILES_COPIED,
+                    SENSOR_NAME_FILES_COPIED_LAST, SENSOR_NAME_TO_COPY_FILES)
+from .common.transfer_manager import TransferManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,8 +21,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     pass
 
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
-    instName = discovery_info['instance_name']
-    coordinator = None #get_coordinator(hass, config[CONF_NAME], config)
+    config = discovery_info
+    instName = config[CONF_NAME]
+    manager: TransferManager = hass.data[DOMAIN][instName]
+    coordinator = manager.coordinator
 
     add_entities([
         ToCopyFilesSensor(coordinator, config),

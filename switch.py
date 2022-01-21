@@ -8,7 +8,8 @@ from homeassistant.helpers.entity import ToggleEntity
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import CONF_ENABLE
+from .const import CONF_ENABLE, DOMAIN
+from .common.transfer_manager import TransferManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,7 +17,10 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry, async_add_
     pass
 
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
-    coordinator = None # get_coordinator(hass, config[CONF_NAME])
+    config = discovery_info
+    instName = config[CONF_NAME]
+    manager: TransferManager = hass.data[DOMAIN][instName]
+    coordinator = manager.coordinator
 
     add_entities([
         CameraArchiverEnabler(coordinator, config),

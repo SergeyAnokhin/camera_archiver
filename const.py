@@ -65,6 +65,7 @@ ATTR_PATH = "path"
 ATTR_LAST = "Last"
 ATTR_TRANSFER_RESULT = "TransferResult"
 ATTR_ARCHIVER_STATE = "ArchiverState"
+ATTR_INSTANCE_NAME = "instance_name"
 
 EVENT_CAMERA_ARCHIVER_FILE_COPIED = "CameraArchiverFileCopied"
 

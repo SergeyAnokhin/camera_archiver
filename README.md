@@ -29,44 +29,49 @@ sensor:
 
 Advanced config
 ```yaml
-sensor:
-  - platform: camera_archiver
-    local_storage: ./config/www/snapshot # intermediate storage can be used for display 'last' record
-    scan_interval: "00:01:00"
-    name: Yi1080pWoodSouth
-    from:
-      directory:
-        path: ../home-assistant-core-data/input
-        datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
-        copied_per_run: 2
-        clean:
-          empty_directories: True
-          files:
-            - index.dat
-            - ".*\\.tmp"
-      # ftp: 
-      #   host: 192.168.1.XX
-      #   user: USER
-      #   password: !secret main
-      #   path: /tmp/sd/record
-      #   datetime_parser: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
-        # copied_per_run: 2
-      mqtt:
-        topic: /yicam_1080p/motion_detection_image
-    to:
-      directory:
-        path: ../home-assistant-core-data
-        datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
-      # ftp:
-      #   host: 192.168.1.XX
-      #   user: USER
-      #   password: !secret main
-      #   path: /Camera/Yi1080pWoodSouth
-        # datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
-
-switch:
-  - platform: camera_archiver
-    name: Yi1080pWoodSouth
+camera_archiver:
+  name: toto
+  entities:
+    - name: Yi1080pWoodSouth
+      local_storage: ./config/www/snapshot # intermediate storage can be used for display 'last' record
+      from: ### any in this list
+        - name: directory
+          platform: directory
+          path: ../home-assistant-core-data/input
+          datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
+          copied_per_run: 2
+          scan_interval: 
+            minutes: 1
+        # - name: ftp
+        #   platform: ftp
+        #   host: !secret Yi1080pWoodSouth_ip
+        #   user: !secret Yi1080pWoodSouth_user
+        #   password: !secret Yi1080pWoodSouth_pass
+        #   path: /tmp/sd/record
+        #   datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
+        #   copied_per_run: 2
+        #   scan_interval: 
+        #     minutes: 1
+        #   clean:
+        #     empty_directories: True
+        #     files:
+        #       - index.dat
+        #       - ".*\\.tmp"
+        - name: mqtt
+          platform: mqtt
+          topic: yicam_1080p/motion_detection_image
+      to: ### all in this list
+        # - name: directory
+        #   platform: directory
+        #   path: ../home-assistant-core-data
+        #   datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
+        - name: ftp
+          platform: ftp
+          host: !secret server_ip
+          user: !secret server_user
+          password: !secret server_pass
+          path: /CameraArchive/Yi1080pWoodSouth
+          datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
 
 automation:
 - alias: auto_CameraArchiverFileCopied

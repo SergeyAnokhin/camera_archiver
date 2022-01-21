@@ -32,30 +32,6 @@ class TransferRunner:
         self._to_components: list[TransferComponent] = []
         self.coordinator: DataUpdateCoordinator = None
 
-        # cfrom = config[CONF_FROM]
-        # if CONF_DIRECTORY in cfrom:
-        #     transfer = DirectoryTransfer(cfrom[CONF_DIRECTORY])
-        #     self._from_components.append(transfer)
-        # if CONF_FTP in cfrom:
-        #     transfer = FtpTransfer(cfrom[CONF_FTP])
-        #     self._from_components.append(transfer)
-        # if CONF_MQTT in cfrom:
-        #     transfer = MqttTransfer(cfrom[CONF_MQTT], hass, self.new_data_callback)
-        #     self._from_components.append(transfer)
-
-        # tfrom = config[CONF_TO]
-        # if CONF_DIRECTORY in tfrom:
-        #     transfer = DirectoryTransfer(tfrom[CONF_DIRECTORY])
-        #     transfer.set_source(self._from_components)
-        #     self._to_components.append(transfer)
-        # if CONF_FTP in tfrom:
-        #     transfer = FtpTransfer(tfrom[CONF_FTP])
-        #     transfer.set_source(self._from_components)
-        #     self._to_components.append(transfer)
-
-        # for c in self._to_components:
-        #     c.copiedFileCallback = self.fire_post_event
-
     @callback
     def new_data_callback(self, callerComponent: TransferComponent):
         self.coordinator.async_refresh()
