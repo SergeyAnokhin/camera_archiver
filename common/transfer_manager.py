@@ -4,14 +4,17 @@ from homeassistant.const import CONF_NAME, CONF_PLATFORM
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from ..const import (ATTR_ARCHIVER_STATE, CONF_ENABLE, CONF_FROM, CONF_TO,
+from ..const import (ATTR_ARCHIVER_STATE, ATTR_COLLECTOR_LAST_SENDER_COMPONENT,
+                     ATTR_COLLECTOR_LAST_STATE_TYPE_UPDATED,
+                     ATTR_INSTANCE_NAME, CONF_ENABLE, CONF_FROM, CONF_TO,
                      DOMAIN)
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from ..lib_mqtt.MqttTransfer import MqttTransfer
 from .helper import getLogger
 from .state_collector import StateCollector
-from .transfer_component import TransferComponent
+from .transfer_component import (TransferComponent, TransferComponentId,
+                                 TransferType)
 from .transfer_runner import TransferRunner
 from .transfer_state import StateType
 
@@ -61,6 +64,15 @@ class TransferManager:
         for comp in self._to_comps:
             comp.add_listener(StateType.SAVE, self._runner.fire_post_event)
 
+        # Listen collector by dataUpdater
+        self._collector.add_listener(self._coordinator_update_data)
+
+    def _coordinator_update_data(self, stateType: StateType, sender: TransferComponentId, collector: StateCollector):
+        data = self._coordinator.data
+        data[ATTR_COLLECTOR_LAST_STATE_TYPE_UPDATED] = stateType
+        data[ATTR_COLLECTOR_LAST_SENDER_COMPONENT] = sender
+        self._coordinator.async_set_updated_data(data)
+
     def build_components(self, config: list) -> list[TransferComponent]:
         components: list[TransferComponent] = []
         components_by_platform = {c.platform: c for c in COMPONENTS_LIST}
@@ -88,12 +100,15 @@ class TransferManager:
             # )
         )
 
-        self._collector = StateCollector(self._collector)
+        self._collector = StateCollector()
 
         self._coordinator.last_update_success = False
         self._coordinator.data = {
+            ATTR_INSTANCE_NAME: self._name,
             CONF_ENABLE: True,
-            ATTR_ARCHIVER_STATE: self._collector
+            ATTR_ARCHIVER_STATE: self._collector,
+            ATTR_COLLECTOR_LAST_STATE_TYPE_UPDATED: None,
+            ATTR_COLLECTOR_LAST_SENDER_COMPONENT: None
         }
         # hass.data[DOMAIN][self._name] = coordinatorInst
 

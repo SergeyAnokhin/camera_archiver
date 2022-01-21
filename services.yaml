@@ -19,3 +19,16 @@ run:
           options:
             - "ftp"
             - "directory"
+            - "mqtt"
+    direction:
+      name: from or to
+      description: component type in config->camera_archiver->entities->from (or to)
+      example: 'from'
+      default: 'from'
+      required: true
+      selector:
+        select:
+          options:
+            - "from"
+            - "to"
+

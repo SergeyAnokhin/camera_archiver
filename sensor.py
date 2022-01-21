@@ -1,19 +1,22 @@
 import logging
 from abc import abstractmethod
 
-from homeassistant.components.sensor import (STATE_CLASS_TOTAL_INCREASING,
-                                             SensorEntity)
+from homeassistant.components.sensor import STATE_CLASS_TOTAL_INCREASING
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .common.transfer_state import TransferState
-from .const import (ATTR_DURATION, ATTR_EXTENSIONS, ATTR_LAST, ATTR_SIZE,
-                    ATTR_TRANSFER_RESULT, CONF_FROM, DOMAIN, ICON_COPIED,
-                    ICON_DEFAULT, ICON_TO_COPY, SENSOR_NAME_FILES_COPIED,
-                    SENSOR_NAME_FILES_COPIED_LAST, SENSOR_NAME_TO_COPY_FILES)
+from .common.state_collector import StateCollector
+from .common.transfer_component import TransferType
 from .common.transfer_manager import TransferManager
+from .common.transfer_state import StateType, TransferState
+from .const import (ATTR_ARCHIVER_STATE, ATTR_COLLECTOR_LAST_TYPE_UPDATED,
+                    ATTR_DURATION, ATTR_EXTENSIONS, ATTR_LAST, ATTR_SIZE,
+                    ATTR_TRANSFER_RESULT, CONF_FROM, CONF_TO, DOMAIN,
+                    ICON_COPIED, ICON_DEFAULT, ICON_TO_COPY,
+                    SENSOR_NAME_FILES_COPIED, SENSOR_NAME_FILES_COPIED_LAST,
+                    SENSOR_NAME_TO_COPY_FILES)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,63 +31,87 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
     manager: TransferManager = hass.data[DOMAIN][instName]
     coordinator = manager.coordinator
 
-    add_entities([
-        ToCopyFilesSensor(coordinator, config),
-        CopiedFilesSensor(coordinator, config),
-        LastFilesCopiedSensor(coordinator, config),
-    ])
+    sensors = []
+    for comp_config in config[CONF_FROM]:
+        sensors.append(FromComponentRepoSensor(instName, comp_config, coordinator))
+        # sensors.append(FromComponentReadSensor(coordinator, comp_config))
 
-class TransferSensor(SensorEntity):
-    def __init__(self, config, name, icon, unit=""):
+    # for comp_config in config[CONF_TO]:
+    #     sensors.append(ToComponentSaveSensor(coordinator, comp_config))
+
+    add_entities(sensors)
+    # add_entities([
+    #     ToCopyFilesSensor(coordinator, config),
+    #     CopiedFilesSensor(coordinator, config),
+    #     LastFilesCopiedSensor(coordinator, config),
+    # ])
+
+class TransferCoordinatorSensor(CoordinatorEntity):
+
+    def __init__(self, instName: str, stateType: StateType, transferType: TransferType, config: dict, coordinator, icon=ICON_DEFAULT, unit=""):
+        """Initialize the sensor."""
+        CoordinatorEntity.__init__(self, coordinator)
         self._config = config
-        self._attr_name = f"{config[CONF_NAME]} {name}"
+        self._transferType = transferType
+        self._attr_name = f"{instName} {stateType} files"
         self._attr_unit_of_measurement = unit
         self._attr_icon = icon
         self._attr_native_value = None
         self._attr_available = False
         self._attr_extra_state_attributes = {}
-
-    def add_attr(self, key: str, value) -> None:
-        self._attr_extra_state_attributes[key] = value
-
-    def add_attrs(self, keyvalues: dict) -> None:
-        self._attr_extra_state_attributes = {
-            **self._attr_extra_state_attributes,
-            **keyvalues
-        }
-
-    def attr_add_float(self, key: str, new_value: float):
-        old_value = self._attr_extra_state_attributes.get(key, 0.0)
-        result = round(old_value + new_value, 2)
-        self.add_attr(key, result)
-
-    def attr_add_set(self, key: str, new_value: list):
-        old_value: dict = self._attr_extra_state_attributes.get(key, set())
-        self.add_attr(key, set(list(old_value) + new_value))
-
-class TransferCoordinatorSensor(CoordinatorEntity, TransferSensor):
-
-    def __init__(self, coordinator, config: ConfigEntry, name, icon=ICON_DEFAULT, unit=""):
-        """Initialize the sensor."""
-        CoordinatorEntity.__init__(self, coordinator)
-        TransferSensor.__init__(self, config, name, icon, unit)
-        cfrom = config[CONF_FROM]
-        # from_attr = cfrom[CONF_FTP][CONF_HOST] if CONF_FTP in cfrom else cfrom[CONF_DIRECTORY][CONF_PATH]
-        # self.add_attr(ATTR_FROM, from_attr)
-        self._coordinator_data: TransferState = None
+        self._stateType: StateType = stateType
 
     @callback
     def _handle_coordinator_update(self):
         """Call when the coordinator has an update."""
         if not self.available:
             return
-        self._data = self.coordinator.data[ATTR_TRANSFER_RESULT]
-        self.coordinator_updated(self._data)
-        # self.async_write_ha_state()
+        collector: StateCollector = self.coordinator.data[ATTR_ARCHIVER_STATE]
+        last_type_updated: StateType = self.coordinator.data[ATTR_COLLECTOR_LAST_TYPE_UPDATED]
+        self.coordinator_updated(collector, last_type_updated)
+        super()._handle_coordinator_update()
 
     @abstractmethod
-    def coordinator_updated(self, state: TransferState):
+    def coordinator_updated(self, collector: StateCollector, last_type_updated: StateType):
         NotImplementedError()
+
+    # def add_attr(self, key: str, value) -> None:
+    #     self._attr_extra_state_attributes[key] = value
+
+    # def add_attrs(self, keyvalues: dict) -> None:
+    #     self._attr_extra_state_attributes = {
+    #         **self._attr_extra_state_attributes,
+    #         **keyvalues
+    #     }
+
+    # def attr_add_float(self, key: str, new_value: float):
+    #     old_value = self._attr_extra_state_attributes.get(key, 0.0)
+    #     result = round(old_value + new_value, 2)
+    #     self.add_attr(key, result)
+
+    # def attr_add_set(self, key: str, new_value: list):
+    #     old_value: dict = self._attr_extra_state_attributes.get(key, set())
+    #     self.add_attr(key, set(list(old_value) + new_value))
+
+class FromComponentRepoSensor(TransferCoordinatorSensor):
+    def __init__(self, instName: str, config, coordinator):
+        super().__init__(instName, 
+            StateType.REPOSITORY, 
+            TransferType.FROM, 
+            config, 
+            coordinator, 
+            ICON_TO_COPY)
+
+    def coordinator_updated(self, collector: StateCollector, last_type_updated: StateType):
+        pass
+
+
+class FromComponentReadSensor(TransferCoordinatorSensor):
+    pass
+
+class ToComponentSaveSensor(TransferCoordinatorSensor):
+    pass
+
 
 class ToCopyFilesSensor(TransferCoordinatorSensor):
     def __init__(self, coordinator, config):

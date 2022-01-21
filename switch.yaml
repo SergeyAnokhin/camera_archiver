@@ -1,7 +1,0 @@
-# - platform: camera_archiver
-#   type: ReadEnabler
-#   name: Yi1080pWoodSouth
-
-# - platform: camera_archiver
-#   type: ReadCopyEnabler
-#   name: Yi1080pWoodSouth

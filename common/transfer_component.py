@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from datetime import datetime
+from enum import Enum
 
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import (CALLBACK_TYPE, HassJob, HomeAssistant,
@@ -11,20 +12,41 @@ from .. import getLogger
 from ..const import (ATTR_DESTINATION_FILE, ATTR_DESTINATION_PLATFORM,
                      ATTR_SOURCE_PLATFORM, CONF_CLEAN, CONF_COPIED_PER_RUN,
                      CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, CONF_FILES,
-                     CONF_PATH, DOMAIN, SERVICE_FIELD_COMPONENT,
+                     CONF_PATH, DOMAIN, SERVICE_FIELD_COMPONENT, SERVICE_FIELD_DIRECTION,
                      SERVICE_FIELD_INSTANCE, SERVICE_RUN)
 from .ifile_info import IFileInfo
 from .transfer_state import StateType
 
 
+class TransferType(Enum):
+    FROM = "from"
+    TO = "to"
+
+class TransferComponentId:
+    Entity: str = None
+    TransferType: TransferType = None
+    Name: str = None
+
+    @property
+    def id(self):
+        return f"{self.Entity}.{self.TransferType}.{self.Name}"
+
+    @property
+    def fullname(self):
+        return f"{self.Entity} {self.TransferType} {self.Name}"
+
+    def __str__(self):
+        return self.id
+
 class TransferComponent:
     platform: str = None
 
-    def __init__(self, instName: str, hass: HomeAssistant, config: dict) -> None:
+    def __init__(self, id: TransferComponentId, hass: HomeAssistant, config: dict) -> None:
         self._hass = hass
-        self._instName = instName
-        self._name = config.get(CONF_NAME, self.platform)
-        self._logger = getLogger(__name__, instName, self._name)
+        self._id = id
+        if not self._id.Name:
+            self._id.Name = config.get(CONF_NAME, self.platform)
+        self._logger = getLogger(__name__, self._id.id)
         self._transfer_file = None
         self._config = config
         self._copied_per_run = config.get(CONF_COPIED_PER_RUN, 100)
@@ -35,7 +57,7 @@ class TransferComponent:
 
         self._listeners = {t: [] for t in StateType}
 
-        self._job = HassJob(self.run)
+        self._job = HassJob(self.async_run)
         self._unsub_refresh: CALLBACK_TYPE = None
         self._schedule_refresh()
 
@@ -61,9 +83,9 @@ class TransferComponent:
         self._logger.debug(f"Delete: [{file.basename}] @ {file.dirname}")
         self.file_delete(file)
 
-    def _new_file_readed(self, file: IFileInfo, content):
+    def _new_file_readed(self, comp_id: TransferComponentId, file: IFileInfo, content):
         if not content:
-            raise Exception('Content is empty')
+            raise Exception(f'Content is empty. Components: {self._id} -> {comp_id}')
         file.metadata[ATTR_DESTINATION_FILE] = self.file_save(file, content)
         file.metadata[ATTR_DESTINATION_PLATFORM] = self.platform
         self._logger.debug(f"Saved: [{file.metadata[ATTR_DESTINATION_FILE]}] content type: {type(content)}")
@@ -73,9 +95,11 @@ class TransferComponent:
         async def _service_run(call: ServiceCall) -> None:
             self._logger.info("service camera archive call")
             data = dict(call.data)
-            if self._instName != data[SERVICE_FIELD_INSTANCE]:
+            if self._id.Entity != data[SERVICE_FIELD_INSTANCE]:
                 return
-            if self._name != data[SERVICE_FIELD_COMPONENT]:
+            if self._id.Name != data[SERVICE_FIELD_COMPONENT]:
+                return
+            if self._id.TransferType.name != data[SERVICE_FIELD_DIRECTION]:
                 return
             self.run()
 
@@ -103,15 +127,15 @@ class TransferComponent:
 
     def _invoke_read_listeners(self, file: IFileInfo, content) -> None:
         for callback in self._listeners[StateType.READ]:
-            callback(file, content)
+            callback(self._id, file, content)
 
     def _invoke_repo_listeners(self, files: list[IFileInfo]) -> None:
         for callback in self._listeners[StateType.REPOSITORY]:
-            callback(files)
+            callback(self._id, files)
 
     def _invoke_save_listeners(self, file: IFileInfo) -> None:
         for callback in self._listeners[StateType.SAVE]:
-            callback(file)
+            callback(self._id, file)
 
     def _run(self):
         self._logger.debug(f"Read from [{self._path}]: START")
@@ -129,6 +153,10 @@ class TransferComponent:
         self._invoke_repo_listeners(files)
         self._logger.debug(f"Read from [{self._path}]: END")
         self._schedule_refresh()
+
+    async def async_run(self, args):
+        ''' External call force start '''
+        return self._run()
 
     def run(self, args):
         ''' External call force start '''

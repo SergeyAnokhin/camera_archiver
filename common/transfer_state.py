@@ -9,7 +9,6 @@ class StateType(Enum):
     READ = "Read"  # Read files from repository in memory
     SAVE = "Save"  # Save file from memory to new repository
 
-
 class TransferState:
     def __init__(self, type: StateType) -> None:
         self._type = type

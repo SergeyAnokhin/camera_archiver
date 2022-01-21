@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import cast
 
 import pytz
+from config.custom_components.camera_archiver.common.transfer_component import TransferComponentId
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
@@ -28,7 +29,7 @@ class TransferRunner:
         self._logger = getLogger(__name__, self._name)
 
     @callback
-    def fire_post_event(self, file: IFileInfo):
+    def fire_post_event(self, sender: TransferComponentId, file: IFileInfo):
         dt = file.datetime # .replace(year=2031)  # TODO: remove replace
         dt = self.local.localize(dt)
         dt_utc = self.to_utc(dt)
