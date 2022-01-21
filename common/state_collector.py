@@ -11,6 +11,16 @@ class StateCollector:
         self._coordinator = coordinator
 
     @callback
-    def new_state(self, stateType: StateType, file: IFileInfo):
-        state = self._states[stateType]
-        state.append(file)
+    def append_repository(self, files: list[IFileInfo]):
+        repo: TransferState = self._states[StateType.REPOSITORY]
+        repo.extend(files)
+
+    @callback
+    def append_read(self, file: IFileInfo, content):
+        read: TransferState = self._states[StateType.READ]
+        read.append(file)
+
+    @callback
+    def append_save(self, file: IFileInfo):
+        save: TransferState = self._states[StateType.SAVE]
+        save.append(file)

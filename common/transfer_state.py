@@ -7,7 +7,7 @@ from .ifile_info import IFileInfo
 class StateType(Enum):
     REPOSITORY = "Repository"  # Read repository
     READ = "Read"  # Read files from repository in memory
-    COPY = "Copy"  # Save file from memory to new repository
+    SAVE = "Save"  # Save file from memory to new repository
 
 
 class TransferState:

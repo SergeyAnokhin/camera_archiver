@@ -1,25 +1,22 @@
-import pytz, mimetypes, logging
-from datetime import datetime, timedelta
+import json
+import mimetypes
+from datetime import datetime
 from typing import cast
 
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-
-from ..lib_mqtt.MqttTransfer import MqttTransfer
-from .ifile_info import IFileInfo
-from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity import generate_entity_id
-from .transfer_component import TransferComponent
-from ..lib_directory.DirectoryTransfer import DirectoryTransfer
-from ..lib_ftp.FtpTransfer import FtpTransfer
-from .transfer_state import TransferState
-from ..const import ATTR_CAMERA, ATTR_EXT, ATTR_ID, ATTR_MIMETYPE, \
-            ATTR_SIZE, ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED, ATTR_TIMESTAMP, ATTR_TIMESTAMP_STR, ATTR_TIMESTAMP_STR_UTC, CONF_DIRECTORY, CONF_FROM, CONF_FTP, CONF_MQTT, \
-            CONF_TO, EVENT_CAMERA_ARCHIVER_FILE_COPIED
+import pytz
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
+from homeassistant.core import HomeAssistant, callback
+
+from ..const import (ATTR_CAMERA, ATTR_EXT, ATTR_ID, ATTR_MIMETYPE, ATTR_SIZE,
+                     ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED,
+                     ATTR_TIMESTAMP, ATTR_TIMESTAMP_STR,
+                     ATTR_TIMESTAMP_STR_UTC,
+                     EVENT_CAMERA_ARCHIVER_FILE_COPIED)
+from .helper import getLogger
+from .ifile_info import IFileInfo
 
 mimetypes.init()
-_LOGGER = logging.getLogger(__name__)
 
 class TransferRunner:
 
@@ -28,23 +25,9 @@ class TransferRunner:
         self._hass = hass
         self._name = config[CONF_NAME]
         self.local = pytz.timezone(hass.config.time_zone)
-        self._from_components: list[TransferComponent] = []
-        self._to_components: list[TransferComponent] = []
-        self.coordinator: DataUpdateCoordinator = None
+        self._logger = getLogger(__name__, self._name)
 
     @callback
-    def new_data_callback(self, callerComponent: TransferComponent):
-        self.coordinator.async_refresh()
-
-    def stat(self) -> TransferState:
-        component_from = self._from_components[0]
-        return component_from.state()
-
-    def run(self) -> TransferState:
-        # entity_id = generate_entity_id("archiver_{}", self._config[CONF_NAME], current_ids=None, hass=self._hass)
-        component_from = self._from_components[0]
-        return component_from.run()
-
     def fire_post_event(self, file: IFileInfo):
         dt = file.datetime # .replace(year=2031)  # TODO: remove replace
         dt = self.local.localize(dt)
@@ -72,7 +55,8 @@ class TransferRunner:
             ATTR_ID: id,
         }
 
-        _LOGGER.debug(f"|{self._name}| Fire event: ID# {id}")
+        self._logger.debug(f"Fire event: ID# {id}")
+        self._logger.debug(json.dumps(entry, indent=4))
         self._hass.bus.fire(EVENT_CAMERA_ARCHIVER_FILE_COPIED, entry)
 
     def to_utc(self, dt: datetime) -> datetime:

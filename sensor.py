@@ -17,6 +17,8 @@ from .common.transfer_manager import TransferManager
 
 _LOGGER = logging.getLogger(__name__)
 
+# from homeassistant.helpers.entity import generate_entity_id
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     pass
 

@@ -1,17 +1,19 @@
 import logging
 
-from .state_collector import StateCollector
-from .transfer_component import TransferComponent
+from homeassistant.const import CONF_NAME, CONF_PLATFORM
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
+from ..const import (ATTR_ARCHIVER_STATE, CONF_ENABLE, CONF_FROM, CONF_TO,
+                     DOMAIN)
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from ..lib_mqtt.MqttTransfer import MqttTransfer
-from homeassistant.const import CONF_NAME, CONF_PLATFORM
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
-from ..const import ATTR_ARCHIVER_STATE, CONF_ENABLE, CONF_FROM, CONF_TO, DOMAIN
+from .helper import getLogger
+from .state_collector import StateCollector
+from .transfer_component import TransferComponent
 from .transfer_runner import TransferRunner
-from .transfer_state import TransferState
+from .transfer_state import StateType
 
 COMPONENTS_LIST = [
     FtpTransfer,
@@ -26,7 +28,7 @@ class TransferManager:
         self._config = config
         self._coordinator: DataUpdateCoordinator = None
         self._name = self._config[CONF_NAME]
-        self.logger = logging.getLogger(f"{__name__}::{self._name}")
+        self.logger = getLogger(__name__, self._name)
         self._runner: TransferRunner = TransferRunner(config, hass)
         self._from_comps: list[TransferComponent] = []
         self._to_comps: list[TransferComponent] = []
@@ -42,22 +44,22 @@ class TransferManager:
         self._from_comps = self.build_components(self._config[CONF_FROM])
         self._to_comps = self.build_components(self._config[CONF_TO])
 
-        # Link components 'From'TransferComponent 1<->n 'To'TransferComponent
+        # Link components 'From'TransferComponent 1<->n 'To'TransferComponent (READ)
         for to_comp in self._to_comps:
             for from_comp in self._from_comps:
-                from_comp.add_listener(to_comp._new_file_readed)
+                from_comp.add_listener(StateType.READ, to_comp._new_file_readed)
 
         # Listen components by StateCollector
-        for comp in [*self._to_comps, *self._from_comps]:
-            comp.add_listener(self._collector_update)
-
         for comp in self._from_comps:
-            comp.add_listener(to_comp._new_file_readed)
+            comp.add_listener(StateType.READ, self._collector.append_read)
+        for comp in self._from_comps:
+            comp.add_listener(StateType.REPOSITORY, self._collector.append_repository)
+        for comp in self._to_comps:
+            comp.add_listener(StateType.SAVE, self._collector.append_save)
 
-    @callback
-    def _collector_update(self, state: TransferState):
-        pass
-        # self._coordinator.async_set_updated_data(self._coordinator.data)
+        # Listen from components SAVE by runner
+        for comp in self._to_comps:
+            comp.add_listener(StateType.SAVE, self._runner.fire_post_event)
 
     def build_components(self, config: list) -> list[TransferComponent]:
         components: list[TransferComponent] = []
@@ -76,7 +78,7 @@ class TransferManager:
 
         self.logger.debug(f"Build coordinator")
 
-        coordinatorInst = DataUpdateCoordinator(
+        self._coordinator = DataUpdateCoordinator(
             hass,
             logging.getLogger(__name__),
             name=DOMAIN,
@@ -86,12 +88,10 @@ class TransferManager:
             # )
         )
 
-        self._runner.coordinator = coordinatorInst
-        self._cooridnator = coordinatorInst
         self._collector = StateCollector(self._collector)
 
-        coordinatorInst.last_update_success = False
-        coordinatorInst.data = {
+        self._coordinator.last_update_success = False
+        self._coordinator.data = {
             CONF_ENABLE: True,
             ATTR_ARCHIVER_STATE: self._collector
         }

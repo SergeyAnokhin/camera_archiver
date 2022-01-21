@@ -4,17 +4,18 @@ from ..common.ifile_info import IFileInfo
 
 class MqttFileInfo(IFileInfo):
 
-    def __init__(self, buffer: bytes) -> None:
+    def __init__(self, topic: str, buffer: bytes) -> None:
         super().__init__()
-        self._fullname = ""
         self._ext = ".jpg"
+        self._fullname = topic
+        self._name = topic
         self._size = len(buffer)
         self._modif_datetime = datetime.now()
         self._datetime = datetime.now()
 
     @property
     def basename(self) -> str:
-        return ""
+        return self._name
 
     @property
     def modif_datetime(self) -> datetime:
@@ -26,4 +27,4 @@ class MqttFileInfo(IFileInfo):
 
     @property
     def fullnameWithoutExt(self) -> str:
-        return ""
+        return self._name

@@ -9,14 +9,13 @@ from typing import Any
 from ..common.transfer_state import TransferState
 from .mqtt_file_info import MqttFileInfo
 from homeassistant.util.async_ import fire_coroutine_threadsafe
-from ..const import ATTR_SOURCE_HOST, ATTR_SOURCE_TYPE, CONF_MQTT, CONF_TOPIC
+from ..const import ATTR_SOURCE_HOST, CONF_MQTT, CONF_TOPIC
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.components import mqtt
 from ..common.ifile_info import IFileInfo
 from ..common.transfer_component import TransferComponent
 
-_LOGGER = logging.getLogger(__name__)
 lock = threading.Lock()
 
 class MqttTransfer(TransferComponent):
@@ -26,6 +25,7 @@ class MqttTransfer(TransferComponent):
         super().__init__(instName, hass, config)
         #self._state_topic = config.data[CONF_MQTT_PREFIX] + "/" + config.data[CONF_TOPIC_MOTION_DETECTION_IMAGE]
         self._state_topic = config[CONF_TOPIC]
+        self._path = self._state_topic
         self._mqtt_subscription = None
         self._last_image = None
         self._last_updated = None
@@ -37,25 +37,29 @@ class MqttTransfer(TransferComponent):
     @callback
     def message_received(self, msg):
         """Handle new MQTT messages."""
-        _LOGGER.debug(f"|{self._state_topic}| MQTT : {msg.topic}")
+        self._logger.debug(f"|{self._state_topic}| MQTT : {msg.topic}")
         data = msg.payload
         self._last_updated = datetime.now()
         self._last_image = data
-        file = MqttFileInfo(data)
+        file = MqttFileInfo(self._state_topic, data)
         self._files.put(file)
         # if self._retained_message:
         #     self._retained_message = False
         # else:
         try:
-            self._run(with_transfer=True)
+            self._run()
         except Exception as ex:
-            _LOGGER.exception(ex)
+            self._logger.exception(ex)
 
     async def subscribe_to_mqtt(self):
         self._subscription = await mqtt.async_subscribe(
             self._hass, self._state_topic, self.message_received, 0, None
         )
         return
+
+    def _schedule_refresh(self):
+        ''' OVERRIDE '''
+        pass # not needed for mqtt
 
     def run(self) -> TransferState:
         ''' OVERRIDE '''
@@ -74,7 +78,6 @@ class MqttTransfer(TransferComponent):
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         file.metadata[ATTR_SOURCE_HOST] = local_ip
-        file.metadata[ATTR_SOURCE_TYPE] = "mqtt"
         return io.BytesIO(self._last_image)
 
     def file_delete(self, file: IFileInfo):

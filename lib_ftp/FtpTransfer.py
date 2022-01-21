@@ -7,12 +7,10 @@ from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from ..common.ifile_info import IFileInfo
 from ..common.transfer_component import TransferComponent
-from ..const import ATTR_PATH, ATTR_SOURCE_FILE, ATTR_SOURCE_HOST, ATTR_SOURCE_TYPE, CONF_DATETIME_PATTERN, CONF_FTP
+from ..const import ATTR_SOURCE_HOST, CONF_DATETIME_PATTERN, CONF_FTP
 
 from .FtpConn import FtpConn
 from .ftp_file_info import FtpFileInfo
-
-_LOGGER = logging.getLogger(__name__)
 
 class FtpTransfer(TransferComponent):
     platform = CONF_FTP
@@ -51,7 +49,6 @@ class FtpTransfer(TransferComponent):
         
     def file_read(self, file: IFileInfo) -> Any:
         ''' OVERRIDE '''
-        file.metadata[ATTR_SOURCE_TYPE] = "ftp"
         file.metadata[ATTR_SOURCE_HOST] = self._config[CONF_HOST]
         with FtpConn(self._config) as ftp:
             return ftp.DownloadBytes(file.fullname)

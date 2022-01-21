@@ -1,6 +1,7 @@
 import logging
 
 import voluptuous as vol
+from .common.helper import getLogger
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (CONF_ENTITIES, CONF_HOST, CONF_NAME,
                                  CONF_PASSWORD, CONF_PLATFORM, CONF_SCAN_INTERVAL)
@@ -14,8 +15,6 @@ from .const import (CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
                     CONF_PATH, CONF_TO, CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
                     DEFAULT_TIME_INTERVAL, DOMAIN)
 from .common.transfer_manager import TransferManager
-
-PLATFORMS = ["sensor", "binary_sensor", "switch"]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -78,7 +77,7 @@ CONFIG_SCHEMA = vol.Schema(
             }, extra=vol.ALLOW_EXTRA)
     }, extra=vol.ALLOW_EXTRA)
 
-PLATFORMS = ["sensor", "switch", "camera"] #"media_player", "binary_sensor"
+PLATFORMS = ["sensor", "switch"]  # , "camera", "media_player", "binary_sensor"
 
 # def setup_platform(hass, config, add_devices, discovery_info=None):
 #     """Setup the sensor platform."""
@@ -102,13 +101,15 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
 
         name = entity_config[CONF_NAME]
         hass.data[DOMAIN][name] = manager
-        _LOGGER.info(f"Init of manager of '{name}' finished with succes")
+        logger = getLogger(__name__, name)
+        logger.info(f"Init of manager finished with succes")
 
         for component in PLATFORMS:
             hass.async_create_task(discovery.async_load_platform(
                 hass, component, DOMAIN, entity_config, global_config))
 
     return True
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up from a config entry."""

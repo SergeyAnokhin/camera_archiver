@@ -1,18 +1,21 @@
 from abc import abstractmethod
 from datetime import datetime
-import logging
 
-from voluptuous.validators import Any
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
-
-from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, ServiceCall
+from homeassistant.core import (CALLBACK_TYPE, HassJob, HomeAssistant,
+                                ServiceCall)
 from homeassistant.helpers.event import async_track_point_in_time
-from .transfer_state import StateType, TransferState
-from homeassistant.config_entries import ConfigEntry
-from .ifile_info import IFileInfo
-from ..const import ATTR_DESTINATION_FILE, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH, DOMAIN, SERVICE_FIELD_COMPONENT, SERVICE_FIELD_INSTANCE, SERVICE_RUN
+from voluptuous.validators import Any
 
-_LOGGER = logging.getLogger(__name__)
+from .. import getLogger
+from ..const import (ATTR_DESTINATION_FILE, ATTR_DESTINATION_PLATFORM,
+                     ATTR_SOURCE_PLATFORM, CONF_CLEAN, CONF_COPIED_PER_RUN,
+                     CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, CONF_FILES,
+                     CONF_PATH, DOMAIN, SERVICE_FIELD_COMPONENT,
+                     SERVICE_FIELD_INSTANCE, SERVICE_RUN)
+from .ifile_info import IFileInfo
+from .transfer_state import StateType
+
 
 class TransferComponent:
     platform: str = None
@@ -21,6 +24,7 @@ class TransferComponent:
         self._hass = hass
         self._instName = instName
         self._name = config.get(CONF_NAME, self.platform)
+        self._logger = getLogger(__name__, instName, self._name)
         self._transfer_file = None
         self._config = config
         self._copied_per_run = config.get(CONF_COPIED_PER_RUN, 100)
@@ -29,7 +33,7 @@ class TransferComponent:
         self._clean_dirs = self._clean.get(CONF_EMPTY_DIRECTORIES, False)
         self._clean_files = self._clean.get(CONF_FILES, list[str])
 
-        self._listeners: list[CALLBACK_TYPE] = []
+        self._listeners = {t: [] for t in StateType}
 
         self._job = HassJob(self.run)
         self._unsub_refresh: CALLBACK_TYPE = None
@@ -54,19 +58,20 @@ class TransferComponent:
         NotImplementedError()
 
     def _file_delete(self, file: IFileInfo):
-        _LOGGER.debug(f"Delete: [{file.basename}] @ {file.dirname}")
+        self._logger.debug(f"Delete: [{file.basename}] @ {file.dirname}")
         self.file_delete(file)
 
     def _new_file_readed(self, file: IFileInfo, content):
         if not content:
             raise Exception('Content is empty')
         file.metadata[ATTR_DESTINATION_FILE] = self.file_save(file, content)
-        _LOGGER.debug(f"Saved: [{file.metadata[ATTR_DESTINATION_FILE]}] content type: {type(content)}")
-        self._invoke_listeners(StateType.COPY, file, content)
+        file.metadata[ATTR_DESTINATION_PLATFORM] = self.platform
+        self._logger.debug(f"Saved: [{file.metadata[ATTR_DESTINATION_FILE]}] content type: {type(content)}")
+        self._invoke_save_listeners(file)
 
     def subscribe_to_service(self) -> None:
         async def _service_run(call: ServiceCall) -> None:
-            _LOGGER.info("service camera archive call")
+            self._logger.info("service camera archive call")
             data = dict(call.data)
             if self._instName != data[SERVICE_FIELD_INSTANCE]:
                 return
@@ -92,45 +97,42 @@ class TransferComponent:
             datetime.now().replace(microsecond=0) + scan_interval,
         )        
 
-    def add_listener(self, update_callback: CALLBACK_TYPE) -> None:
+    def add_listener(self, stateType: StateType, update_callback: CALLBACK_TYPE) -> None:
         """Listen for data updates."""
-        self._listeners.append(update_callback)
+        self._listeners[stateType].append(update_callback)
 
-    def _invoke_listeners(self, stateType: StateType, file: IFileInfo, content) -> None:
-        for callback in self._listeners:
-            callback(stateType, file, content)
+    def _invoke_read_listeners(self, file: IFileInfo, content) -> None:
+        for callback in self._listeners[StateType.READ]:
+            callback(file, content)
 
-    def _run(self, with_transfer=False) -> TransferState:
-        action_log = "Copy" if with_transfer else "Stat"
-        _LOGGER.debug(f"{action_log} from [{self._path}]: START")
-        state = TransferState()
+    def _invoke_repo_listeners(self, files: list[IFileInfo]) -> None:
+        for callback in self._listeners[StateType.REPOSITORY]:
+            callback(files)
 
-        if with_transfer:
-            files: list[IFileInfo] = self.get_files(self._copied_per_run)
-            _LOGGER.debug(f"Found files for copy: {len(files)}")
-            for file in files:
-                _LOGGER.debug(f"Read: [{file.fullname}]")
-                content = self.file_read(file)
-                self._invoke_listeners(StateType.READ, file, content)
-                self.file_delete(file)
-                state.Copy.append(file)
+    def _invoke_save_listeners(self, file: IFileInfo) -> None:
+        for callback in self._listeners[StateType.SAVE]:
+            callback(file)
 
-        state.Read.start()
+    def _run(self):
+        self._logger.debug(f"Read from [{self._path}]: START")
+
+        files: list[IFileInfo] = self.get_files(self._copied_per_run)
+        self._logger.debug(f"Found files for copy: {len(files)}")
+        for file in files:
+            self._logger.debug(f"Read: [{file.fullname}]")
+            content = self.file_read(file)
+            file.metadata[ATTR_SOURCE_PLATFORM] = self.platform
+            self._invoke_read_listeners(file, content)
+            self.file_delete(file)
+
         files = self.get_files(max=100)
-        state.Read.extend(files)
-        state.Read.stop()
-        state.Copy.stop()
-        _LOGGER.debug(f"Found: {state.Read}")
-        _LOGGER.debug(f"{action_log} from [{self._path}]: END, {state.Read}")
-        self._scedule_refresh()
-        return state
+        self._invoke_repo_listeners(files)
+        self._logger.debug(f"Read from [{self._path}]: END")
+        self._schedule_refresh()
 
-    def state(self) -> TransferState:
-        return self._run(with_transfer=False)
-
-    def run(self) -> TransferState:
+    def run(self, args):
         ''' External call force start '''
-        return self._run(with_transfer=True)
+        return self._run()
 
     def validate_file(self, file: IFileInfo) -> bool:
         dt = self.filename_datetime(file)
@@ -148,5 +150,5 @@ class TransferComponent:
             pattern = self._config[CONF_DATETIME_PATTERN]
             return datetime.strptime(path, pattern)
         except Exception as e:
-            _LOGGER.warn(f"Can't parse datetime from: '{path}' pattern: '{pattern}' Exception: {e}")
+            self._logger.warn(f"Can't parse datetime from: '{path}' pattern: '{pattern}' Exception: {e}")
             return None

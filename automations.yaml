@@ -8,8 +8,9 @@
       camera: Yi1080pWoodSouth
   action:
   #- service: camera_archiver.run
-  #- service: script.variable_test
-  - service: rest_command.elastic_cameraarchive
+  #- service: script.camera_archiver_run
+  - service: script.system_log_write
+  #- service: rest_command.elastic_cameraarchive
     data_template:
       index: '{{ trigger.event.data.timestamp | timestamp_custom("%Y.%m", False) }}'
       tags: 'camera_archiver activity motion camera archive webcam wifi'

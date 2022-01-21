@@ -6,11 +6,9 @@ from homeassistant.core import HomeAssistant
 from ..common.ifile_info import IFileInfo
 from .file_info import FileInfo
 from ..common.transfer_component import TransferComponent
-from ..const import ATTR_SOURCE_HOST, ATTR_SOURCE_TYPE, CONF_DATETIME_PATTERN, CONF_DIRECTORY
+from ..const import ATTR_SOURCE_HOST, CONF_DATETIME_PATTERN, CONF_DIRECTORY
 import os, io, logging, socket
 from pathlib import Path
-
-_LOGGER = logging.getLogger(__name__)
 
 class DirectoryTransfer(TransferComponent):
     platform = CONF_DIRECTORY
@@ -23,7 +21,7 @@ class DirectoryTransfer(TransferComponent):
         files: list[IFileInfo] = []
         for root, dirs, walk_files in os.walk(self._path):
             if self._clean_dirs and len(dirs) == len(walk_files) == 0 and root != self._path:
-                _LOGGER.debug(f"Remove empty directory: {root}")
+                self._logger.debug(f"Remove empty directory: {root}")
                 os.rmdir(root)
             for walk_file in walk_files:
                 file = FileInfo(f"{root}/{walk_file}")
@@ -41,7 +39,6 @@ class DirectoryTransfer(TransferComponent):
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         file.metadata[ATTR_SOURCE_HOST] = local_ip
-        file.metadata[ATTR_SOURCE_TYPE] = "os"
 
         with open(file.fullname, 'rb') as infile:
             return io.BytesIO(infile.read())
