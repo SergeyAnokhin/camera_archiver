@@ -13,7 +13,7 @@ from .common.state_collector import StateCollector
 from .common.transfer_component_id import TransferComponentId, TransferType
 from .common.transfer_state import StateType, TransferState
 from .const import (ATTR_ARCHIVER_STATE, ATTR_DURATION, ATTR_EXTENSIONS,
-                    ATTR_LAST, ATTR_SIZE, ATTR_TRANSFER_STATE, CONF_FROM, DOMAIN, ICON_COPIED,
+                    ATTR_LAST, ATTR_LAST_FILE, ATTR_SIZE, ATTR_SIZE_MB, ATTR_TRANSFER_STATE, CONF_FROM, DOMAIN, ICON_COPIED,
                     ICON_DEFAULT, ICON_TO_COPY, SENSOR_NAME_FILES_COPIED,
                     SENSOR_NAME_FILES_COPIED_LAST, SENSOR_NAME_TO_COPY_FILES)
 
@@ -65,12 +65,15 @@ class TransferCoordinatorSensor(CoordinatorEntity, SensorEntity):
         self.coordinator_updated(state)
         super()._handle_coordinator_update()
 
-    @abstractmethod
+    #@abstractmethod
     def coordinator_updated(self, state: TransferState):
-        NotImplementedError()
+        self._attr_native_value = state.files_count
+        self.set_attr(ATTR_SIZE_MB, state.files_size_mb)
+        self.set_attr(ATTR_EXTENSIONS, state.files_ext)
+        self.set_attr(ATTR_LAST_FILE, state.last)
 
-    # def add_attr(self, key: str, value) -> None:
-    #     self._attr_extra_state_attributes[key] = value
+    def set_attr(self, key: str, value) -> None:
+        self._attr_extra_state_attributes[key] = value
 
     # def add_attrs(self, keyvalues: dict) -> None:
     #     self._attr_extra_state_attributes = {
@@ -94,8 +97,6 @@ class FromComponentRepoSensor(TransferCoordinatorSensor):
             coordinator, 
             ICON_TO_COPY)
 
-    def coordinator_updated(self, state: TransferState):
-        self._attr_native_value = state.files_count
 
 class FromComponentReadSensor(TransferCoordinatorSensor):
     def __init__(self, comp_id: TransferComponentId, coordinator):
@@ -104,18 +105,12 @@ class FromComponentReadSensor(TransferCoordinatorSensor):
             coordinator, 
             ICON_COPIED)
 
-    def coordinator_updated(self, state: TransferState):
-        self._attr_native_value = state.files_count
-
 class ToComponentSaveSensor(TransferCoordinatorSensor):
     def __init__(self, comp_id: TransferComponentId, coordinator):
         super().__init__(comp_id, 
             StateType.SAVE, 
             coordinator, 
             ICON_COPIED)
-
-    def coordinator_updated(self, state: TransferState):
-        self._attr_native_value = state.files_count
 
 
 

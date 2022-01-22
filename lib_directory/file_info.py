@@ -6,7 +6,7 @@ class FileInfo(IFileInfo):
 
     def __init__(self, fullname: str) -> None:
         super().__init__()
-        self._fullname = fullname
+        self._fullname = fullname.replace("\\", "/")
         self._fullname_without_ext, self._ext = os.path.splitext(self._fullname)
         self._stat = os.stat(self._fullname)
         self._size = self._stat.st_size

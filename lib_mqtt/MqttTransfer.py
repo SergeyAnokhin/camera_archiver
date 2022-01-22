@@ -4,6 +4,7 @@ import queue
 import io
 import threading
 import socket
+import time
 from typing import Any
 
 from ..common.transfer_state import TransferState
@@ -43,13 +44,13 @@ class MqttTransfer(TransferComponent):
         self._last_image = data
         file = MqttFileInfo(self._state_topic, data)
         self._files.put(file)
-        # if self._retained_message:
-        #     self._retained_message = False
-        # else:
-        try:
-            self._run()
-        except Exception as ex:
-            self._logger.exception(ex)
+        if self._retained_message: # ignore first message after loading
+            self._retained_message = False
+        else:
+            try:
+                self._run()
+            except Exception as ex:
+                self._logger.exception(ex)
 
     async def subscribe_to_mqtt(self):
         self._subscription = await mqtt.async_subscribe(
