@@ -30,7 +30,7 @@ class TransferEntityContext:
         self._logger = getLogger(__name__, self._name)
 
     @callback
-    def fire_post_event(self, sender: TransferComponentId, file: IFileInfo):
+    def fire_post_event(self, sender: TransferComponentId, file: IFileInfo) -> None:
         dt = file.datetime # .replace(year=2031)  # TODO: remove replace
         dt = self.local.localize(dt)
         dt_utc = to_utc(dt)

@@ -1,20 +1,17 @@
-from datetime import timedelta
 import logging
 
 from homeassistant.const import CONF_NAME, CONF_PLATFORM
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from ..const import (ATTR_ARCHIVER_STATE, ATTR_COLLECTOR_LAST_SENDER_COMPONENT,
-                     ATTR_COLLECTOR_LAST_STATE_TYPE_UPDATED, ATTR_DURATION, ATTR_EXTENSIONS, ATTR_FILES, ATTR_ID,
-                     ATTR_INSTANCE_NAME, ATTR_LAST_FILE, ATTR_SIZE_MB, ATTR_TRANSFER_STATE, CONF_ENABLE, CONF_FROM, CONF_TO,
-                     DOMAIN)
+from ..const import CONF_FROM, CONF_TO
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from ..lib_mqtt.MqttTransfer import MqttTransfer
 from .helper import getLogger
 from .state_collector import StateCollector
-from .transfer_component import (TransferComponent, TransferComponentId)
+from .transfer_component import TransferComponent, TransferComponentId
+from .transfer_component_id import TransferType
 from .transfer_entity_context import TransferEntityContext
 from .transfer_state import StateType
 
@@ -40,8 +37,8 @@ class TransferBuilder:
     def build(self):
         self.logger.debug(f"Build transfer components")
         # Read config, create TransferComponents
-        self._from_comps = self.build_components(self._config, CONF_FROM)
-        self._to_comps = self.build_components(self._config, CONF_TO)
+        self._from_comps = self.build_components(self._config, TransferType.FROM)
+        self._to_comps = self.build_components(self._config, TransferType.TO)
         self._collectors = self.build_collectors([*self._from_comps, *self._to_comps])
 
         # Link components 'From'TransferComponent 1<->n 'To'TransferComponent (READ)
@@ -49,16 +46,32 @@ class TransferBuilder:
             for from_comp in self._from_comps:
                 from_comp.add_listener(StateType.READ, to_comp._new_file_readed)
 
+        collector: StateCollector = None
         # Listen components by StateCollector
         for comp in self._from_comps:
-            comp.add_listener(StateType.READ, self._collectors[comp.Id][StateType.READ].append)
-            comp.add_listener(StateType.REPOSITORY, self._collectors[comp.Id][StateType.REPOSITORY].set)
+            collector = self._collectors[comp.Id][StateType.READ]
+            comp.add_listener(StateType.READ, collector.append)
+            collector = self._collectors[comp.Id][StateType.REPOSITORY]
+            comp.add_listener(StateType.REPOSITORY, collector.set)
         for comp in self._to_comps:
-            comp.add_listener(StateType.SAVE, self._collectors[comp.Id][StateType.SAVE].append)
+            collector = self._collectors[comp.Id][StateType.SAVE]
+            comp.add_listener(StateType.SAVE, collector.append)
+
+        # Listen from DataUpdateCoordinator by component
+        for comp in self._from_comps:
+            collector = self._collectors[comp.Id][StateType.READ]
+            collector.add_listener(comp.settings_changed)
+            collector = self._collectors[comp.Id][StateType.REPOSITORY]
+            collector.add_listener(comp.settings_changed)
+        for comp in self._to_comps:
+            collector = self._collectors[comp.Id][StateType.SAVE]
+            collector.add_listener(comp.settings_changed)
+
 
         # Listen from components SAVE by runner
         for comp in self._to_comps:
             comp.add_listener(StateType.SAVE, self._context.fire_post_event)
+
 
     def build_coordinators_dict(self) -> dict[TransferComponentId:  dict[StateType: DataUpdateCoordinator]]:
         return { 
@@ -69,14 +82,14 @@ class TransferBuilder:
             for key, value in self._collectors.items()
         }
             
-    def build_components(self, config: dict, dir_key: str) -> list[TransferComponent]:
+    def build_components(self, config: dict, transferType: TransferType) -> list[TransferComponent]:
         components: list[TransferComponent] = []
         components_by_platform = {c.platform: c for c in COMPONENTS_LIST}
 
-        for value in config[dir_key]:
+        for value in config[transferType.value]:
             platform = value[CONF_PLATFORM]
             class_type = components_by_platform[platform]
-            id = TransferComponentId(self._name, dir_key)
+            id = TransferComponentId(self._name, transferType)
             transfer = class_type(id, self._hass, value)
             components.append(transfer)
         return components      
@@ -97,13 +110,13 @@ class TransferBuilder:
         coordinator = DataUpdateCoordinator(
             self._hass,
             logging.getLogger(__name__),
-            name=f"{id.id}({type})",
+            name=f"{id.id}({type.value})",
             # request_refresh_debouncer=Debouncer(
             #     hass, self.logger, cooldown=600, immediate=False
             # )
         )
 
-        return StateCollector(id, coordinator)
+        return StateCollector(id, type, coordinator)
 
 
         # hass.data[DOMAIN][self._name] = coordinatorInst

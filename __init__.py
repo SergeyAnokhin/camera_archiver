@@ -77,7 +77,7 @@ CONFIG_SCHEMA = vol.Schema(
             }, extra=vol.ALLOW_EXTRA)
     }, extra=vol.ALLOW_EXTRA)
 
-PLATFORMS = ["sensor"]  # , "switch", "camera", "media_player", "binary_sensor"
+PLATFORMS = ["sensor", "switch"]  # , "camera", "media_player", "binary_sensor"
 
 # def setup_platform(hass, config, add_devices, discovery_info=None):
 #     """Setup the sensor platform."""

@@ -14,7 +14,6 @@ CONF_TOPIC = "topic"
 CONF_PATH = "path"
 CONF_DATETIME_PATTERN = "datetime_pattern"
 CONF_TRIGGERS = "triggers"
-CONF_ENABLE = "enable"
 CONF_CLEAN = "clean"
 CONF_EMPTY_DIRECTORIES = "empty_directories"
 CONF_FILES = "files"
@@ -78,7 +77,7 @@ ATTR_EXTENSIONS = "Extensions"
 ATTR_DURATION = "Duration"
 ATTR_LAST_FILE = "LastFile"
 ATTR_TRANSFER_STATE = "TransferState"
-
+ATTR_ENABLE = "enable"
 
 EVENT_CAMERA_ARCHIVER_FILE_COPIED = "CameraArchiverFileCopied"
 

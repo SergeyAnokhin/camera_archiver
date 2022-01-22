@@ -11,12 +11,12 @@ from voluptuous.validators import Any
 from .. import getLogger
 from ..const import (ATTR_DESTINATION_FILE, ATTR_DESTINATION_PLATFORM,
                      ATTR_SOURCE_PLATFORM, CONF_CLEAN, CONF_COPIED_PER_RUN,
-                     CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, CONF_FILES,
+                     CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, ATTR_ENABLE, CONF_FILES,
                      CONF_FROM, CONF_PATH, CONF_TO, DEFAULT_TIME_INTERVAL,
                      DOMAIN, SERVICE_FIELD_COMPONENT, SERVICE_FIELD_DIRECTION,
                      SERVICE_FIELD_INSTANCE, SERVICE_RUN)
 from .ifile_info import IFileInfo
-from .transfer_component_id import TransferComponentId
+from .transfer_component_id import TransferComponentId, TransferType
 from .transfer_state import StateType
 
 
@@ -36,14 +36,15 @@ class TransferComponent:
         self._clean = config.get(CONF_CLEAN, {})
         self._clean_dirs = self._clean.get(CONF_EMPTY_DIRECTORIES, False)
         self._clean_files = self._clean.get(CONF_FILES, list[str])
+        self._is_enabled: dict[StateType] = {t: True for t in StateType}
 
         self._listeners = {t: [] for t in StateType}
 
         self._job = HassJob(self.async_run)
         self._unsub_refresh: CALLBACK_TYPE = None
-        self._schedule_refresh()
-
-        self.subscribe_to_service()
+        if self._id.TransferType == TransferType.FROM:
+            self._schedule_refresh()
+            self.subscribe_to_service()
 
     @abstractmethod
     def file_read(self, file: IFileInfo) -> Any:
@@ -69,13 +70,23 @@ class TransferComponent:
         self._logger.debug(f"Delete: [{file.basename}] @ {file.dirname}")
         self.file_delete(file)
 
-    def _new_file_readed(self, comp_id: TransferComponentId, file: IFileInfo, content):
+    def _new_file_readed(self, comp_id: TransferComponentId, file: IFileInfo, content) -> bool:
+        if not self._is_enabled[StateType.SAVE]:
+            return False
         if not content:
             raise Exception(f'Content is empty. Components: {self._id} -> {comp_id}')
         file.metadata[ATTR_DESTINATION_FILE] = self.file_save(file, content)
         file.metadata[ATTR_DESTINATION_PLATFORM] = self.platform
         self._logger.debug(f"Saved: [{file.metadata[ATTR_DESTINATION_FILE]}] content type: {type(content)}")
         self._invoke_save_listeners(file)
+        return True # need ack for file delete permission
+
+    def settings_changed(self, stateType: StateType, data) -> None:
+        if self._is_enabled[stateType] == data[ATTR_ENABLE]:
+            return
+        self._is_enabled[stateType] = data[ATTR_ENABLE]
+        if stateType == StateType.REPOSITORY:
+            self._schedule_refresh()
 
     def subscribe_to_service(self) -> None:
         async def _service_run(call: ServiceCall) -> None:
@@ -85,21 +96,24 @@ class TransferComponent:
                 return
             if self._id.Name != data[SERVICE_FIELD_COMPONENT]:
                 return
-            if self._id.TransferType.name != data[SERVICE_FIELD_DIRECTION]:
+            if self._id.TransferType != TransferType.FROM:
                 return
             self.run()
 
         self._hass.services.async_register(DOMAIN, SERVICE_RUN, _service_run)
 
-    def _schedule_refresh(self):
-        if CONF_SCAN_INTERVAL not in self._config:
-            return
-
-        scan_interval = self._config.get(CONF_SCAN_INTERVAL, DEFAULT_TIME_INTERVAL)
+    def _schedule_off(self):
         if self._unsub_refresh:
             self._unsub_refresh()
             self._unsub_refresh = None
 
+    def _schedule_refresh(self):
+        self._schedule_off()
+        if CONF_SCAN_INTERVAL not in self._config \
+            or not self._is_enabled[StateType.REPOSITORY]:
+            return
+
+        scan_interval = self._config.get(CONF_SCAN_INTERVAL, DEFAULT_TIME_INTERVAL)
         self._unsub_refresh = async_track_point_in_time(
             self._hass,
             self._job,
@@ -110,9 +124,12 @@ class TransferComponent:
         """Listen for data updates."""
         self._listeners[stateType].append(update_callback)
 
-    def _invoke_read_listeners(self, file: IFileInfo, content) -> None:
+    def _invoke_read_listeners(self, file: IFileInfo, content) -> bool:
+        results: list = []
         for callback in self._listeners[StateType.READ]:
-            callback(self._id, file, content)
+            results.append(callback(self._id, file, content))
+
+        return True in results # check if any compinent recieved and saved file
 
     def _invoke_repo_listeners(self, files: list[IFileInfo]) -> None:
         for callback in self._listeners[StateType.REPOSITORY]:
@@ -124,15 +141,18 @@ class TransferComponent:
 
     def _run(self):
         self._logger.debug(f"Read from [{self._path}]: START")
+        if not self._is_enabled[StateType.REPOSITORY]:
+            return
 
-        files: list[IFileInfo] = self.get_files(self._copied_per_run)
-        self._logger.debug(f"Found files for copy: {len(files)}")
-        for file in files:
-            self._logger.debug(f"Read: [{file.fullname}]")
-            content = self.file_read(file)
-            file.metadata[ATTR_SOURCE_PLATFORM] = self.platform
-            self._invoke_read_listeners(file, content)
-            self.file_delete(file)
+        if self._is_enabled[StateType.READ]:
+            files: list[IFileInfo] = self.get_files(self._copied_per_run)
+            self._logger.debug(f"Found files for copy: {len(files)}")
+            for file in files:
+                self._logger.debug(f"Read: [{file.fullname}]")
+                content = self.file_read(file)
+                file.metadata[ATTR_SOURCE_PLATFORM] = self.platform
+                if self._invoke_read_listeners(file, content):
+                    self.file_delete(file)
 
         files = self.get_files(max=100)
         self._invoke_repo_listeners(files)

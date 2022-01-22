@@ -13,8 +13,8 @@ class TransferComponentId:
     TransferType: TransferType = None
     Name: str = None
 
-    def __init__(self, entity: str, transferType: str) -> None:
-        self.TransferType = TransferType.FROM if transferType == CONF_FROM else TransferType.TO
+    def __init__(self, entity: str, transferType: TransferType) -> None:
+        self.TransferType = transferType
         self.Entity = entity
 
     @property

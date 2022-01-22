@@ -52,9 +52,16 @@ class TransferCoordinatorSensor(CoordinatorEntity, SensorEntity):
         self._attr_unit_of_measurement = unit
         self._attr_icon = icon
         self._attr_native_value = None
-        self._attr_available = False
+        # self._attr_available = False
         self._attr_extra_state_attributes = {}
         self._stateType: StateType = stateType
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self.coordinator.data \
+            and ATTR_TRANSFER_STATE in self.coordinator.data \
+            and self.coordinator.data[ATTR_TRANSFER_STATE] is not None
 
     @callback
     def _handle_coordinator_update(self):
