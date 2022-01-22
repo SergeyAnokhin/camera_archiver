@@ -38,6 +38,11 @@ class StateCollector:
         self._state.append(file)
         self._update_coordinator()
 
+    @callback
+    def extend(self, _: TransferComponentId, files: list[IFileInfo], contents = []) -> None:
+        self._state.extend(files)
+        self._update_coordinator()
+
     def _coordinator_update_method(self) -> dict:
         data = self._coordinator.data
         data[ATTR_TRANSFER_STATE] = self._state

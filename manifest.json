@@ -6,5 +6,5 @@
   "codeowners": ["@SergeyAnokhin"],
   "iot_class": "local_push",
   "config_flow": false,
-  "version": "v0.0.1"
+  "version": "v0.1.0"
 }

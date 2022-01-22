@@ -13,7 +13,6 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import ATTR_ENABLE, DOMAIN
-from .common.transfer_builder import TransferBuilder
 
 _LOGGER = logging.getLogger(__name__)
 

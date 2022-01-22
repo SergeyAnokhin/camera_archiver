@@ -12,7 +12,7 @@ from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
 from .common.state_collector import StateCollector
 from .common.transfer_component_id import TransferComponentId, TransferType
 from .common.transfer_state import StateType, TransferState
-from .const import (ATTR_ARCHIVER_STATE, ATTR_DURATION, ATTR_EXTENSIONS,
+from .const import (ATTR_ARCHIVER_STATE, ATTR_DURATION, ATTR_ENABLE, ATTR_EXTENSIONS,
                     ATTR_LAST, ATTR_LAST_FILE, ATTR_SIZE, ATTR_SIZE_MB, ATTR_TRANSFER_STATE, CONF_FROM, DOMAIN, ICON_COPIED,
                     ICON_DEFAULT, ICON_TO_COPY, SENSOR_NAME_FILES_COPIED,
                     SENSOR_NAME_FILES_COPIED_LAST, SENSOR_NAME_TO_COPY_FILES)
@@ -55,25 +55,38 @@ class TransferCoordinatorSensor(CoordinatorEntity, SensorEntity):
         # self._attr_available = False
         self._attr_extra_state_attributes = {}
         self._stateType: StateType = stateType
+        self.data = self.coordinator.data
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.coordinator.data \
-            and ATTR_TRANSFER_STATE in self.coordinator.data \
-            and self.coordinator.data[ATTR_TRANSFER_STATE] is not None
+        return self.coordinator.data[ATTR_ENABLE]
+
+    @property
+    def enabled(self) -> bool:
+        return self.coordinator.data[ATTR_ENABLE]
+    @property
+    def has_transfer_state(self) -> bool:
+        return ATTR_TRANSFER_STATE in self.data \
+            and self.data[ATTR_TRANSFER_STATE] \
+            and isinstance(self.data[ATTR_TRANSFER_STATE], TransferState)
 
     @callback
     def _handle_coordinator_update(self):
         """Call when the coordinator has an update."""
-        if not self.available:
-            return
+        if self.enabled and not self.has_transfer_state:
+            self.coordinator.data[ATTR_TRANSFER_STATE] = TransferState(self._stateType)
+
         state: TransferState = self.coordinator.data[ATTR_TRANSFER_STATE]
         self.coordinator_updated(state)
         super()._handle_coordinator_update()
 
+
     #@abstractmethod
     def coordinator_updated(self, state: TransferState):
+        self.set_attr(ATTR_ENABLE, self.available)
+        if not state:
+            return
         self._attr_native_value = state.files_count
         self.set_attr(ATTR_SIZE_MB, state.files_size_mb)
         self.set_attr(ATTR_EXTENSIONS, state.files_ext)
