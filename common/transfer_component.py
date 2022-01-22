@@ -12,31 +12,13 @@ from .. import getLogger
 from ..const import (ATTR_DESTINATION_FILE, ATTR_DESTINATION_PLATFORM,
                      ATTR_SOURCE_PLATFORM, CONF_CLEAN, CONF_COPIED_PER_RUN,
                      CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, CONF_FILES,
-                     CONF_PATH, DOMAIN, SERVICE_FIELD_COMPONENT, SERVICE_FIELD_DIRECTION,
+                     CONF_FROM, CONF_PATH, CONF_TO, DEFAULT_TIME_INTERVAL,
+                     DOMAIN, SERVICE_FIELD_COMPONENT, SERVICE_FIELD_DIRECTION,
                      SERVICE_FIELD_INSTANCE, SERVICE_RUN)
 from .ifile_info import IFileInfo
+from .transfer_component_id import TransferComponentId
 from .transfer_state import StateType
 
-
-class TransferType(Enum):
-    FROM = "from"
-    TO = "to"
-
-class TransferComponentId:
-    Entity: str = None
-    TransferType: TransferType = None
-    Name: str = None
-
-    @property
-    def id(self):
-        return f"{self.Entity}.{self.TransferType}.{self.Name}"
-
-    @property
-    def fullname(self):
-        return f"{self.Entity} {self.TransferType} {self.Name}"
-
-    def __str__(self):
-        return self.id
 
 class TransferComponent:
     platform: str = None
@@ -79,6 +61,10 @@ class TransferComponent:
     def file_save(self, file: IFileInfo, content):
         NotImplementedError()
 
+    @property
+    def Id(self):
+        return self._id
+
     def _file_delete(self, file: IFileInfo):
         self._logger.debug(f"Delete: [{file.basename}] @ {file.dirname}")
         self.file_delete(file)
@@ -105,12 +91,11 @@ class TransferComponent:
 
         self._hass.services.async_register(DOMAIN, SERVICE_RUN, _service_run)
 
-
     def _schedule_refresh(self):
         if CONF_SCAN_INTERVAL not in self._config:
-            return 
+            return
 
-        scan_interval = self._config[CONF_SCAN_INTERVAL]
+        scan_interval = self._config.get(CONF_SCAN_INTERVAL, DEFAULT_TIME_INTERVAL)
         if self._unsub_refresh:
             self._unsub_refresh()
             self._unsub_refresh = None
@@ -119,7 +104,7 @@ class TransferComponent:
             self._hass,
             self._job,
             datetime.now().replace(microsecond=0) + scan_interval,
-        )        
+        )
 
     def add_listener(self, stateType: StateType, update_callback: CALLBACK_TYPE) -> None:
         """Listen for data updates."""
@@ -165,7 +150,7 @@ class TransferComponent:
     def validate_file(self, file: IFileInfo) -> bool:
         dt = self.filename_datetime(file)
         if dt == None:
-            return False # ignore file
+            return False  # ignore file
         file.datetime = dt
         return True
 

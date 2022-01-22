@@ -14,15 +14,15 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.components import mqtt
 from ..common.ifile_info import IFileInfo
-from ..common.transfer_component import TransferComponent
+from ..common.transfer_component import TransferComponent, TransferComponentId
 
 lock = threading.Lock()
 
 class MqttTransfer(TransferComponent):
     platform = CONF_MQTT
 
-    def __init__(self, instName: str, hass: HomeAssistant, config: ConfigEntry):
-        super().__init__(instName, hass, config)
+    def __init__(self, id: TransferComponentId, hass: HomeAssistant, config: ConfigEntry):
+        super().__init__(id, hass, config)
         #self._state_topic = config.data[CONF_MQTT_PREFIX] + "/" + config.data[CONF_TOPIC_MOTION_DETECTION_IMAGE]
         self._state_topic = config[CONF_TOPIC]
         self._path = self._state_topic

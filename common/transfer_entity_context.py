@@ -4,22 +4,23 @@ from datetime import datetime
 from typing import cast
 
 import pytz
-from config.custom_components.camera_archiver.common.transfer_component import TransferComponentId
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from ..const import (ATTR_CAMERA, ATTR_EXT, ATTR_ID, ATTR_MIMETYPE, ATTR_SIZE,
                      ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED,
                      ATTR_TIMESTAMP, ATTR_TIMESTAMP_STR,
-                     ATTR_TIMESTAMP_STR_UTC,
-                     EVENT_CAMERA_ARCHIVER_FILE_COPIED)
-from .helper import getLogger
+                     ATTR_TIMESTAMP_STR_UTC, EVENT_CAMERA_ARCHIVER_FILE_COPIED)
+from .helper import getLogger, to_str_timestamp, to_utc
 from .ifile_info import IFileInfo
+from .transfer_component import TransferComponentId
+from .transfer_state import TransferState
 
 mimetypes.init()
 
-class TransferRunner:
+class TransferEntityContext:
 
     def __init__(self, config: ConfigEntry, hass: HomeAssistant):
         self._config = config
@@ -32,11 +33,11 @@ class TransferRunner:
     def fire_post_event(self, sender: TransferComponentId, file: IFileInfo):
         dt = file.datetime # .replace(year=2031)  # TODO: remove replace
         dt = self.local.localize(dt)
-        dt_utc = self.to_utc(dt)
+        dt_utc = to_utc(dt)
         timestamp = datetime.timestamp(dt)
-        timestamp_str_utc = self.to_str_timestamp(dt_utc)
-        timestamp_str = self.to_str_timestamp(dt)
-        modif_timestamp_str = self.to_str_timestamp(file.modif_datetime)
+        timestamp_str_utc = to_str_timestamp(dt_utc)
+        timestamp_str = to_str_timestamp(dt)
+        modif_timestamp_str = to_str_timestamp(file.modif_datetime)
 
         mimestart = mimetypes.guess_type(file.basename)[0] or "unknown/ext"
         mimestart = mimestart.split('/')[0]
@@ -59,10 +60,3 @@ class TransferRunner:
         self._logger.debug(f"Fire event: ID# {id}")
         self._logger.debug(json.dumps(entry, indent=4))
         self._hass.bus.fire(EVENT_CAMERA_ARCHIVER_FILE_COPIED, entry)
-
-    def to_utc(self, dt: datetime) -> datetime:
-        #local_dt = self.local.localize(dt)
-        return dt.astimezone(pytz.utc)
-
-    def to_str_timestamp(self, dt: datetime) -> str:
-        return dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')

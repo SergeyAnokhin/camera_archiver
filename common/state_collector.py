@@ -1,50 +1,46 @@
-from ntpath import join
-
-from .transfer_component import TransferComponentId
-from .ifile_info import IFileInfo
-from homeassistant.core import CALLBACK_TYPE, callback
+from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from .transfer_state import StateType, TransferState
+
+from ..const import ATTR_ID, ATTR_TRANSFER_STATE, CONF_ENABLE
+from .ifile_info import IFileInfo
+from .transfer_component import TransferComponentId
+from .transfer_state import TransferState
 
 
 class StateCollector:
 
-    def __init__(self) -> None:
-        self._states = {type: {}  for type in StateType}
-        self._listeners = []
+    def __init__(self, id: TransferComponentId, coordinator: DataUpdateCoordinator) -> None:
+        self._state = TransferState()
+        self._coordinator = coordinator
+        self._coordinator.data = {
+            ATTR_ID: id,
+            CONF_ENABLE: True,
+            ATTR_TRANSFER_STATE: None,
+        }
+        self._id = id
+
+    @property
+    def coordinator(self) -> DataUpdateCoordinator:
+        return self._coordinator
 
     @callback
-    def append_repository(self, sender: TransferComponentId, files: list[IFileInfo]):
-        ''' override old values '''
-        #repo: TransferState = self._states[StateType.REPOSITORY]
-        repo = TransferState(StateType.REPOSITORY)
-        repo.extend(files)
-        self._states[StateType.REPOSITORY] = repo
-        self._invoke_listeners(StateType.REPOSITORY, sender)
+    def set(self, _: TransferComponentId, files: list[IFileInfo]):
+        self._state = TransferState()
+        self._state.extend(files)
+        self._update_coordinator()
 
     @callback
-    def append_read(self, sender: TransferComponentId, file: IFileInfo, content):
-        read: TransferState = self._states[StateType.READ]
-        read.append(file)
-        self._invoke_listeners(StateType.REPOSITORY, sender)
+    def append(self, _: TransferComponentId, file: IFileInfo, content = None):
+        self._state.append(file)
+        self._update_coordinator()
 
-    @callback
-    def append_save(self, sender: TransferComponentId, file: IFileInfo):
-        save: TransferState = self._states[StateType.SAVE]
-        save.append(file)
-        self._invoke_listeners(StateType.SAVE, sender)
-
-    def add_listener(self, update_callback: CALLBACK_TYPE) -> None:
-        """Listen for data updates."""
-        self._listeners.append(update_callback)
-
-    def _invoke_listeners(self, stateType: StateType, sender: TransferComponentId) -> None:
-        for callback in self._listeners:
-            callback(stateType, sender, self)
+    def _update_coordinator(self) -> None:
+        data = self._coordinator.data
+        data[ATTR_TRANSFER_STATE] = self._state
+        self._coordinator.async_set_updated_data(data)
 
     def __str__(self):
-        types = " ".join([f"{key}:{state.files_count}" for key, state in self._states.items()])
-        return f"[Collector: {types}"
+        return f"[Collector: ID# {self._id} {self._state}]"
 
     def __repr__(self):
         return self.__str__()

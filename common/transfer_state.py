@@ -10,7 +10,7 @@ class StateType(Enum):
     SAVE = "Save"  # Save file from memory to new repository
 
 class TransferState:
-    def __init__(self, type: StateType) -> None:
+    def __init__(self, type: StateType = None) -> None:
         self._type = type
         self._files: list[str] = []
         self._size = 0

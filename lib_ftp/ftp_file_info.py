@@ -36,6 +36,3 @@ class FtpFileInfo(IFileInfo):
     def fullnameWithoutExt(self) -> str:
         withoutExt, _ = os.path.splitext(self.fullname)
         return withoutExt
-
-    def relname(self, root: str) -> str:
-        return self._fullname.lstrip(root).lstrip("/")

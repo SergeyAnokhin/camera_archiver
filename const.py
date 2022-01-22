@@ -72,6 +72,13 @@ ATTR_ARCHIVER_STATE = "ArchiverState"
 ATTR_COLLECTOR_LAST_STATE_TYPE_UPDATED = "CollectorLastStateTypeUpdated"
 ATTR_COLLECTOR_LAST_SENDER_COMPONENT = "CollectorLastSenderComponent"
 ATTR_INSTANCE_NAME = "instance_name"
+ATTR_FILES = "files"
+ATTR_SIZE_MB = "SizeMb"
+ATTR_EXTENSIONS = "Extensions"
+ATTR_DURATION = "Duration"
+ATTR_LAST_FILE = "LastFile"
+ATTR_TRANSFER_STATE = "TransferState"
+
 
 EVENT_CAMERA_ARCHIVER_FILE_COPIED = "CameraArchiverFileCopied"
 

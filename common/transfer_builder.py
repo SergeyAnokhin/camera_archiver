@@ -1,3 +1,4 @@
+from datetime import timedelta
 import logging
 
 from homeassistant.const import CONF_NAME, CONF_PLATFORM
@@ -5,17 +6,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from ..const import (ATTR_ARCHIVER_STATE, ATTR_COLLECTOR_LAST_SENDER_COMPONENT,
-                     ATTR_COLLECTOR_LAST_STATE_TYPE_UPDATED,
-                     ATTR_INSTANCE_NAME, CONF_ENABLE, CONF_FROM, CONF_TO,
+                     ATTR_COLLECTOR_LAST_STATE_TYPE_UPDATED, ATTR_DURATION, ATTR_EXTENSIONS, ATTR_FILES, ATTR_ID,
+                     ATTR_INSTANCE_NAME, ATTR_LAST_FILE, ATTR_SIZE_MB, ATTR_TRANSFER_STATE, CONF_ENABLE, CONF_FROM, CONF_TO,
                      DOMAIN)
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from ..lib_mqtt.MqttTransfer import MqttTransfer
 from .helper import getLogger
 from .state_collector import StateCollector
-from .transfer_component import (TransferComponent, TransferComponentId,
-                                 TransferType)
-from .transfer_runner import TransferRunner
+from .transfer_component import (TransferComponent, TransferComponentId)
+from .transfer_entity_context import TransferEntityContext
 from .transfer_state import StateType
 
 COMPONENTS_LIST = [
@@ -24,7 +24,7 @@ COMPONENTS_LIST = [
     MqttTransfer,
 ]
 
-class TransferManager:
+class TransferBuilder:
 
     def __init__(self, hass: HomeAssistant, platform_config: dict, config: dict) -> None:
         self._hass = hass
@@ -32,20 +32,17 @@ class TransferManager:
         self._coordinator: DataUpdateCoordinator = None
         self._name = self._config[CONF_NAME]
         self.logger = getLogger(__name__, self._name)
-        self._runner: TransferRunner = TransferRunner(config, hass)
+        self._context: TransferEntityContext = TransferEntityContext(config, hass)
         self._from_comps: list[TransferComponent] = []
         self._to_comps: list[TransferComponent] = []
-        self._collector: StateCollector = None
+        self._collectors: dict[TransferComponentId:  dict[StateType: StateCollector]] = {}
 
-    @property
-    def coordinator(self) -> DataUpdateCoordinator:
-        return self._coordinator
-
-    def build_transfer_components(self):
+    def build(self):
         self.logger.debug(f"Build transfer components")
         # Read config, create TransferComponents
-        self._from_comps = self.build_components(self._config[CONF_FROM])
-        self._to_comps = self.build_components(self._config[CONF_TO])
+        self._from_comps = self.build_components(self._config, CONF_FROM)
+        self._to_comps = self.build_components(self._config, CONF_TO)
+        self._collectors = self.build_collectors([*self._from_comps, *self._to_comps])
 
         # Link components 'From'TransferComponent 1<->n 'To'TransferComponent (READ)
         for to_comp in self._to_comps:
@@ -54,73 +51,65 @@ class TransferManager:
 
         # Listen components by StateCollector
         for comp in self._from_comps:
-            comp.add_listener(StateType.READ, self._collector.append_read)
-        for comp in self._from_comps:
-            comp.add_listener(StateType.REPOSITORY, self._collector.append_repository)
+            comp.add_listener(StateType.READ, self._collectors[comp.Id][StateType.READ].append)
+            comp.add_listener(StateType.REPOSITORY, self._collectors[comp.Id][StateType.REPOSITORY].set)
         for comp in self._to_comps:
-            comp.add_listener(StateType.SAVE, self._collector.append_save)
+            comp.add_listener(StateType.SAVE, self._collectors[comp.Id][StateType.SAVE].append)
 
         # Listen from components SAVE by runner
         for comp in self._to_comps:
-            comp.add_listener(StateType.SAVE, self._runner.fire_post_event)
+            comp.add_listener(StateType.SAVE, self._context.fire_post_event)
 
-        # Listen collector by dataUpdater
-        self._collector.add_listener(self._coordinator_update_data)
-
-    def _coordinator_update_data(self, stateType: StateType, sender: TransferComponentId, collector: StateCollector):
-        data = self._coordinator.data
-        data[ATTR_COLLECTOR_LAST_STATE_TYPE_UPDATED] = stateType
-        data[ATTR_COLLECTOR_LAST_SENDER_COMPONENT] = sender
-        self._coordinator.async_set_updated_data(data)
-
-    def build_components(self, config: list) -> list[TransferComponent]:
+    def build_coordinators_dict(self) -> dict[TransferComponentId:  dict[StateType: DataUpdateCoordinator]]:
+        return { 
+            key: { # TransferComponentId:
+                key1: value1.coordinator # StateType: DataUpdateCoordinator
+                for key1, value1 in value.items()    
+            }
+            for key, value in self._collectors.items()
+        }
+            
+    def build_components(self, config: dict, dir_key: str) -> list[TransferComponent]:
         components: list[TransferComponent] = []
         components_by_platform = {c.platform: c for c in COMPONENTS_LIST}
 
-        for value in config:
+        for value in config[dir_key]:
             platform = value[CONF_PLATFORM]
             class_type = components_by_platform[platform]
-            transfer = class_type(self._name, self._hass, value)
+            id = TransferComponentId(self._name, dir_key)
+            transfer = class_type(id, self._hass, value)
             components.append(transfer)
         return components      
 
-    def build_coordinator(self):
-        hass = self._hass
-        config = self._config
+    def build_collectors(self, comps: list[TransferComponent]) -> dict[TransferComponentId:  dict[StateType: StateCollector]]:
+        return {
+            comp.Id: self.build_collectors_by_state(comp.Id) 
+            for comp in comps
+        }
 
-        self.logger.debug(f"Build coordinator")
+    def build_collectors_by_state(self, id: TransferComponentId) -> dict[StateType: StateCollector]:
+        return {
+            type: self.build_collector(id, type) 
+            for type in StateType
+        }
 
-        self._coordinator = DataUpdateCoordinator(
-            hass,
+    def build_collector(self, id: TransferComponentId, type: StateType) -> StateCollector:
+        coordinator = DataUpdateCoordinator(
+            self._hass,
             logging.getLogger(__name__),
-            name=DOMAIN,
-            # #update_interval = timedelta(days=10),
+            name=f"{id.id}({type})",
             # request_refresh_debouncer=Debouncer(
             #     hass, self.logger, cooldown=600, immediate=False
             # )
         )
 
-        self._collector = StateCollector()
+        return StateCollector(id, coordinator)
 
-        self._coordinator.last_update_success = False
-        self._coordinator.data = {
-            ATTR_INSTANCE_NAME: self._name,
-            CONF_ENABLE: True,
-            ATTR_ARCHIVER_STATE: self._collector,
-            ATTR_COLLECTOR_LAST_STATE_TYPE_UPDATED: None,
-            ATTR_COLLECTOR_LAST_SENDER_COMPONENT: None
-        }
+
         # hass.data[DOMAIN][self._name] = coordinatorInst
-
-
         # def _enable_scheduled_speedtests(*_):
         #     """Activate the data update coordinator."""
         #     coordinatorInst.update_interval = timedelta(days = 10)
-
-        # coordinatorInst.update_interval = config[CONF_SCAN_INTERVAL]
-        # coordinatorInst.update_method = self.async_get_status
-
-        #await coordinatorInst.async_refresh()
 
         # if hass.state == CoreState.running:
         #     _enable_scheduled_speedtests()
@@ -132,6 +121,4 @@ class TransferManager:
         #         EVENT_HOMEASSISTANT_STARTED, _enable_scheduled_speedtests
         #     )
 
-        # scan_interval = config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         # await async_setup_sensor_registry_updates(hass, sensor_registry, scan_interval)
-

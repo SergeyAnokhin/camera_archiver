@@ -14,7 +14,7 @@ from .const import (CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
                     CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MQTT,
                     CONF_PATH, CONF_TO, CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
                     DEFAULT_TIME_INTERVAL, DOMAIN)
-from .common.transfer_manager import TransferManager
+from .common.transfer_builder import TransferBuilder
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ CONFIG_SCHEMA = vol.Schema(
             }, extra=vol.ALLOW_EXTRA)
     }, extra=vol.ALLOW_EXTRA)
 
-PLATFORMS = ["sensor", "switch"]  # , "camera", "media_player", "binary_sensor"
+PLATFORMS = ["sensor"]  # , "switch", "camera", "media_player", "binary_sensor"
 
 # def setup_platform(hass, config, add_devices, discovery_info=None):
 #     """Setup the sensor platform."""
@@ -95,12 +95,11 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
     entities = config[CONF_ENTITIES]
 
     for entity_config in entities:
-        manager = TransferManager(hass, config, entity_config)
-        manager.build_coordinator()
-        manager.build_transfer_components()
+        builder = TransferBuilder(hass, config, entity_config)
+        builder.build()
 
         name = entity_config[CONF_NAME]
-        hass.data[DOMAIN][name] = manager
+        hass.data[DOMAIN][name] = builder.build_coordinators_dict()
         logger = getLogger(__name__, name)
         logger.info(f"Init of manager finished with succes")
 

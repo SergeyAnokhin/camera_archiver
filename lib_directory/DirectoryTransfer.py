@@ -1,20 +1,20 @@
 from sys import platform
 from typing import Any
+from ..common.helper import mkdir_by
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from ..common.ifile_info import IFileInfo
 from .file_info import FileInfo
-from ..common.transfer_component import TransferComponent
+from ..common.transfer_component import TransferComponent, TransferComponentId
 from ..const import ATTR_SOURCE_HOST, CONF_DATETIME_PATTERN, CONF_DIRECTORY
-import os, io, logging, socket
-from pathlib import Path
+import os, io, socket
 
 class DirectoryTransfer(TransferComponent):
     platform = CONF_DIRECTORY
 
-    def __init__(self, instName: str, hass: HomeAssistant, config: ConfigEntry):
-        super().__init__(instName, hass, config)
+    def __init__(self, id: TransferComponentId, hass: HomeAssistant, config: ConfigEntry):
+        super().__init__(id, hass, config)
 
     def get_files(self, max=None) -> list[IFileInfo]:
         ''' OVERRIDE '''
@@ -45,14 +45,13 @@ class DirectoryTransfer(TransferComponent):
 
     def file_delete(self, file: IFileInfo):
         ''' OVERRIDE '''
-        # os.remove(file.fullname)
-        pass
+        os.remove(file.fullname)
 
     def file_save(self, file: IFileInfo, content) -> str:
         ''' OVERRIDE '''
         rel_path = file.datetime.strftime(self._config[CONF_DATETIME_PATTERN])
         filename = f"{self._path}/{rel_path}.{file.ext}"
-        self.mkdir(filename)
+        mkdir_by(filename)
         if isinstance(content, io.BytesIO): 
             with content:
                 with open(filename, 'wb') as outfile:
@@ -63,6 +62,3 @@ class DirectoryTransfer(TransferComponent):
 
         return filename
 
-    def mkdir(self, filename: str):
-        path = Path(Path(filename).parent)
-        path.mkdir(parents=True, exist_ok=True)
