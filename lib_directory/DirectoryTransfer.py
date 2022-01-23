@@ -1,14 +1,17 @@
-from sys import platform
+import io
+import os
 from typing import Any
-from ..common.helper import mkdir_by
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
+from ..common.helper import local_ip, mkdir_by
 from ..common.ifile_info import IFileInfo
-from .file_info import FileInfo
 from ..common.transfer_component import TransferComponent, TransferComponentId
-from ..const import ATTR_SOURCE_HOST, CONF_DATETIME_PATTERN, CONF_DIRECTORY
-import os, io, socket
+from ..const import (ATTR_DESTINATION_HOST, ATTR_SOURCE_HOST,
+                     CONF_DATETIME_PATTERN, CONF_DIRECTORY)
+from .file_info import FileInfo
+
 
 class DirectoryTransfer(TransferComponent):
     platform = CONF_DIRECTORY
@@ -36,9 +39,7 @@ class DirectoryTransfer(TransferComponent):
 
     def file_read(self, file: IFileInfo) -> Any:
         ''' OVERRIDE '''
-        hostname = socket.gethostname()
-        local_ip = socket.gethostbyname(hostname)
-        file.metadata[ATTR_SOURCE_HOST] = local_ip
+        file.metadata[ATTR_SOURCE_HOST] = local_ip()
 
         with open(file.fullname, 'rb') as infile:
             return io.BytesIO(infile.read())
@@ -49,6 +50,7 @@ class DirectoryTransfer(TransferComponent):
 
     def file_save(self, file: IFileInfo, content) -> str:
         ''' OVERRIDE '''
+        file.metadata[ATTR_DESTINATION_HOST] = local_ip()
         rel_path = file.datetime.strftime(self._config[CONF_DATETIME_PATTERN])
         filename = f"{self._path}/{rel_path}.{file.ext}"
         mkdir_by(filename)

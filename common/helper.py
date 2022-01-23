@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from pathlib import Path
+import socket
 
 import pytz
 
@@ -24,3 +25,7 @@ def mkdir_by(filename: str):
 
 def relative_name(fullname: str, root: str) -> str:
     return fullname.lstrip(root).lstrip("/").lstrip("\\")
+
+def local_ip():
+    hostname = socket.gethostname()
+    return socket.gethostbyname(hostname)

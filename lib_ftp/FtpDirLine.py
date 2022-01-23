@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import parser
 
 class FtpDirLine:
@@ -29,4 +29,9 @@ class FtpDirLine:
     @property
     def modif_datetime(self) -> datetime:
         # https://stackoverflow.com/questions/29026709/how-to-get-ftp-files-modify-time-using-python-ftplib
-        return parser.parse(self._time_str)
+        result = parser.parse(self._time_str)
+        result -= timedelta(hours=1)
+        if result > datetime.now():
+            ''' wrong year ''' 
+            result = result.replace(year=result.year-1)
+        return result

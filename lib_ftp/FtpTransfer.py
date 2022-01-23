@@ -7,7 +7,7 @@ from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from ..common.ifile_info import IFileInfo
 from ..common.transfer_component import TransferComponent, TransferComponentId
-from ..const import ATTR_SOURCE_HOST, CONF_DATETIME_PATTERN, CONF_FTP
+from ..const import ATTR_DESTINATION_COMPONENT, ATTR_DESTINATION_HOST, ATTR_SOURCE_COMPONENT, ATTR_SOURCE_HOST, CONF_DATETIME_PATTERN, CONF_FTP
 
 from .FtpConn import FtpConn
 from .ftp_file_info import FtpFileInfo
@@ -57,6 +57,7 @@ class FtpTransfer(TransferComponent):
         ''' OVERRIDE '''
         rel_path = file.datetime.strftime(self._config[CONF_DATETIME_PATTERN])
         filename = f"{self._path}/{rel_path}.{file.ext}"
+        file.metadata[ATTR_DESTINATION_HOST] = self._config[CONF_HOST]
 
         if isinstance(content, io.BytesIO): 
             with content:

@@ -1,21 +1,21 @@
-from datetime import datetime
-import logging
-import queue
 import io
+import queue
 import threading
-import socket
-import time
+from datetime import datetime
 from typing import Any
 
-from ..common.transfer_state import TransferState
-from .mqtt_file_info import MqttFileInfo
-from homeassistant.util.async_ import fire_coroutine_threadsafe
-from ..const import ATTR_SOURCE_HOST, CONF_MQTT, CONF_TOPIC
+from homeassistant.components import mqtt
+from homeassistant.components.mqtt.const import CONF_BROKER
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.components import mqtt
+from homeassistant.util.async_ import fire_coroutine_threadsafe
+
+from ..common.helper import local_ip
 from ..common.ifile_info import IFileInfo
 from ..common.transfer_component import TransferComponent, TransferComponentId
+from ..common.transfer_state import TransferState
+from ..const import ATTR_SOURCE_HOST, CONF_MQTT, CONF_TOPIC
+from .mqtt_file_info import MqttFileInfo
 
 lock = threading.Lock()
 
@@ -31,6 +31,9 @@ class MqttTransfer(TransferComponent):
         self._last_image = None
         self._last_updated = None
         self._hass = hass
+        self._broker = ""
+        if CONF_MQTT in self._hass.data:
+            self._broker = self._hass.data[CONF_MQTT].conf[CONF_BROKER]
         self._files: queue.Queue = queue.Queue()
         self._retained_message = True # ignore first message after initialisation
         fire_coroutine_threadsafe(self.subscribe_to_mqtt(), hass.loop)
@@ -43,6 +46,7 @@ class MqttTransfer(TransferComponent):
         self._last_updated = datetime.now()
         self._last_image = data
         file = MqttFileInfo(self._state_topic, data)
+        file.metadata[ATTR_SOURCE_HOST] = self._broker
         self._files.put(file)
         if self._retained_message: # ignore first message after loading
             self._retained_message = False
@@ -76,9 +80,7 @@ class MqttTransfer(TransferComponent):
 
     def file_read(self, file: IFileInfo) -> Any:
         ''' OVERRIDE '''
-        hostname = socket.gethostname()
-        local_ip = socket.gethostbyname(hostname)
-        file.metadata[ATTR_SOURCE_HOST] = local_ip
+        file.metadata[ATTR_SOURCE_HOST] = local_ip()
         return io.BytesIO(self._last_image)
 
     def file_delete(self, file: IFileInfo):

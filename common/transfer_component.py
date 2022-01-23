@@ -9,7 +9,7 @@ from homeassistant.helpers.event import async_track_point_in_time
 from voluptuous.validators import Any
 
 from .. import getLogger
-from ..const import (ATTR_DESTINATION_FILE, ATTR_DESTINATION_PLATFORM,
+from ..const import (ATTR_DESTINATION_COMPONENT, ATTR_DESTINATION_FILE, ATTR_DESTINATION_PLATFORM, ATTR_SOURCE_COMPONENT,
                      ATTR_SOURCE_PLATFORM, CONF_CLEAN, CONF_COPIED_PER_RUN,
                      CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, ATTR_ENABLE, CONF_FILES,
                      CONF_FROM, CONF_PATH, CONF_TO, DEFAULT_TIME_INTERVAL,
@@ -76,7 +76,7 @@ class TransferComponent:
         if not content:
             raise Exception(f'Content is empty. Components: {self._id} -> {comp_id}')
         file.metadata[ATTR_DESTINATION_FILE] = self.file_save(file, content)
-        file.metadata[ATTR_DESTINATION_PLATFORM] = self.platform
+        file.metadata[ATTR_DESTINATION_COMPONENT] = self._id.Name
         self._logger.debug(f"Saved: [{file.metadata[ATTR_DESTINATION_FILE]}] content type: {type(content)}")
         self._invoke_save_listeners(file)
         return True # need ack for file delete permission
@@ -150,7 +150,7 @@ class TransferComponent:
             for file in files:
                 self._logger.debug(f"Read: [{file.fullname}]")
                 content = self.file_read(file)
-                file.metadata[ATTR_SOURCE_PLATFORM] = self.platform
+                file.metadata[ATTR_SOURCE_COMPONENT] = self._id.Name
                 if self._invoke_read_listeners(file, content):
                     self.file_delete(file)
 
