@@ -73,7 +73,6 @@ CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(
             {
-                vol.Required(CONF_NAME): cv.string,
                 vol.Required(CONF_ENTITIES): ENTITY_SCHEMA
             }, extra=vol.ALLOW_EXTRA)
     }, extra=vol.ALLOW_EXTRA)
@@ -84,7 +83,7 @@ PLATFORMS = ["sensor", "switch"]  # , "timer", "camera", "binary_sensor", "media
 
 async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
     """Set up this integration using YAML."""
-
+    
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
 
@@ -103,5 +102,5 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
         for component in PLATFORMS:
             hass.async_create_task(discovery.async_load_platform(
                 hass, component, DOMAIN, entity_config, global_config))
-
+    
     return True

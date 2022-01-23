@@ -13,7 +13,7 @@ from ..const import (ATTR_CAMERA, ATTR_EXT, ATTR_ID, ATTR_MIMETYPE, ATTR_SIZE,
                      ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED,
                      ATTR_TIMESTAMP, ATTR_TIMESTAMP_STR,
                      ATTR_TIMESTAMP_STR_UTC, EVENT_CAMERA_ARCHIVER_FILE_COPIED)
-from .helper import getLogger, to_str_timestamp, to_utc
+from .helper import file_mimetype, getLogger, to_str_timestamp, to_utc
 from .ifile_info import IFileInfo
 from .transfer_component import TransferComponentId
 from .transfer_state import TransferState
@@ -39,8 +39,6 @@ class TransferEntityContext:
         timestamp_str = to_str_timestamp(dt)
         modif_timestamp_str = to_str_timestamp(file.modif_datetime)
 
-        mimestart = mimetypes.guess_type(file.basename)[0] or "unknown/ext"
-        mimestart = mimestart.split('/')[0]
         id = f"{self._config[CONF_NAME]}@{timestamp_str_utc}"
 
         # only python native types: https://github.com/home-assistant/core/pull/41227
@@ -52,7 +50,7 @@ class TransferEntityContext:
             ATTR_SOURCE_FILE: file.fullname,
             ATTR_CAMERA: self._config[CONF_NAME],
             ATTR_EXT: file.ext,
-            ATTR_MIMETYPE: mimestart,
+            ATTR_MIMETYPE: file_mimetype(file.basename),
             ATTR_SIZE: file.size,
             ATTR_ID: id,
         }

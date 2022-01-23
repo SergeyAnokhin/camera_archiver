@@ -8,8 +8,7 @@ from homeassistant.core import HomeAssistant
 from ..common.helper import local_ip, mkdir_by
 from ..common.ifile_info import IFileInfo
 from ..common.transfer_component import TransferComponent, TransferComponentId
-from ..const import (ATTR_DESTINATION_HOST, ATTR_SOURCE_HOST,
-                     CONF_DATETIME_PATTERN, CONF_DIRECTORY)
+from ..const import ATTR_SOURCE_HOST, ATTR_TARGET_HOST, CONF_DATETIME_PATTERN, CONF_DIRECTORY
 from .file_info import FileInfo
 
 
@@ -50,7 +49,7 @@ class DirectoryTransfer(TransferComponent):
 
     def file_save(self, file: IFileInfo, content) -> str:
         ''' OVERRIDE '''
-        file.metadata[ATTR_DESTINATION_HOST] = local_ip()
+        file.metadata[ATTR_TARGET_HOST] = local_ip()
         rel_path = file.datetime.strftime(self._config[CONF_DATETIME_PATTERN])
         filename = f"{self._path}/{rel_path}.{file.ext}"
         mkdir_by(filename)

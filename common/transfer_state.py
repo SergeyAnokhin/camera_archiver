@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from enum import Enum
 
+from ..const import ATTR_LAST_TARGET, ATTR_TARGET_FILE
+from .helper import file_mimetype
 from .ifile_info import IFileInfo
 
 
@@ -8,6 +10,7 @@ class StateType(Enum):
     REPOSITORY = "Repository"  # Read repository
     READ = "Read"  # Read files from repository in memory
     SAVE = "Save"  # Save file from memory to new repository
+
 
 class TransferState:
     def __init__(self, type: StateType = None) -> None:
@@ -18,8 +21,9 @@ class TransferState:
         self._start = datetime.now()
         self._stop = datetime.now()
         self._duration = timedelta()
-        self._last = None
-        self._last_by_ext = {}
+        self._last_image = None
+        self._last_video = None
+        self._last_datetime = None
 
     def start(self) -> None:
         self._start = datetime.now()
@@ -35,8 +39,13 @@ class TransferState:
         if file.ext not in self._size_by_ext:
             self._size_by_ext[file.ext] = 0
         self._size_by_ext[file.ext] += file.size
-        self._last = file.fullname
-        self._last_by_ext[file.ext] = file.fullname
+
+        type = file_mimetype(file.basename)
+        if type == "video":
+            self._last_video = file
+        elif type == "image":
+            self._last_image = file
+        self._last_datetime = file.datetime
 
     def extend(self, files: list[IFileInfo]) -> None:
         [self.append(f) for f in files]
@@ -62,12 +71,20 @@ class TransferState:
         return self._size
 
     @property
-    def last(self) -> str:
-        return self._last
+    def last_image(self) -> str:
+        return self._last_image.metadata[ATTR_TARGET_FILE] \
+            if self._last_image and ATTR_TARGET_FILE in self._last_image.metadata \
+            else ""
 
     @property
-    def last_by_ext(self, ext: str) -> str:
-        return self._last_by_ext[ext]
+    def last_video(self) -> str:
+        return self._last_video.metadata[ATTR_TARGET_FILE] \
+            if self._last_video and ATTR_TARGET_FILE in self._last_video.metadata \
+            else ""
+
+    @property
+    def last_datetime(self) -> str:
+        return self._last_datetime
 
     @property
     def files_size_mb(self) -> float:

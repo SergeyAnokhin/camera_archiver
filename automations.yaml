@@ -9,8 +9,8 @@
   action:
   #- service: camera_archiver.run
   #- service: script.camera_archiver_run
-  - service: script.system_log_write
-  #- service: rest_command.elastic_cameraarchive
+  #- service: script.system_log_write
+  - service: rest_command.elastic_cameraarchive
     data_template:
       index: '{{ trigger.event.data.timestamp | timestamp_custom("%Y.%m", False) }}'
       tags: 'camera_archiver activity motion camera archive webcam wifi'

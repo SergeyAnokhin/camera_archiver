@@ -2,32 +2,36 @@ import logging
 from abc import abstractmethod
 from typing import Dict
 
-from homeassistant.components.sensor import STATE_CLASS_TOTAL_INCREASING, SensorEntity
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
 
+from .common.helper import to_human_readable, to_short_human_readable
 from .common.state_collector import StateCollector
 from .common.transfer_component_id import TransferComponentId, TransferType
 from .common.transfer_state import StateType, TransferState
-from .const import (ATTR_ARCHIVER_STATE, ATTR_DURATION, ATTR_ENABLE, ATTR_EXTENSIONS,
-                    ATTR_LAST, ATTR_LAST_FILE, ATTR_SIZE, ATTR_SIZE_MB, ATTR_TRANSFER_STATE, CONF_FROM, DOMAIN, ICON_COPIED,
-                    ICON_DEFAULT, ICON_TO_COPY, SENSOR_NAME_FILES_COPIED,
-                    SENSOR_NAME_FILES_COPIED_LAST, SENSOR_NAME_TO_COPY_FILES)
+from .const import (ATTR_ENABLE, ATTR_EXTENSIONS, ATTR_LAST_DATETIME,
+                    ATTR_LAST_DATETIME_FULL, ATTR_LAST_IMAGE, ATTR_LAST_TARGET,
+                    ATTR_LAST_VIDEO, ATTR_SIZE_MB, ATTR_TRANSFER_STATE, DOMAIN,
+                    ICON_COPIED, ICON_DEFAULT, ICON_LAST, ICON_SCREENSHOT,
+                    ICON_TO_COPY, ICON_VIDEO)
 
 _LOGGER = logging.getLogger(__name__)
 
 # from homeassistant.helpers.entity import generate_entity_id
 
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     pass
+
 
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
     entity_config = discovery_info
     instName = entity_config[CONF_NAME]
-    coordinators: Dict[TransferComponentId:  Dict[StateType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName]
+    coordinators: Dict[TransferComponentId: Dict[StateType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName]
 
     sensors = []
     for comp_id, coords_by_state in coordinators.items():
@@ -40,8 +44,15 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
         elif id.TransferType == TransferType.TO:
             coordinator = coords_by_state[StateType.SAVE]
             sensors.append(ToComponentSaveSensor(id, coordinator))
+            coordinator = coords_by_state[StateType.SAVE]
+            sensors.append(ComponentLastTimeSensor(id, coordinator))
+            coordinator = coords_by_state[StateType.SAVE]
+            sensors.append(ComponentLastImageSensor(id, coordinator))
+            coordinator = coords_by_state[StateType.SAVE]
+            sensors.append(ComponentLastVideoSensor(id, coordinator))
 
     add_entities(sensors)
+
 
 class TransferCoordinatorSensor(CoordinatorEntity, SensorEntity):
 
@@ -65,6 +76,7 @@ class TransferCoordinatorSensor(CoordinatorEntity, SensorEntity):
     @property
     def enabled(self) -> bool:
         return self.coordinator.data[ATTR_ENABLE]
+
     @property
     def has_transfer_state(self) -> bool:
         return ATTR_TRANSFER_STATE in self.data \
@@ -78,126 +90,78 @@ class TransferCoordinatorSensor(CoordinatorEntity, SensorEntity):
             self.coordinator.data[ATTR_TRANSFER_STATE] = TransferState(self._stateType)
 
         state: TransferState = self.coordinator.data[ATTR_TRANSFER_STATE]
-        self.coordinator_updated(state)
+        self.set_attr(ATTR_ENABLE, self.available)
+        if state:
+            self.coordinator_updated(state)
         super()._handle_coordinator_update()
 
-
-    #@abstractmethod
     def coordinator_updated(self, state: TransferState):
-        self.set_attr(ATTR_ENABLE, self.available)
-        if not state:
-            return
         self._attr_native_value = state.files_count
         self.set_attr(ATTR_SIZE_MB, state.files_size_mb)
         self.set_attr(ATTR_EXTENSIONS, state.files_ext)
-        self.set_attr(ATTR_LAST_FILE, state.last)
+        self.set_attr(ATTR_LAST_IMAGE, state.last_image)
+        self.set_attr(ATTR_LAST_VIDEO, state.last_video)
+        last_time = to_short_human_readable(state.last_datetime)
+        self.set_attr(ATTR_LAST_DATETIME, last_time)
+        last_time = to_human_readable(state.last_datetime)
+        self.set_attr(ATTR_LAST_DATETIME_FULL, last_time)
 
     def set_attr(self, key: str, value) -> None:
-        self._attr_extra_state_attributes[key] = value
+        if value:
+            self._attr_extra_state_attributes[key] = value
+        elif key in self._attr_extra_state_attributes:
+            del(self._attr_extra_state_attributes[key])
 
-    # def add_attrs(self, keyvalues: dict) -> None:
-    #     self._attr_extra_state_attributes = {
-    #         **self._attr_extra_state_attributes,
-    #         **keyvalues
-    #     }
 
-    # def attr_add_float(self, key: str, new_value: float):
-    #     old_value = self._attr_extra_state_attributes.get(key, 0.0)
-    #     result = round(old_value + new_value, 2)
-    #     self.add_attr(key, result)
+class ComponentLastTimeSensor(TransferCoordinatorSensor):
+    def __init__(self, comp_id: TransferComponentId, coordinator):
+        super().__init__(comp_id, StateType.SAVE, coordinator, ICON_LAST)
+        self._attr_name = f"{comp_id.Entity}: last time"
 
-    # def attr_add_set(self, key: str, new_value: list):
-    #     old_value: dict = self._attr_extra_state_attributes.get(key, set())
-    #     self.add_attr(key, set(list(old_value) + new_value))
+    def coordinator_updated(self, state: TransferState):
+        self._attr_native_value = to_human_readable(state.last_datetime)
+
+
+class ComponentLastImageSensor(TransferCoordinatorSensor):
+    def __init__(self, comp_id: TransferComponentId, coordinator):
+        super().__init__(comp_id, StateType.SAVE, coordinator, ICON_SCREENSHOT)
+        self._attr_name = f"{comp_id.Entity}: last image"
+
+    def coordinator_updated(self, state: TransferState):
+        self._attr_native_value = state.last_image
+
+
+class ComponentLastVideoSensor(TransferCoordinatorSensor):
+    def __init__(self, comp_id: TransferComponentId, coordinator):
+        super().__init__(comp_id, StateType.SAVE, coordinator, ICON_VIDEO)
+        self._attr_name = f"{comp_id.Entity}: last video"
+
+    def coordinator_updated(self, state: TransferState):
+        self._attr_native_value = state.last_video
+
 
 class FromComponentRepoSensor(TransferCoordinatorSensor):
     def __init__(self, comp_id: TransferComponentId, coordinator):
-        super().__init__(comp_id, 
-            StateType.REPOSITORY, 
-            coordinator, 
-            ICON_TO_COPY)
+        super().__init__(comp_id,
+                         StateType.REPOSITORY,
+                         coordinator,
+                         ICON_TO_COPY)
 
 
 class FromComponentReadSensor(TransferCoordinatorSensor):
     def __init__(self, comp_id: TransferComponentId, coordinator):
-        super().__init__(comp_id, 
-            StateType.READ, 
-            coordinator, 
-            ICON_COPIED)
+        super().__init__(comp_id,
+                         StateType.READ,
+                         coordinator,
+                         ICON_COPIED)
+
 
 class ToComponentSaveSensor(TransferCoordinatorSensor):
     def __init__(self, comp_id: TransferComponentId, coordinator):
-        super().__init__(comp_id, 
-            StateType.SAVE, 
-            coordinator, 
-            ICON_COPIED)
-
-
-
-
-
-class ToCopyFilesSensor(TransferCoordinatorSensor):
-    def __init__(self, coordinator, config):
-        name = SENSOR_NAME_TO_COPY_FILES
-        icon = ICON_TO_COPY
-        super().__init__(coordinator, config, name, icon)
-
-    def coordinator_updated(self, state: TransferState):
-        self.add_attrs({
-            ATTR_EXTENSIONS: state.Read.files_ext,
-            ATTR_DURATION: state.Read.duration.seconds,
-            ATTR_SIZE: f"{state.Read.files_size_mb}Mb",
-            ATTR_LAST: state.Read.last
-        })
-        self._attr_native_value = state.Read.files_count
-
-        # If the background update finished before
-        # we added the entity, there is no need to restore
-        # state.
-        # _LOGGER.info(f"#{self._name}# coordinator.last_update_success={self.coordinator.last_update_success} STATE={self._state}")
-        # if self.coordinator.last_update_success:
-        #     return
-
-        # last_state = await self.async_get_last_state()
-        # _LOGGER.info(f"#{self._name}# call async_get_last_state STATE={self._state}")
-        # if last_state:
-        #     self._state = last_state.state
-        #     self._available = True
-        #     _LOGGER.info(f"#{self._name}# NEW_STATE={self._state}")
-
-
-class LastFilesCopiedSensor(TransferCoordinatorSensor):
-    def __init__(self, coordinator, config):
-        name = SENSOR_NAME_FILES_COPIED_LAST
-        super().__init__(coordinator, config, name)
-
-    def coordinator_updated(self, state: TransferState):
-        self.add_attrs({
-            ATTR_EXTENSIONS: state.Copy.files_ext,
-            ATTR_DURATION: state.Copy.duration.seconds,
-            ATTR_SIZE: f"{state.Copy.files_size_mb}Mb",
-            ATTR_LAST: state.Copy.last
-        })
-        self._attr_native_value = state.Copy.files_count
-
-
-class CopiedFilesSensor(TransferCoordinatorSensor):
-    def __init__(self, coordinator, config):
-        # name = get_sensor_unique_id(config, SENSOR_NAME_FILES_COPIED)
-        name = SENSOR_NAME_FILES_COPIED
-        icon = ICON_COPIED
-        self._attr_native_value = 0
-        super().__init__(coordinator, config, name, icon)
-        self._attr_state_class = STATE_CLASS_TOTAL_INCREASING
-
-
-    def coordinator_updated(self, state: TransferState):
-        self.attr_add_set(ATTR_EXTENSIONS, state.Copy.files_exts)
-        self.attr_add_float(ATTR_DURATION, state.Copy.duration.seconds)
-        self.attr_add_float(ATTR_SIZE, state.Copy.files_size_mb)
-        if not self._attr_native_value:
-            self._attr_native_value = 0
-        self._attr_native_value = int(self._attr_native_value) + state.Copy.files_count
+        super().__init__(comp_id,
+                         StateType.SAVE,
+                         coordinator,
+                         ICON_COPIED)
 
 # class TransferRestoreSensor(CoordinatorEntity, TransferSensor):
 #     def __init__(self, coordinator, config, name, icon, unit=""):
@@ -290,5 +254,3 @@ class CopiedFilesSensor(TransferCoordinatorSensor):
 #         if last_state and last_state.state and last_state.state.isdigit():
 #             self._state = last_state.state
 #             _LOGGER.info(f"#{self._name}# NEW_STATE={self._state}")
-
-

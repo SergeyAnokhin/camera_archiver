@@ -1,57 +1,32 @@
 elastic_cameraarchive:
-  url: 'http://{{ elasticsearch_point }}/cameraarchivetest-{{ index }}/_create/{{ data_nature.id }}'
+  url: 'http://{{ elasticsearch_point }}/cameraarchivetest-{{ index }}/_doc/{{ data_nature.id }}'
   method: POST
   content_type: "application/json; charset=utf-8"
   headers:
     accept: "application/json, text/html"
   payload: >
-    {
-      "@timestamp": "{{ data_nature.timestamp_str_utc }}",
-      "camera": "{{ data_nature.camera }}",
-      "doc": "event",
-      "event_start": "{{ data_nature.timestamp_str }}",
-      "ext": "{{ data_nature.ext }}",
-      "path": "{{ data_nature.destination_file }}",
-      "origin": {
-        "type": "{{ data_nature.source_type }}",
-        {% if ftp_date and ftp_date != '' %}"ftp_date": "{{ ftp_date }}",{% endif %}
-        "modif_time": "{{ data_nature.source_file_created }}",
-        "host": "{{ data_nature.source_host }}",
-        "filename": "{{ data_nature.source_file }}"
-      },
-      "mimitype": "{{ data_nature.mimetype }}",
-      {{ (customize_data | to_json | trim())[1:-1] }},
-      "tags": "synology_cameraarchive hassio {{ tags }}",
-      "value": {{ data_nature.size }},
-      "volume": "/volume2"
-    }          
-  # payload: >
-  #   {
-  #       "name" : "{{ name }}",
-  #       "value": {{ value | float('null') }},
-  #       {% if status and status != '' %}"status": "{{ status }}",{% endif %}
-  #       {% if value_from or value_from == 0 %}"from": {
-  #         {% if not 'error' in values_debug and value_from_time %}"secs": {{ value_from_time|int('null') }},{% endif %}
-  #         {% if not 'error' in values_debug  %}"delta": {{ (value|float(0) - value_from|float(0)) | round(4) }},{% endif %}
-  #         {% if values_debug %}"debug": "{{ values_debug }}",{% endif %}
-  #         "value": {{ value_from|float('null') }}
-  #       },{% endif %}
-  #       "trigger": "{{ trigger }}",
-  #       "@timestamp": "{{ datetime }}",
-  #       "tags": "{{ tags }}",
-  #       "type": "{{ type }}",
-  #       "position": {
-  #         "detail": "{{ position_detail }}",
-  #         "is_external": {% if position_is_external and position_is_external != 'False' %}true{% else %}false{% endif %},
-  #         "floor": {{ position_floor | int(-1) }},
-  #         "room": "{{ position_room }}"
-  #       },
-  #       "sensor": {
-  #         "device": "{{ sensor_device }}",
-  #         "display": "{{ sensor_display }}",
-  #         "type": "{{ sensor_type }}",
-  #         {% if sensor_unit and sensor_unit != '' %}"unit": "{{ sensor_unit }}",{% endif %}
-  #         {% if sensor_icon and sensor_icon != '' %}"icon": "{{ sensor_icon }}",{% endif %}
-  #         "id": "{{ sensor_id }}"
-  #       }
-  #   }
+          {
+            "doc": "event",
+            "@timestamp": "{{ data_nature.timestamp_str_utc }}",
+            "event_start": "{{ data_nature.timestamp_str }}",
+            "camera": "{{ data_nature.camera }}",
+            "ext": "{{ data_nature.ext }}",
+            "mimitype": "{{ data_nature.mimetype }}",
+            "path": "{{ data_nature.target_file }}",
+            "origin": {
+              "component": "{{ data_nature.source_component }}",
+              {% if ftp_date and ftp_date != '' %}"ftp_date": "{{ ftp_date }}",{% endif %}
+              "modif_time": "{{ data_nature.source_file_created }}",
+              "host": "{{ data_nature.source_host }}",
+              "filename": "{{ data_nature.source_file }}"
+            },
+            "target": {
+              "component": "{{ data_nature.target_component }}",
+              "host": "{{ data_nature.target_host }}"
+            },
+            "source_type": "{{ data_nature.source_component }}",
+            {{ (customize_data | to_json | trim())[1:-1] }},
+            "tags": "synology_cameraarchive hassio {{ tags }}",
+            "value": {{ data_nature.size }},
+            "volume": "/volume2"
+          }            

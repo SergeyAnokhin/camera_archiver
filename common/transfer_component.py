@@ -9,11 +9,10 @@ from homeassistant.helpers.event import async_track_point_in_time
 from voluptuous.validators import Any
 
 from .. import getLogger
-from ..const import (ATTR_DESTINATION_COMPONENT, ATTR_DESTINATION_FILE, ATTR_DESTINATION_PLATFORM, ATTR_SOURCE_COMPONENT,
-                     ATTR_SOURCE_PLATFORM, CONF_CLEAN, CONF_COPIED_PER_RUN,
-                     CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, ATTR_ENABLE, CONF_FILES,
-                     CONF_FROM, CONF_PATH, CONF_TO, DEFAULT_TIME_INTERVAL,
-                     DOMAIN, SERVICE_FIELD_COMPONENT, SERVICE_FIELD_DIRECTION,
+from ..const import (ATTR_ENABLE, ATTR_SOURCE_COMPONENT, ATTR_TARGET_COMPONENT, ATTR_TARGET_FILE, CONF_CLEAN,
+                     CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
+                     CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH,
+                     DEFAULT_TIME_INTERVAL, DOMAIN, SERVICE_FIELD_COMPONENT,
                      SERVICE_FIELD_INSTANCE, SERVICE_RUN)
 from .ifile_info import IFileInfo
 from .transfer_component_id import TransferComponentId, TransferType
@@ -75,9 +74,9 @@ class TransferComponent:
             return False
         if not content:
             raise Exception(f'Content is empty. Components: {self._id} -> {comp_id}')
-        file.metadata[ATTR_DESTINATION_FILE] = self.file_save(file, content)
-        file.metadata[ATTR_DESTINATION_COMPONENT] = self._id.Name
-        self._logger.debug(f"Saved: [{file.metadata[ATTR_DESTINATION_FILE]}] content type: {type(content)}")
+        file.metadata[ATTR_TARGET_FILE] = self.file_save(file, content)
+        file.metadata[ATTR_TARGET_COMPONENT] = self._id.Name
+        self._logger.debug(f"Saved: [{file.metadata[ATTR_TARGET_FILE]}] content type: {type(content)}")
         self._invoke_save_listeners(file)
         return True # need ack for file delete permission
 
