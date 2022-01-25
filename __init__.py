@@ -11,7 +11,7 @@ from sqlalchemy import true
 
 from .common.helper import getLogger
 from .common.transfer_builder import TransferBuilder
-from .const import (CONF_CAMERA, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
+from .const import (ATTR_HASS_STORAGE_COORDINATORS, CONF_CAMERA, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
                     CONF_DIRECTORY, CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_FILTER,
                     CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MQTT,
                     CONF_PATH, CONF_TO, CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
@@ -101,7 +101,8 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
         builder.build()
 
         name = entity_config[CONF_NAME]
-        hass.data[DOMAIN][name] = builder.build_coordinators_dict()
+        hass.data[DOMAIN][name] = {}
+        hass.data[DOMAIN][name][ATTR_HASS_STORAGE_COORDINATORS] = builder.build_coordinators_dict()
         logger = getLogger(__name__, name)
         logger.info(f"Init of manager finished with succes")
 

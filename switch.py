@@ -12,7 +12,7 @@ from homeassistant.helpers.entity import ToggleEntity
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import ATTR_ENABLE, DOMAIN
+from .const import ATTR_ENABLE, ATTR_HASS_STORAGE_COORDINATORS, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry, async_add_
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
     entity_config = discovery_info
     instName = entity_config[CONF_NAME]
-    coordinators: Dict[TransferComponentId: Dict[StateType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName]
+    coordinators: Dict[TransferComponentId: Dict[StateType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName][ATTR_HASS_STORAGE_COORDINATORS]
 
     switches = []
     coordinators_list = []

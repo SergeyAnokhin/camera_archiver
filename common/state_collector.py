@@ -36,7 +36,7 @@ class StateCollector:
     @callback
     def append(self, _: TransferComponentId, file: IFileInfo, content = None) -> None:
         self._state.append(file)
-        self._update_coordinator(content if file.mimetype == MIMETYPE_IMAGE else None) # optional. just for reduce memory usage
+        self._update_coordinator() # optional. just for reduce memory usage
 
     @callback
     def extend(self, _: TransferComponentId, files: list[IFileInfo], contents = []) -> None:
@@ -48,10 +48,9 @@ class StateCollector:
         data[ATTR_TRANSFER_STATE] = self._state
         return data
 
-    def _update_coordinator(self, content = None) -> None:
+    def _update_coordinator(self) -> None:
         data = self._coordinator.data
         data[ATTR_TRANSFER_STATE] = self._state
-        data[ATTR_CONTENT] = content
         self._coordinator.async_set_updated_data(data)
 
     def _coordinator_updated(self):

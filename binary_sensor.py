@@ -8,13 +8,13 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .common.transfer_component_id import TransferComponentId, TransferType
 from .common.transfer_state import StateType
-from .const import DOMAIN
+from .const import ATTR_HASS_STORAGE_COORDINATORS, DOMAIN
 
 
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
     entity_config = discovery_info
     instName = entity_config[CONF_NAME]
-    coordinators: Dict[TransferComponentId: Dict[StateType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName]
+    coordinators: Dict[TransferComponentId: Dict[StateType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName][ATTR_HASS_STORAGE_COORDINATORS]
 
     switches = []
     coordinators_list = []

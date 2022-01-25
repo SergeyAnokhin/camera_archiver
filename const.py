@@ -91,6 +91,9 @@ ATTR_LAST_DATETIME_FULL = "Last full datetime"
 ATTR_TRANSFER_STATE = "TransferState"
 ATTR_CONTENT = "Content"
 ATTR_ENABLE = "enable"
+ATTR_HASS_STORAGE_COORDINATORS = "Coordinators"
+ATTR_HASS_STORAGE_MEMORY = "MemoryStorage"
+
 
 EVENT_CAMERA_ARCHIVER_FILE_COPIED = "CameraArchiverFileCopied"
 

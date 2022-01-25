@@ -135,9 +135,9 @@ class TransferComponent:
         for callback in self._listeners[StateType.REPOSITORY]:
             callback(self._id, files)
 
-    def _invoke_save_listeners(self, file: IFileInfo, content = None) -> None:
+    def _invoke_save_listeners(self, file: IFileInfo) -> None:
         for callback in self._listeners[StateType.SAVE]:
-            callback(self._id, file, content)
+            callback(self._id, file)
 
     def _run(self):
         self._logger.debug(f"Read from [{self._path}]: START")

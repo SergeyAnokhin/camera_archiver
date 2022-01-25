@@ -9,14 +9,14 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 
 from .common.transfer_component_id import TransferComponentId, TransferType
-from .common.transfer_state import StateType
-from .const import CONF_CAMERA, DOMAIN, ICON_CAMERA
+from .common.transfer_state import StateType, TransferState
+from .const import ATTR_ENABLE, ATTR_HASS_STORAGE_COORDINATORS, ATTR_TRANSFER_STATE, CONF_CAMERA, DOMAIN, ICON_CAMERA
 
 
 async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry, async_add_entities, discovery_info=None):
     entity_config = discovery_info
     instName = entity_config[CONF_NAME]
-    coordinators: Dict[TransferComponentId: Dict[StateType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName]
+    coordinators: Dict[TransferComponentId: Dict[StateType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName][ATTR_HASS_STORAGE_COORDINATORS]
 
     cameras = []
     for comp_id, coords_by_state in coordinators.items():
@@ -26,14 +26,14 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry, async_add_
             
         if id.TransferType == TransferType.TO and comp_id.Platfrom == CONF_CAMERA:
             coordinator = coords_by_state[StateType.SAVE]
-            cameras.append(ToCamera(id, coordinator))
+            cameras.append(ToCamera(hass, id, coordinator))
 
     async_add_entities(cameras)
 
 class ToCamera(CoordinatorEntity, Camera):
     """Representation of a MQTT camera."""
 
-    def __init__(self, id: TransferComponentId, coordinator: DataUpdateCoordinator):
+    def __init__(self, hass: HomeAssistant, id: TransferComponentId, coordinator: DataUpdateCoordinator):
         """Initialize the MQTT Camera."""
         CoordinatorEntity.__init__(self, coordinator)
         Camera().__init__(self)
@@ -43,6 +43,7 @@ class ToCamera(CoordinatorEntity, Camera):
         self._attr_icon = ICON_CAMERA
         self._last_image = None
         self._state = None
+        self._hass = hass
 
     def update(self):
         """Return the state of the camera (privacy off = state on)."""
@@ -68,6 +69,16 @@ class ToCamera(CoordinatorEntity, Camera):
     #     if self._mqtt_subscription:
     #         self._mqtt_subscription()
 
+    @property
+    def enabled(self) -> bool:
+        return self.coordinator.data[ATTR_ENABLE]
+
+    @property
+    def has_transfer_state(self) -> bool:
+        return ATTR_TRANSFER_STATE in self.data \
+            and self.data[ATTR_TRANSFER_STATE] \
+            and isinstance(self.data[ATTR_TRANSFER_STATE], TransferState)
+
     @callback
     def _handle_coordinator_update(self):
         """Call when the coordinator has an update."""
@@ -82,14 +93,6 @@ class ToCamera(CoordinatorEntity, Camera):
 
     def coordinator_updated(self, state: TransferState):
         self._attr_native_value = state.files_count
-        self.set_attr(ATTR_SIZE_MB, state.files_size_mb)
-        self.set_attr(ATTR_EXTENSIONS, state.files_ext)
-        self.set_attr(ATTR_LAST_IMAGE, state.last_image)
-        self.set_attr(ATTR_LAST_VIDEO, state.last_video)
-        last_time = to_short_human_readable(state.last_datetime)
-        self.set_attr(ATTR_LAST_DATETIME, last_time)
-        last_time = to_human_readable(state.last_datetime)
-        self.set_attr(ATTR_LAST_DATETIME_FULL, last_time)
 
     async def async_camera_image(
         self, width: int = None, height: int = None
