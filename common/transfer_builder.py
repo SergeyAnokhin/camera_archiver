@@ -5,6 +5,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from ..const import CONF_FROM, CONF_TO
+from ..lib_camera.camera_transfer import CameraTransfer
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from ..lib_mqtt.MqttTransfer import MqttTransfer
@@ -19,6 +20,7 @@ COMPONENTS_LIST = [
     FtpTransfer,
     DirectoryTransfer,
     MqttTransfer,
+    CameraTransfer
 ]
 
 class TransferBuilder:

@@ -10,11 +10,13 @@ from homeassistant.helpers import discovery
 from sqlalchemy import true
 
 from .common.helper import getLogger
+from .common.memory_storage import MemoryStorage
 from .common.transfer_builder import TransferBuilder
-from .const import (ATTR_HASS_STORAGE_COORDINATORS, CONF_CAMERA, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
-                    CONF_DIRECTORY, CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_FILTER,
-                    CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MQTT,
-                    CONF_PATH, CONF_TO, CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
+from .const import (ATTR_HASS_STORAGE_COORDINATORS, CONF_CAMERA, CONF_CLEAN,
+                    CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN, CONF_DIRECTORY,
+                    CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_FILTER, CONF_FROM,
+                    CONF_FTP, CONF_LOCAL_STORAGE, CONF_MQTT, CONF_PATH,
+                    CONF_TO, CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
                     DEFAULT_TIME_INTERVAL, DOMAIN)
 
 _LOGGER = logging.getLogger(__name__)
@@ -83,16 +85,13 @@ CONFIG_SCHEMA = vol.Schema(
             }, extra=vol.ALLOW_EXTRA)
     }, extra=vol.ALLOW_EXTRA)
 
-PLATFORMS = ["sensor", "switch"]  # , "timer", "camera", "binary_sensor", "media_player"
+PLATFORMS = ["sensor", "switch", "camera"]  # , "timer", "binary_sensor", "media_player"
 
 # HISTORY EXAMPLE : homeassistant\components\history_stats\sensor.py 228
 
 async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
     """Set up this integration using YAML."""
     
-    if DOMAIN not in hass.data:
-        hass.data[DOMAIN] = {}
-
     config = global_config[DOMAIN]
     entities = config[CONF_ENTITIES]
 
@@ -101,8 +100,8 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
         builder.build()
 
         name = entity_config[CONF_NAME]
-        hass.data[DOMAIN][name] = {}
-        hass.data[DOMAIN][name][ATTR_HASS_STORAGE_COORDINATORS] = builder.build_coordinators_dict()
+        storage = MemoryStorage(hass, name)
+        storage.coordinators = builder.build_coordinators_dict()
         logger = getLogger(__name__, name)
         logger.info(f"Init of manager finished with succes")
 

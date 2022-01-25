@@ -1,34 +1,30 @@
-# custom_components\yi_hack\camera.py
-
-from typing import Dict
-
 from homeassistant.components.camera import Camera
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
+                                                      DataUpdateCoordinator)
 
+from .common.memory_storage import MemoryStorage
 from .common.transfer_component_id import TransferComponentId, TransferType
-from .common.transfer_state import StateType, TransferState
-from .const import ATTR_ENABLE, ATTR_HASS_STORAGE_COORDINATORS, ATTR_TRANSFER_STATE, CONF_CAMERA, DOMAIN, ICON_CAMERA
+from .common.transfer_state import StateType
+from .const import (ATTR_ENABLE, CONF_CAMERA, DOMAIN, ICON_CAMERA)
 
+# async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry, async_add_entities, discovery_info=None):
+async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
 
-async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry, async_add_entities, discovery_info=None):
     entity_config = discovery_info
     instName = entity_config[CONF_NAME]
-    coordinators: Dict[TransferComponentId: Dict[StateType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName][ATTR_HASS_STORAGE_COORDINATORS]
+    storage = MemoryStorage(hass, instName)
 
     cameras = []
-    for comp_id, coords_by_state in coordinators.items():
+    for comp_id, coords_by_state in storage.coordinators.items():
         id: TransferComponentId = comp_id
-        if id.TransferType == TransferType.FROM:
-            coordinator = coords_by_state[StateType.READ]
-            
-        if id.TransferType == TransferType.TO and comp_id.Platfrom == CONF_CAMERA:
+        if id.TransferType == TransferType.TO and id.Platform == CONF_CAMERA:
             coordinator = coords_by_state[StateType.SAVE]
             cameras.append(ToCamera(hass, id, coordinator))
 
-    async_add_entities(cameras)
+    add_entities(cameras)
 
 class ToCamera(CoordinatorEntity, Camera):
     """Representation of a MQTT camera."""
@@ -36,7 +32,7 @@ class ToCamera(CoordinatorEntity, Camera):
     def __init__(self, hass: HomeAssistant, id: TransferComponentId, coordinator: DataUpdateCoordinator):
         """Initialize the MQTT Camera."""
         CoordinatorEntity.__init__(self, coordinator)
-        Camera().__init__(self)
+        Camera.__init__(self)
 
         self._comp_id = id
         self._attr_name = f"{id.Entity}: {id.Name} last file"
@@ -44,6 +40,7 @@ class ToCamera(CoordinatorEntity, Camera):
         self._last_image = None
         self._state = None
         self._hass = hass
+        self._storage = MemoryStorage(hass, id.Entity)
 
     def update(self):
         """Return the state of the camera (privacy off = state on)."""
@@ -71,38 +68,32 @@ class ToCamera(CoordinatorEntity, Camera):
 
     @property
     def enabled(self) -> bool:
-        return self.coordinator.data[ATTR_ENABLE]
+        return self.coordinator.data[ATTR_ENABLE] and self.has_file
 
     @property
-    def has_transfer_state(self) -> bool:
-        return self._hass.data[DOMAIN][self._id]
+    def has_file(self) -> bool:
+        return self._storage.has_file(self._comp_id.id)
 
     @callback
     def _handle_coordinator_update(self):
         """Call when the coordinator has an update."""
-        if self.enabled and not self.has_transfer_state:
-            self.coordinator.data[ATTR_TRANSFER_STATE] = TransferState(self._stateType)
+        if not self.enabled:
+            return
 
-        state: TransferState = self.coordinator.data[ATTR_TRANSFER_STATE]
-        self.set_attr(ATTR_ENABLE, self.available)
-        if state:
-            self.coordinator_updated(state)
+        self._last_image = self._storage.get_file(self._comp_id.id)
         super()._handle_coordinator_update()
-
-    def coordinator_updated(self, state: TransferState):
-        self._attr_native_value = state.files_count
 
     async def async_camera_image(
         self, width: int = None, height: int = None
     ) -> bytes:
         """Return image response."""
         """Ignore width and height: camera component will resize it."""
-        return self._last_image
+        return self._storage.get_file(self._comp_id.id)
 
     @property
     def is_on(self):
         """Determine whether the camera is on."""
-        return self._last_image is not None
+        return self._storage.has_file(self._comp_id.id)
 
     @property
     def device_info(self):

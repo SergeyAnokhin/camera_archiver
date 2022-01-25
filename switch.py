@@ -1,8 +1,6 @@
-from abc import abstractmethod
 import logging
+from abc import abstractmethod
 from typing import Dict
-from .common.transfer_component_id import TransferComponentId, TransferType
-from .common.transfer_state import StateType
 
 from homeassistant.components.switch import DEVICE_CLASS_SWITCH
 from homeassistant.config_entries import ConfigEntry
@@ -12,6 +10,9 @@ from homeassistant.helpers.entity import ToggleEntity
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
+from .common.memory_storage import MemoryStorage
+from .common.transfer_component_id import TransferComponentId, TransferType
+from .common.transfer_state import StateType
 from .const import ATTR_ENABLE, ATTR_HASS_STORAGE_COORDINATORS, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,12 +25,12 @@ async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry, async_add_
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
     entity_config = discovery_info
     instName = entity_config[CONF_NAME]
-    coordinators: Dict[TransferComponentId: Dict[StateType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName][ATTR_HASS_STORAGE_COORDINATORS]
-
+    storage = MemoryStorage(hass, instName)
+    
     switches = []
     coordinators_list = []
 
-    for comp_id, coords_by_state in coordinators.items():
+    for comp_id, coords_by_state in storage.coordinators.items():
         id: TransferComponentId = comp_id
         if id.TransferType == TransferType.FROM:
             coordinator = coords_by_state[StateType.REPOSITORY]

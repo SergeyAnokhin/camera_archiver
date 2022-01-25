@@ -10,10 +10,12 @@ from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
 
 from .common.helper import to_human_readable, to_short_human_readable
+from .common.memory_storage import MemoryStorage
 from .common.state_collector import StateCollector
 from .common.transfer_component_id import TransferComponentId, TransferType
 from .common.transfer_state import StateType, TransferState
-from .const import (ATTR_ENABLE, ATTR_EXTENSIONS, ATTR_HASS_STORAGE_COORDINATORS, ATTR_LAST_DATETIME,
+from .const import (ATTR_ENABLE, ATTR_EXTENSIONS,
+                    ATTR_HASS_STORAGE_COORDINATORS, ATTR_LAST_DATETIME,
                     ATTR_LAST_DATETIME_FULL, ATTR_LAST_IMAGE, ATTR_LAST_TARGET,
                     ATTR_LAST_VIDEO, ATTR_SIZE_MB, ATTR_TRANSFER_STATE, DOMAIN,
                     ICON_COPIED, ICON_DEFAULT, ICON_LAST, ICON_SCREENSHOT,
@@ -31,10 +33,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
     entity_config = discovery_info
     instName = entity_config[CONF_NAME]
-    coordinators: Dict[TransferComponentId: Dict[StateType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName][ATTR_HASS_STORAGE_COORDINATORS]
+    storage = MemoryStorage(hass, instName)
 
     sensors = []
-    for comp_id, coords_by_state in coordinators.items():
+    for comp_id, coords_by_state in storage.coordinators.items():
         id: TransferComponentId = comp_id
         if id.TransferType == TransferType.FROM:
             coordinator = coords_by_state[StateType.REPOSITORY]

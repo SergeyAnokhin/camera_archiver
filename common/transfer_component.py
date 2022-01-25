@@ -78,7 +78,7 @@ class TransferComponent:
         file.metadata[ATTR_TARGET_FILE] = self.file_save(file, content)
         file.metadata[ATTR_TARGET_COMPONENT] = self._id.Name
         self._logger.debug(f"Saved: [{file.metadata[ATTR_TARGET_FILE]}] content type: {type(content)}")
-        self._invoke_save_listeners(file, content)
+        self._invoke_save_listeners(file)
         return True # need ack for file delete permission
 
     def settings_changed(self, stateType: StateType, data) -> None:

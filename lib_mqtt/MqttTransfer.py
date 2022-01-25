@@ -41,11 +41,12 @@ class MqttTransfer(TransferComponent):
     @callback
     def message_received(self, msg):
         """Handle new MQTT messages."""
-        self._logger.debug(f"|{self._state_topic}| MQTT : {msg.topic}")
+        self._logger.debug(f"|{self._state_topic}| MQTT")
         data = msg.payload
         self._last_updated = datetime.now()
         self._last_image = data
-        file = MqttFileInfo(self._state_topic, data)
+        filename = f"{self._state_topic}/mqtt.jpg"
+        file = MqttFileInfo(filename, data)
         file.metadata[ATTR_SOURCE_HOST] = self._broker
         self._files.put(file)
         if self._retained_message: # ignore first message after loading

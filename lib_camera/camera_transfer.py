@@ -5,9 +5,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from ..common.ifile_info import IFileInfo
+from ..common.memory_storage import MemoryStorage
 from ..common.transfer_component import TransferComponent
 from ..common.transfer_component_id import TransferComponentId
-from ..const import ATTR_HASS_STORAGE_MEMORY, CONF_CAMERA, CONF_FILTER, DOMAIN
+from ..const import CONF_CAMERA, CONF_FILTER, DOMAIN
 
 
 class CameraTransfer(TransferComponent):
@@ -19,6 +20,7 @@ class CameraTransfer(TransferComponent):
         if CONF_FILTER in config:
             pattern = config[CONF_FILTER]
             self._regex_filter = re.compile(pattern)
+        self._storage = MemoryStorage(hass, id.Entity)
 
     def get_files(self, max=None) -> list[IFileInfo]:
         ''' OVERRIDE '''
@@ -38,10 +40,5 @@ class CameraTransfer(TransferComponent):
         if not self._regex_filter.match(file.basename):
             return None
 
-        entity_storage = self._hass.data[DOMAIN][self._id.Entity]
-        if ATTR_HASS_STORAGE_MEMORY not in entity_storage:
-            entity_storage[ATTR_HASS_STORAGE_MEMORY] = {}
-
-        entity_storage[ATTR_HASS_STORAGE_MEMORY][self._id.id] = content
-
+        self._storage.append_file(self._id.id, content)
         return self._id.id
