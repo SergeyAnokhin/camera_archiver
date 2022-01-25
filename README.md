@@ -65,6 +65,8 @@ camera_archiver:
         #   platform: directory
         #   path: ../home-assistant-core-data
         #   datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
+        - platform: camera
+          filter: '.*\\.jpg'
         - name: ftp
           platform: ftp
           host: !secret server_ip

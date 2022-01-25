@@ -75,9 +75,7 @@ class ToCamera(CoordinatorEntity, Camera):
 
     @property
     def has_transfer_state(self) -> bool:
-        return ATTR_TRANSFER_STATE in self.data \
-            and self.data[ATTR_TRANSFER_STATE] \
-            and isinstance(self.data[ATTR_TRANSFER_STATE], TransferState)
+        return self._hass.data[DOMAIN][self._id]
 
     @callback
     def _handle_coordinator_update(self):
