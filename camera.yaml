@@ -1,0 +1,12 @@
+# - platform: generic
+#   name: Generic cam
+#   still_image_url: http://192.168.1.31:2180/CameraArchive/test.jpg
+#   stream_source: http://192.168.1.31:2180/CameraArchive/test.mp4
+
+# - platform: mjpeg
+#   name: mjpeg cam
+#   mjpeg_url: http://192.168.1.31:2180/CameraArchive/test.mp4
+
+# - platform: ffmpeg
+#   input: -rtsp_transport tcp -i http://192.168.1.31:2180/CameraArchive/test.mp4
+#   name: ffmpeg cam

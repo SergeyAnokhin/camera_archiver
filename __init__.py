@@ -11,8 +11,8 @@ from sqlalchemy import true
 
 from .common.helper import getLogger
 from .common.transfer_builder import TransferBuilder
-from .const import (CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
-                    CONF_DIRECTORY, CONF_EMPTY_DIRECTORIES, CONF_FILES,
+from .const import (CONF_CAMERA, CONF_CLEAN, CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
+                    CONF_DIRECTORY, CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_FILTER,
                     CONF_FROM, CONF_FTP, CONF_LOCAL_STORAGE, CONF_MQTT,
                     CONF_PATH, CONF_TO, CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
                     DEFAULT_TIME_INTERVAL, DOMAIN)
@@ -55,8 +55,14 @@ MQTT_SCHEMA = vol.Schema({
     vol.Optional(CONF_NAME): cv.string,
 })
 
+CAMERA_SCHEMA = vol.Schema({
+    vol.Required(CONF_PLATFORM): CONF_CAMERA,
+    vol.Required(CONF_FILTER): cv.string,
+    vol.Optional(CONF_NAME): cv.string,
+})
+
 TO_SCHEMA = FROM_SCHEMA = vol.All(cv.ensure_list, [
-    vol.Any(FTP_SCHEMA, DIRECTORY_SCHEMA, MQTT_SCHEMA)
+    vol.Any(FTP_SCHEMA, DIRECTORY_SCHEMA, MQTT_SCHEMA, CAMERA_SCHEMA)
 ])
 
 ENTITY_SCHEMA = vol.All(cv.ensure_list, [

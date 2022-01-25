@@ -1,0 +1,15 @@
+Yi1080pWoodSouth:
+  entities:
+    - sensor.yi1080pwoodsouth_ftp_read_files
+    - sensor.yi1080pwoodsouth_ftp_repository_files
+    - sensor.yi1080pwoodsouth_ftp_save_files
+    - sensor.yi1080pwoodsouth_last_image
+    - sensor.yi1080pwoodsouth_last_time
+    - sensor.yi1080pwoodsouth_last_video
+    - sensor.yi1080pwoodsouth_mqtt_read_files
+    - sensor.yi1080pwoodsouth_mqtt_repository_files
+    - switch.yi1080pwoodsouth_ftp_read
+    - switch.yi1080pwoodsouth_ftp_repository
+    - switch.yi1080pwoodsouth_ftp_save
+    - switch.yi1080pwoodsouth_mqtt_read
+    - switch.yi1080pwoodsouth_mqtt_repository

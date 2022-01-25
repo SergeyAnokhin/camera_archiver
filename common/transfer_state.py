@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 from enum import Enum
 
-from ..const import ATTR_LAST_TARGET, ATTR_TARGET_FILE
-from .helper import file_mimetype
+from ..const import ATTR_TARGET_FILE, MIMETYPE_IMAGE, MIMETYPE_VIDEO
 from .ifile_info import IFileInfo
 
 
@@ -40,10 +39,10 @@ class TransferState:
             self._size_by_ext[file.ext] = 0
         self._size_by_ext[file.ext] += file.size
 
-        type = file_mimetype(file.basename)
-        if type == "video":
+        type = file.mimetype
+        if type == MIMETYPE_VIDEO:
             self._last_video = file
-        elif type == "image":
+        elif type == MIMETYPE_IMAGE:
             self._last_image = file
         self._last_datetime = file.datetime
 

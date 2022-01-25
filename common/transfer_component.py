@@ -27,6 +27,7 @@ class TransferComponent:
         self._id = id
         if not self._id.Name:
             self._id.Name = config.get(CONF_NAME, self.platform)
+        self._id.Platform = self.platform
         self._logger = getLogger(__name__, self._id.id)
         self._transfer_file = None
         self._config = config
@@ -77,7 +78,7 @@ class TransferComponent:
         file.metadata[ATTR_TARGET_FILE] = self.file_save(file, content)
         file.metadata[ATTR_TARGET_COMPONENT] = self._id.Name
         self._logger.debug(f"Saved: [{file.metadata[ATTR_TARGET_FILE]}] content type: {type(content)}")
-        self._invoke_save_listeners(file)
+        self._invoke_save_listeners(file, content)
         return True # need ack for file delete permission
 
     def settings_changed(self, stateType: StateType, data) -> None:
@@ -134,9 +135,9 @@ class TransferComponent:
         for callback in self._listeners[StateType.REPOSITORY]:
             callback(self._id, files)
 
-    def _invoke_save_listeners(self, file: IFileInfo) -> None:
+    def _invoke_save_listeners(self, file: IFileInfo, content = None) -> None:
         for callback in self._listeners[StateType.SAVE]:
-            callback(self._id, file)
+            callback(self._id, file, content)
 
     def _run(self):
         self._logger.debug(f"Read from [{self._path}]: START")

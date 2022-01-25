@@ -33,6 +33,32 @@
           is_external: false
           display: "{{ trigger.event.data.camera }} CameraArchive"
           id: "CameraArchive_{{ trigger.event.data.camera }}"
+
+  - service: script.system_log_write
+    data_template:
+      index: '{{ trigger.event.data.timestamp | timestamp_custom("%Y.%m", False) }}'
+      tags: 'camera_archiver activity motion camera archive webcam wifi'
+      ftp_date: '{{ trigger.event.data.ftp_date | default }}'
+      trigger: '{{ this.entity_id }}'
+      elasticsearch_point: !secret elasticsearch_point
+      data_nature: >-
+        {{ trigger.event.data }}
+      customize_data: 
+        position: 
+          detail: cupboard
+          floor: 2
+          room: WoodSouth
+          is_external: false
+        sensor: 
+          emoji: "🎥"
+          icon: mdi:webcam
+          type: CameraArchive
+          unit: bytes
+          is_external: false
+          display: "{{ trigger.event.data.camera }} CameraArchive"
+          id: "CameraArchive_{{ trigger.event.data.camera }}"
+
+
       # customize_json: >
       #   "position": {
       #     "detail": "cupboard",

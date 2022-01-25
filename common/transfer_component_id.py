@@ -12,6 +12,7 @@ class TransferComponentId:
     Entity: str = None
     TransferType: TransferType = None
     Name: str = None
+    Platform: str = None
 
     def __init__(self, entity: str, transferType: TransferType) -> None:
         self.TransferType = transferType

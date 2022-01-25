@@ -1,12 +1,9 @@
 import logging
 from datetime import datetime
-import mimetypes
 from pathlib import Path
 import socket
 
 import pytz
-
-mimetypes.init()
 
 def getLogger(name: str, instance: str = "", component: str = "") -> logging.Logger:
     name = name.replace("custom_components.camera_archiver", "CamArc")
@@ -46,10 +43,3 @@ def relative_name(fullname: str, root: str) -> str:
 def local_ip():
     hostname = socket.gethostname()
     return socket.gethostbyname(hostname)
-
-def file_mimetype(filename: str) -> str:
-    ''' video or image '''
-    if not filename:
-        return "unknown"
-    mimestart = mimetypes.guess_type(filename)[0] or "unknown/ext"
-    return mimestart.split('/')[0]

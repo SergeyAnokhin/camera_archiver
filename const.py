@@ -10,6 +10,8 @@ CONF_TO = "to"
 CONF_FTP = "ftp"
 CONF_DIRECTORY = "directory"
 CONF_MQTT = "mqtt"
+CONF_CAMERA = "camera"
+CONF_FILTER = "filter"
 CONF_TOPIC = "topic"
 CONF_PATH = "path"
 CONF_DATETIME_PATTERN = "datetime_pattern"
@@ -17,6 +19,9 @@ CONF_TRIGGERS = "triggers"
 CONF_CLEAN = "clean"
 CONF_EMPTY_DIRECTORIES = "empty_directories"
 CONF_FILES = "files"
+
+MIMETYPE_IMAGE = "image"
+MIMETYPE_VIDEO = "video"
 
 # Sensors:
 SENSOR_NAME_FILES_COPIED = "Files copied"
@@ -43,6 +48,7 @@ ICON_LAST = 'mdi:page-last'
 ICON_24HOURS = 'mdi:hours-24'
 ICON_7DAYS = 'mdi:calendar-week'
 ICON_DEFAULT = 'mdi:upload'
+ICON_CAMERA = 'mdi:camera-plus'
 
 ATTR_FROM = "From"
 ATTR_DURATION = "Duration"
@@ -83,6 +89,7 @@ ATTR_LAST_TARGET = "Last target"
 ATTR_LAST_DATETIME = "Last datetime"
 ATTR_LAST_DATETIME_FULL = "Last full datetime"
 ATTR_TRANSFER_STATE = "TransferState"
+ATTR_CONTENT = "Content"
 ATTR_ENABLE = "enable"
 
 EVENT_CAMERA_ARCHIVER_FILE_COPIED = "CameraArchiverFileCopied"

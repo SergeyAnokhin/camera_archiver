@@ -1,6 +1,8 @@
 from datetime import datetime
-from io import BytesIO
+import mimetypes
 from pathlib import Path
+
+mimetypes.init()
 
 class IFileInfo:
 
@@ -49,6 +51,14 @@ class IFileInfo:
     @property
     def files_size_mb(self) -> float:
         return round(self.size / 1024 / 1024, 2)
+
+    @property
+    def mimetype(self) -> str:
+        ''' video or image '''
+        if not self.basename:
+            return "unknown"
+        mimestart = mimetypes.guess_type(self.basename)[0] or "unknown/ext"
+        return mimestart.split('/')[0]
 
     def __str__(self):
          return f"{self.basename} @{self.dirname} {self.files_size_mb}Mb"

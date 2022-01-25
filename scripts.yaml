@@ -67,3 +67,10 @@
             "value": {{ data_nature.size }},
             "volume": "/volume2"
           }            
+
+
+  restart_home_assistant:
+    alias: Restart Home Assistant
+    sequence:
+      - alias: Restart Home Assistant
+        service: homeassistant.restart

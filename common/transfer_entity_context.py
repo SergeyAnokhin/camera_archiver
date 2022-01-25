@@ -13,7 +13,7 @@ from ..const import (ATTR_CAMERA, ATTR_EXT, ATTR_ID, ATTR_MIMETYPE, ATTR_SIZE,
                      ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED,
                      ATTR_TIMESTAMP, ATTR_TIMESTAMP_STR,
                      ATTR_TIMESTAMP_STR_UTC, EVENT_CAMERA_ARCHIVER_FILE_COPIED)
-from .helper import file_mimetype, getLogger, to_str_timestamp, to_utc
+from .helper import getLogger, to_str_timestamp, to_utc
 from .ifile_info import IFileInfo
 from .transfer_component import TransferComponentId
 from .transfer_state import TransferState
@@ -50,7 +50,7 @@ class TransferEntityContext:
             ATTR_SOURCE_FILE: file.fullname,
             ATTR_CAMERA: self._config[CONF_NAME],
             ATTR_EXT: file.ext,
-            ATTR_MIMETYPE: file_mimetype(file.basename),
+            ATTR_MIMETYPE: file.mimetype,
             ATTR_SIZE: file.size,
             ATTR_ID: id,
         }

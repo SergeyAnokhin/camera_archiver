@@ -1,7 +1,7 @@
 from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from ..const import ATTR_ID, ATTR_TRANSFER_STATE, ATTR_ENABLE
+from ..const import ATTR_CONTENT, ATTR_ID, ATTR_TRANSFER_STATE, ATTR_ENABLE, MIMETYPE_IMAGE
 from .ifile_info import IFileInfo
 from .transfer_component import TransferComponentId
 from .transfer_state import StateType, TransferState
@@ -36,7 +36,7 @@ class StateCollector:
     @callback
     def append(self, _: TransferComponentId, file: IFileInfo, content = None) -> None:
         self._state.append(file)
-        self._update_coordinator()
+        self._update_coordinator(content if file.mimetype == MIMETYPE_IMAGE else None) # optional. just for reduce memory usage
 
     @callback
     def extend(self, _: TransferComponentId, files: list[IFileInfo], contents = []) -> None:
@@ -48,9 +48,10 @@ class StateCollector:
         data[ATTR_TRANSFER_STATE] = self._state
         return data
 
-    def _update_coordinator(self) -> None:
+    def _update_coordinator(self, content = None) -> None:
         data = self._coordinator.data
         data[ATTR_TRANSFER_STATE] = self._state
+        data[ATTR_CONTENT] = content
         self._coordinator.async_set_updated_data(data)
 
     def _coordinator_updated(self):
