@@ -27,50 +27,21 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
 
     add_entities(cameras)
 
-class ToCamera(Camera):
+class ToCamera(CoordinatorEntity, Camera):
     """Representation of a MQTT camera."""
 
     def __init__(self, hass: HomeAssistant, id: TransferComponentId, coordinator: DataUpdateCoordinator):
         """Initialize the MQTT Camera."""
-        # CoordinatorEntity.__init__(self, coordinator)
+        CoordinatorEntity.__init__(self, coordinator)
         Camera.__init__(self)
 
-        self.coordinator = coordinator
         self._comp_id = id
         self._attr_name = f"{id.Entity}: {id.Name} last file"
         self._attr_icon = ICON_CAMERA
-        self._last_image: BytesIO = None
+        self._last_image: bytes = None
         self._state = None
         self._hass = hass
         self._storage = MemoryStorage(hass, id.Entity)
-
-    def update(self):
-        """Return the state of the camera (privacy off = state on)."""
-        # self._state = not get_privacy(self.hass, self._device_name)
-        pass
-
-        # @callback
-        # def message_received(msg):
-        #     """Handle new MQTT messages."""
-        #     data = msg.payload
-
-        #     self._last_image = data
-
-        # self._mqtt_subscription = await mqtt.async_subscribe(
-        #     self.hass, self._state_topic, message_received, 1, None
-        # )
-
-    # async def async_will_remove_from_hass(self):
-    #     """Unsubscribe from MQTT events."""
-    #     if self._mqtt_subscription:
-    #         self._mqtt_subscription()
-
-    async def async_added_to_hass(self) -> None:
-        """When entity is added to hass."""
-        await super().async_added_to_hass()
-        self.async_on_remove(
-            self.coordinator.async_add_listener(self._handle_coordinator_update)
-        )
 
     @property
     def enabled(self) -> bool:
@@ -87,18 +58,24 @@ class ToCamera(Camera):
             return
 
         self._last_image = self._storage.get_file(self._comp_id.id)
-        # super()._handle_coordinator_update()
+        super()._handle_coordinator_update()
 
-    async def async_camera_image(
+    def camera_image(
         self, width: int = None, height: int = None
     ) -> bytes:
-        """Return image response."""
-        """Ignore width and height: camera component will resize it."""
-        bytes: BytesIO = self._storage.get_file(self._comp_id.id)
-        #bytes.seek(0)
-        return bytes.getvalue()
-        
+        self._last_image = self._storage.get_file(self._comp_id.id)
+        bytes = self._last_image
+        return bytes
 
+    # async def async_camera_image(
+    #     self, width: int = None, height: int = None
+    # ) -> bytes:
+    #     """Return image response."""
+    #     """Ignore width and height: camera component will resize it."""
+    #     self._last_image = self._storage.get_file(self._comp_id.id)
+    #     bytes = self._last_image.getvalue()
+    #     return bytes
+        
     @property
     def is_on(self):
         """Determine whether the camera is on."""

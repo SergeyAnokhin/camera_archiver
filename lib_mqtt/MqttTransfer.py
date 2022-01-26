@@ -82,7 +82,7 @@ class MqttTransfer(TransferComponent):
     def file_read(self, file: IFileInfo) -> Any:
         ''' OVERRIDE '''
         file.metadata[ATTR_SOURCE_HOST] = local_ip()
-        return io.BytesIO(self._last_image)
+        return self._last_image
 
     def file_delete(self, file: IFileInfo):
         ''' OVERRIDE '''

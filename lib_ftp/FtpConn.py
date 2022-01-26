@@ -71,17 +71,18 @@ class FtpConn:
     def DeleteDir(self, dirname: str):
         self.ftp.rmd(dirname)
 
-    def UploadBytes(self, bytesIo: BytesIO, fullFtpPath: str):
+    def UploadBytes(self, bytes: bytes, fullFtpPath: str):
         self.cd(fullFtpPath, withDirectoryCreation=True)
         filename = fullFtpPath.split('/')[-1]
+        bytesIo = BytesIO(bytes)
         bytesIo.seek(0)
         self.ftp.storbinary(f'STOR {filename}', bytesIo)
 
-    def DownloadBytes(self, fullname: str) -> BytesIO:
+    def DownloadBytes(self, fullname: str) -> bytes:
         buffer = BytesIO()
         self.ftp.retrbinary(f"RETR {fullname}", buffer.write)
         filesize = buffer.getbuffer().nbytes
         buffer.seek(0)
         _LOGGER.debug(f'File downloaded : [{fullname}] ==> [memory] ({filesize}b)')
-        return buffer
+        return buffer.getvalue()
 

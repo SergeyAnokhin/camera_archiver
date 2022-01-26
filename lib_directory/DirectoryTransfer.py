@@ -1,4 +1,3 @@
-import io
 import os
 from typing import Any
 
@@ -41,7 +40,7 @@ class DirectoryTransfer(TransferComponent):
         file.metadata[ATTR_SOURCE_HOST] = local_ip()
 
         with open(file.fullname, 'rb') as infile:
-            return io.BytesIO(infile.read())
+            return infile.read()
 
     def file_delete(self, file: IFileInfo):
         ''' OVERRIDE '''
@@ -53,11 +52,9 @@ class DirectoryTransfer(TransferComponent):
         rel_path = file.datetime.strftime(self._config[CONF_DATETIME_PATTERN])
         filename = f"{self._path}/{rel_path}.{file.ext}"
         mkdir_by(filename)
-        if isinstance(content, io.BytesIO): 
-            with content:
-                with open(filename, 'wb') as outfile:
-                    outfile.write(content.read())
-                    content.close()
+        if isinstance(content, bytes): 
+            with open(filename, 'wb') as outfile:
+                outfile.write(content)
         else:
             raise Exception(f'Unknown content type to save: {type(content)}')
 

@@ -1,5 +1,3 @@
-import io
-import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -59,11 +57,9 @@ class FtpTransfer(TransferComponent):
         filename = f"{self._path}/{rel_path}.{file.ext}"
         file.metadata[ATTR_TARGET_HOST] = self._config[CONF_HOST]
 
-        if isinstance(content, io.BytesIO): 
-            with content:
-                with FtpConn(self._config) as ftp:
-                    ftp.UploadBytes(content, filename)
-                content.close()
+        if isinstance(content, bytes): 
+            with FtpConn(self._config) as ftp:
+                ftp.UploadBytes(content, filename)
         else:
             raise Exception(f'Unknown content type to save: {type(content)}')
 

@@ -49,7 +49,7 @@
             "camera": "{{ data_nature.camera }}",
             "ext": "{{ data_nature.ext }}",
             "mimitype": "{{ data_nature.mimetype }}",
-            "path": "{{ data_nature.destination_file }}",
+            "path": "{{ data_nature.target_file }}",
             "origin": {
               "component": "{{ data_nature.source_component }}",
               {% if ftp_date and ftp_date != '' %}"ftp_date": "{{ ftp_date }}",{% endif %}
@@ -57,11 +57,11 @@
               "host": "{{ data_nature.source_host }}",
               "filename": "{{ data_nature.source_file }}"
             },
-            "destination": {
-              "component": "{{ data_nature.destination_component }}",
-              "host": "{{ data_nature.destination_host }}"
+            "target": {
+              "component": "{{ data_nature.target_component }}",
+              "host": "{{ data_nature.target_host }}"
             },
-            "source_type": "{{ data_nature.source_component }}"
+            "source_type": "{{ data_nature.source_component }}",
             {{ (customize_data | to_json | trim())[1:-1] }},
             "tags": "synology_cameraarchive hassio {{ tags }}",
             "value": {{ data_nature.size }},

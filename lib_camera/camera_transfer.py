@@ -37,7 +37,7 @@ class CameraTransfer(TransferComponent):
 
     def file_save(self, file: IFileInfo, content) -> str:
         ''' OVERRIDE '''
-        if not self._regex_filter.match(file.basename):
+        if self._regex_filter and not self._regex_filter.match(file.basename):
             return None
 
         self._storage.append_file(self._id.id, content)

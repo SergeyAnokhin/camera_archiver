@@ -59,7 +59,7 @@ MQTT_SCHEMA = vol.Schema({
 
 CAMERA_SCHEMA = vol.Schema({
     vol.Required(CONF_PLATFORM): CONF_CAMERA,
-    vol.Required(CONF_FILTER): cv.string,
+    vol.Optional(CONF_FILTER): cv.string,
     vol.Optional(CONF_NAME): cv.string,
 })
 
