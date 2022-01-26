@@ -7,14 +7,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .common.transfer_component_id import TransferComponentId, TransferType
-from .common.transfer_state import StateType
+from .common.transfer_state import EventType
 from .const import ATTR_HASS_STORAGE_COORDINATORS, DOMAIN
 
 
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
     entity_config = discovery_info
     instName = entity_config[CONF_NAME]
-    coordinators: Dict[TransferComponentId: Dict[StateType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName][ATTR_HASS_STORAGE_COORDINATORS]
+    coordinators: Dict[TransferComponentId: Dict[EventType: DataUpdateCoordinator]] = hass.data[DOMAIN][instName][ATTR_HASS_STORAGE_COORDINATORS]
 
     switches = []
     coordinators_list = []
@@ -22,15 +22,15 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
     for comp_id, coords_by_state in coordinators.items():
         id: TransferComponentId = comp_id
         if id.TransferType == TransferType.FROM:
-            coordinator = coords_by_state[StateType.REPOSITORY]
-            switches.append(ActivityBinarySensor(id, StateType.REPOSITORY, coordinator))
+            coordinator = coords_by_state[EventType.REPOSITORY]
+            switches.append(ActivityBinarySensor(id, EventType.REPOSITORY, coordinator))
             coordinators_list.append(coordinator)
-            coordinator = coords_by_state[StateType.READ]
-            switches.append(ActivityBinarySensor(id, StateType.READ, coordinator))
+            coordinator = coords_by_state[EventType.READ]
+            switches.append(ActivityBinarySensor(id, EventType.READ, coordinator))
             coordinators_list.append(coordinator)
         elif id.TransferType == TransferType.TO:
-            coordinator = coords_by_state[StateType.SAVE]
-            switches.append(ActivityBinarySensor(id, StateType.SAVE, coordinator))
+            coordinator = coords_by_state[EventType.SAVE]
+            switches.append(ActivityBinarySensor(id, EventType.SAVE, coordinator))
             coordinators_list.append(coordinator)
 
     # switches.append(CameraArchiverEnabler(entity_config, coordinators_list))

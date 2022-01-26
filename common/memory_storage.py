@@ -6,7 +6,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from ..const import (ATTR_HASS_STORAGE_COORDINATORS, ATTR_HASS_STORAGE_FILES,
                      DOMAIN)
 from .transfer_component_id import TransferComponentId
-from .transfer_state import StateType
+from .transfer_state import EventType
 
 
 class MemoryStorage: 
@@ -24,11 +24,11 @@ class MemoryStorage:
         self._name = instName
 
     @property
-    def coordinators(self) -> dict[TransferComponentId: dict[StateType: DataUpdateCoordinator]]:
+    def coordinators(self) -> dict[TransferComponentId: dict[EventType: DataUpdateCoordinator]]:
         return self._hass.data[DOMAIN][self._name][ATTR_HASS_STORAGE_COORDINATORS]
 
     @coordinators.setter
-    def coordinators(self, value: dict[TransferComponentId: dict[StateType: DataUpdateCoordinator]]) -> None:
+    def coordinators(self, value: dict[TransferComponentId: dict[EventType: DataUpdateCoordinator]]) -> None:
         self._hass.data[DOMAIN][self._name][ATTR_HASS_STORAGE_COORDINATORS] = value
 
     @property

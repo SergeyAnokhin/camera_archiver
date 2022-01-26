@@ -12,7 +12,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .common.memory_storage import MemoryStorage
 from .common.transfer_component_id import TransferComponentId, TransferType
-from .common.transfer_state import StateType
+from .common.transfer_state import EventType
 from .const import ATTR_ENABLE, ATTR_HASS_STORAGE_COORDINATORS, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,15 +33,15 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
     for comp_id, coords_by_state in storage.coordinators.items():
         id: TransferComponentId = comp_id
         if id.TransferType == TransferType.FROM:
-            coordinator = coords_by_state[StateType.REPOSITORY]
-            switches.append(ComponentEnabler(id, StateType.REPOSITORY, coordinator))
+            coordinator = coords_by_state[EventType.REPOSITORY]
+            switches.append(ComponentEnabler(id, EventType.REPOSITORY, coordinator))
             coordinators_list.append(coordinator)
-            coordinator = coords_by_state[StateType.READ]
-            switches.append(ComponentEnabler(id, StateType.READ, coordinator))
+            coordinator = coords_by_state[EventType.READ]
+            switches.append(ComponentEnabler(id, EventType.READ, coordinator))
             coordinators_list.append(coordinator)
         elif id.TransferType == TransferType.TO:
-            coordinator = coords_by_state[StateType.SAVE]
-            switches.append(ComponentEnabler(id, StateType.SAVE, coordinator))
+            coordinator = coords_by_state[EventType.SAVE]
+            switches.append(ComponentEnabler(id, EventType.SAVE, coordinator))
             coordinators_list.append(coordinator)
 
     # switches.append(CameraArchiverEnabler(entity_config, coordinators_list))
@@ -78,7 +78,7 @@ class GenericEnabler(RestoreEntity, ToggleEntity):
 
 class ComponentEnabler(GenericEnabler):
 
-    def __init__(self, comp_id: TransferComponentId, stateType: StateType, coordinator: DataUpdateCoordinator):
+    def __init__(self, comp_id: TransferComponentId, stateType: EventType, coordinator: DataUpdateCoordinator):
         super().__init__()
         self.coordinator: DataUpdateCoordinator = coordinator
         self._device_name = f"{comp_id.Entity}: {comp_id.Name} {stateType.value}"

@@ -49,6 +49,7 @@ ICON_24HOURS = 'mdi:hours-24'
 ICON_7DAYS = 'mdi:calendar-week'
 ICON_DEFAULT = 'mdi:upload'
 ICON_CAMERA = 'mdi:camera-plus'
+ICON_TIMER = 'mdi:timer-outline'
 
 ATTR_FROM = "From"
 ATTR_DURATION = "Duration"

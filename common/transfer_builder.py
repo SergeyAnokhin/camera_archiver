@@ -10,11 +10,12 @@ from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from ..lib_mqtt.MqttTransfer import MqttTransfer
 from .helper import getLogger
-from .state_collector import StateCollector
+from .state_collector import (AbstractCollector, FileAppenderCollector,
+                              FilesSetCollector, SetObjectCollector)
 from .transfer_component import TransferComponent, TransferComponentId
 from .transfer_component_id import TransferType
 from .transfer_entity_context import TransferEntityContext
-from .transfer_state import StateType
+from .transfer_state import EventType
 
 COMPONENTS_LIST = [
     FtpTransfer,
@@ -22,6 +23,13 @@ COMPONENTS_LIST = [
     MqttTransfer,
     CameraTransfer
 ]
+
+COLLECTOR_STATE_TYPES = { 
+    EventType.READ: FileAppenderCollector, 
+    EventType.SAVE: FileAppenderCollector,
+    EventType.REPOSITORY: FilesSetCollector,
+    EventType.SET_SCHEDULER: SetObjectCollector,
+ }
 
 class TransferBuilder:
 
@@ -34,7 +42,7 @@ class TransferBuilder:
         self._context: TransferEntityContext = TransferEntityContext(config, hass)
         self._from_comps: list[TransferComponent] = []
         self._to_comps: list[TransferComponent] = []
-        self._collectors: dict[TransferComponentId:  dict[StateType: StateCollector]] = {}
+        self._collectors: dict[TransferComponentId:  dict[EventType: AbstractCollector]] = {}
 
     def build(self):
         self.logger.debug(f"Build transfer components")
@@ -46,43 +54,49 @@ class TransferBuilder:
         # Link components 'From'TransferComponent 1<->n 'To'TransferComponent (READ)
         for to_comp in self._to_comps:
             for from_comp in self._from_comps:
-                from_comp.add_listener(StateType.READ, to_comp._new_file_readed)
+                from_comp.add_listener(EventType.READ, to_comp._new_file_readed)
 
-        collector: StateCollector = None
-        # Listen components by StateCollector
+        collector: AbstractCollector = None
+        # Listen components by collectors
         for comp in self._from_comps:
-            collector = self._collectors[comp.Id][StateType.READ]
-            comp.add_listener(StateType.READ, collector.append)
-            collector = self._collectors[comp.Id][StateType.REPOSITORY]
-            comp.add_listener(StateType.REPOSITORY, collector.set)
+            collector = self._collectors[comp.Id][EventType.READ]
+            comp.add_listener(EventType.READ, collector.append)
+            collector = self._collectors[comp.Id][EventType.REPOSITORY]
+            comp.add_listener(EventType.REPOSITORY, collector.append)
         for comp in self._to_comps:
-            collector = self._collectors[comp.Id][StateType.SAVE]
-            comp.add_listener(StateType.SAVE, collector.append)
+            collector = self._collectors[comp.Id][EventType.SAVE]
+            comp.add_listener(EventType.SAVE, collector.append)
 
         # Listen from DataUpdateCoordinator by component
         for comp in self._from_comps:
-            collector = self._collectors[comp.Id][StateType.READ]
+            collector = self._collectors[comp.Id][EventType.READ]
             collector.add_listener(comp.settings_changed)
-            collector = self._collectors[comp.Id][StateType.REPOSITORY]
+            collector = self._collectors[comp.Id][EventType.REPOSITORY]
             collector.add_listener(comp.settings_changed)
         for comp in self._to_comps:
-            collector = self._collectors[comp.Id][StateType.SAVE]
+            collector = self._collectors[comp.Id][EventType.SAVE]
             collector.add_listener(comp.settings_changed)
-
 
         # Listen from components SAVE by runner
         for comp in self._to_comps:
-            comp.add_listener(StateType.SAVE, self._context.fire_post_event)
+            comp.add_listener(EventType.SAVE, self._context.fire_post_event)
+
+        # Listen from components scheduler next run by coordinator
+        for comp in self._from_comps:
+            if comp.has_scheduler:
+                collector = self._collectors[comp.Id][EventType.SET_SCHEDULER]
+                comp.add_listener(EventType.SET_SCHEDULER, collector.append)
 
 
-    def build_coordinators_dict(self) -> dict[TransferComponentId:  dict[StateType: DataUpdateCoordinator]]:
-        return { 
+    def build_coordinators_dict(self) -> dict[TransferComponentId:  dict[EventType: DataUpdateCoordinator]]:
+        result = { 
             key: { # TransferComponentId:
                 key1: value1.coordinator # StateType: DataUpdateCoordinator
                 for key1, value1 in value.items()    
             }
             for key, value in self._collectors.items()
         }
+        return result
             
     def build_components(self, config: dict, transferType: TransferType) -> list[TransferComponent]:
         components: list[TransferComponent] = []
@@ -96,44 +110,24 @@ class TransferBuilder:
             components.append(transfer)
         return components      
 
-    def build_collectors(self, comps: list[TransferComponent]) -> dict[TransferComponentId:  dict[StateType: StateCollector]]:
+    def build_collectors(self, comps: list[TransferComponent]) -> dict[TransferComponentId:  dict[EventType: AbstractCollector]]:
         return {
             comp.Id: self.build_collectors_by_state(comp.Id) 
             for comp in comps
         }
 
-    def build_collectors_by_state(self, id: TransferComponentId) -> dict[StateType: StateCollector]:
+    def build_collectors_by_state(self, id: TransferComponentId) -> dict[EventType: AbstractCollector]:
         return {
             type: self.build_collector(id, type) 
-            for type in StateType
+            for type in EventType
         }
 
-    def build_collector(self, id: TransferComponentId, type: StateType) -> StateCollector:
+    def build_collector(self, id: TransferComponentId, type: EventType) -> AbstractCollector:
         coordinator = DataUpdateCoordinator(
             self._hass,
             logging.getLogger(__name__),
             name=f"{id.id}({type.value})",
-            # request_refresh_debouncer=Debouncer(
-            #     hass, self.logger, cooldown=600, immediate=False
-            # )
         )
-
-        return StateCollector(id, type, coordinator)
-
-
-        # hass.data[DOMAIN][self._name] = coordinatorInst
-        # def _enable_scheduled_speedtests(*_):
-        #     """Activate the data update coordinator."""
-        #     coordinatorInst.update_interval = timedelta(days = 10)
-
-        # if hass.state == CoreState.running:
-        #     _enable_scheduled_speedtests()
-        # else:
-        #     # Running a speed test during startup can prevent
-        #     # integrations from being able to setup because it
-        #     # can saturate the network interface.
-        #     hass.bus.async_listen_once(
-        #         EVENT_HOMEASSISTANT_STARTED, _enable_scheduled_speedtests
-        #     )
-
-        # await async_setup_sensor_registry_updates(hass, sensor_registry, scan_interval)
+        
+        collector = COLLECTOR_STATE_TYPES[type](id, type, coordinator)
+        return collector

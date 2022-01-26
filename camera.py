@@ -8,7 +8,7 @@ from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
 
 from .common.memory_storage import MemoryStorage
 from .common.transfer_component_id import TransferComponentId, TransferType
-from .common.transfer_state import StateType
+from .common.transfer_state import EventType
 from .const import (ATTR_ENABLE, CONF_CAMERA, DOMAIN, ICON_CAMERA)
 
 # async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry, async_add_entities, discovery_info=None):
@@ -22,7 +22,7 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
     for comp_id, coords_by_state in storage.coordinators.items():
         id: TransferComponentId = comp_id
         if id.TransferType == TransferType.TO and id.Platform == CONF_CAMERA:
-            coordinator = coords_by_state[StateType.SAVE]
+            coordinator = coords_by_state[EventType.SAVE]
             cameras.append(ToCamera(hass, id, coordinator))
 
     add_entities(cameras)

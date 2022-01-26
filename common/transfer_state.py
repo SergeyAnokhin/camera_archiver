@@ -5,14 +5,14 @@ from ..const import ATTR_TARGET_FILE, MIMETYPE_IMAGE, MIMETYPE_VIDEO
 from .ifile_info import IFileInfo
 
 
-class StateType(Enum):
+class EventType(Enum):
     REPOSITORY = "Repository"  # Read repository
     READ = "Read"  # Read files from repository in memory
     SAVE = "Save"  # Save file from memory to new repository
-
+    SET_SCHEDULER = "set_scheduler" # scheduler updated
 
 class TransferState:
-    def __init__(self, type: StateType = None) -> None:
+    def __init__(self, type: EventType = None) -> None:
         self._type = type
         self._files: list[str] = []
         self._size = 0

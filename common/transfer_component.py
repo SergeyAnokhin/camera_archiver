@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
@@ -16,7 +16,7 @@ from ..const import (ATTR_ENABLE, ATTR_SOURCE_COMPONENT, ATTR_TARGET_COMPONENT, 
                      SERVICE_FIELD_INSTANCE, SERVICE_RUN)
 from .ifile_info import IFileInfo
 from .transfer_component_id import TransferComponentId, TransferType
-from .transfer_state import StateType
+from .transfer_state import EventType
 
 
 class TransferComponent:
@@ -36,12 +36,13 @@ class TransferComponent:
         self._clean = config.get(CONF_CLEAN, {})
         self._clean_dirs = self._clean.get(CONF_EMPTY_DIRECTORIES, False)
         self._clean_files = self._clean.get(CONF_FILES, list[str])
-        self._is_enabled: dict[StateType] = {t: True for t in StateType}
+        self._is_enabled: dict[EventType] = {t: True for t in EventType}
 
-        self._listeners = {t: [] for t in StateType}
+        self._listeners = {t: [] for t in EventType}
 
         self._job = HassJob(self.async_run)
         self._unsub_refresh: CALLBACK_TYPE = None
+        self._next_run = None
         if self._id.TransferType == TransferType.FROM:
             self._schedule_refresh()
             self.subscribe_to_service()
@@ -71,7 +72,7 @@ class TransferComponent:
         self.file_delete(file)
 
     def _new_file_readed(self, comp_id: TransferComponentId, file: IFileInfo, content) -> bool:
-        if not self._is_enabled[StateType.SAVE]:
+        if not self._is_enabled[EventType.SAVE]:
             return False
         if not content:
             raise Exception(f'Content is empty. Components: {self._id} -> {comp_id}')
@@ -81,12 +82,15 @@ class TransferComponent:
         self._invoke_save_listeners(file)
         return True # need ack for file delete permission
 
-    def settings_changed(self, stateType: StateType, data) -> None:
+    def settings_changed(self, stateType: EventType, data) -> None:
         if self._is_enabled[stateType] == data[ATTR_ENABLE]:
             return
         self._is_enabled[stateType] = data[ATTR_ENABLE]
-        if stateType == StateType.REPOSITORY:
-            self._schedule_refresh()
+        if stateType == EventType.REPOSITORY:
+            if self._is_enabled[stateType]:
+                self._schedule_refresh()
+            else:
+                self.schedule_off()
 
     def subscribe_to_service(self) -> None:
         async def _service_run(call: ServiceCall) -> None:
@@ -102,49 +106,62 @@ class TransferComponent:
 
         self._hass.services.async_register(DOMAIN, SERVICE_RUN, _service_run)
 
+    @property
+    def has_scheduler(self) -> bool:
+        return CONF_SCAN_INTERVAL in self._config
+
+    def schedule_off(self):
+        self._schedule_off()
+        self._invoke_scheduler_listeners()
+        
     def _schedule_off(self):
         if self._unsub_refresh:
             self._unsub_refresh()
             self._unsub_refresh = None
+        self._next_run = None
 
     def _schedule_refresh(self):
         self._schedule_off()
-        if CONF_SCAN_INTERVAL not in self._config \
-            or not self._is_enabled[StateType.REPOSITORY]:
+        if not self.has_scheduler \
+            or not self._is_enabled[EventType.REPOSITORY]:
             return
 
-        scan_interval = self._config.get(CONF_SCAN_INTERVAL, DEFAULT_TIME_INTERVAL)
+        scan_interval: timedelta = self._config[CONF_SCAN_INTERVAL]
+        self._next_run = datetime.now().replace(microsecond=0) + scan_interval
         self._unsub_refresh = async_track_point_in_time(
-            self._hass,
-            self._job,
-            datetime.now().replace(microsecond=0) + scan_interval,
+            self._hass, self._job, self._next_run,
         )
+        self._invoke_scheduler_listeners()
 
-    def add_listener(self, stateType: StateType, update_callback: CALLBACK_TYPE) -> None:
+    def add_listener(self, stateType: EventType, update_callback: CALLBACK_TYPE) -> None:
         """Listen for data updates."""
         self._listeners[stateType].append(update_callback)
 
     def _invoke_read_listeners(self, file: IFileInfo, content) -> bool:
         results: list = []
-        for callback in self._listeners[StateType.READ]:
+        for callback in self._listeners[EventType.READ]:
             results.append(callback(self._id, file, content))
 
         return True in results # check if any compinent recieved and saved file
 
     def _invoke_repo_listeners(self, files: list[IFileInfo]) -> None:
-        for callback in self._listeners[StateType.REPOSITORY]:
+        for callback in self._listeners[EventType.REPOSITORY]:
             callback(self._id, files)
 
     def _invoke_save_listeners(self, file: IFileInfo) -> None:
-        for callback in self._listeners[StateType.SAVE]:
+        for callback in self._listeners[EventType.SAVE]:
             callback(self._id, file)
+
+    def _invoke_scheduler_listeners(self) -> None:
+        for callback in self._listeners[EventType.SET_SCHEDULER]:
+            callback(self._id, self._next_run)
 
     def _run(self):
         self._logger.debug(f"Read from [{self._path}]: START")
-        if not self._is_enabled[StateType.REPOSITORY]:
+        if not self._is_enabled[EventType.REPOSITORY]:
             return
 
-        if self._is_enabled[StateType.READ]:
+        if self._is_enabled[EventType.READ]:
             files: list[IFileInfo] = self.get_files(self._copied_per_run)
             self._logger.debug(f"Found files for copy: {len(files)}")
             for file in files:
