@@ -41,7 +41,7 @@ class MqttTransfer(TransferComponent):
     @callback
     def message_received(self, msg):
         """Handle new MQTT messages."""
-        self._logger.debug(f"|{self._state_topic}| MQTT")
+        self._logger.debug(f"|{self._state_topic}| MQTT message received")
         data = msg.payload
         self._last_updated = datetime.now()
         self._last_image = data

@@ -13,3 +13,4 @@ Yi1080pWoodSouth:
     - switch.yi1080pwoodsouth_ftp_save
     - switch.yi1080pwoodsouth_mqtt_read
     - switch.yi1080pwoodsouth_mqtt_repository
+    - switch.yi1080pwoodsouth_camera_save

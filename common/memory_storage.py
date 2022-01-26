@@ -40,7 +40,7 @@ class MemoryStorage:
 
     def has_file(self, id) -> bool:
         return id in self.files \
-            and self.files[id]
+            and self.files[id] is not None
 
     def append_file(self, id, content) -> Any:
         self.files[id] = content
