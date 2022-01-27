@@ -20,10 +20,10 @@ from .mqtt_file_info import MqttFileInfo
 lock = threading.Lock()
 
 class MqttTransfer(TransferComponent):
-    platform = CONF_MQTT
+    Platform = CONF_MQTT
 
-    def __init__(self, id: TransferComponentId, hass: HomeAssistant, config: ConfigEntry):
-        super().__init__(id, hass, config)
+    def __init__(self, hass: HomeAssistant, config: ConfigEntry):
+        super().__init__(hass, config)
         #self._state_topic = config.data[CONF_MQTT_PREFIX] + "/" + config.data[CONF_TOPIC_MOTION_DETECTION_IMAGE]
         self._state_topic = config[CONF_TOPIC]
         self._path = self._state_topic

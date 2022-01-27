@@ -20,8 +20,7 @@ from .transfer_state import EventType
 COMPONENTS_LIST = [
     FtpTransfer,
     DirectoryTransfer,
-    MqttTransfer,
-    CameraTransfer
+    MqttTransfer
 ]
 
 COLLECTOR_STATE_TYPES = { 

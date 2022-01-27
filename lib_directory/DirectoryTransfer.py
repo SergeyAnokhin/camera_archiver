@@ -6,16 +6,16 @@ from homeassistant.core import HomeAssistant
 
 from ..common.helper import local_ip, mkdir_by
 from ..common.ifile_info import IFileInfo
-from ..common.transfer_component import TransferComponent, TransferComponentId
+from ..common.transfer_component import TransferComponent
 from ..const import ATTR_SOURCE_HOST, ATTR_TARGET_HOST, CONF_DATETIME_PATTERN, CONF_DIRECTORY
 from .file_info import FileInfo
 
 
 class DirectoryTransfer(TransferComponent):
-    platform = CONF_DIRECTORY
+    Platform = CONF_DIRECTORY
 
-    def __init__(self, id: TransferComponentId, hass: HomeAssistant, config: ConfigEntry):
-        super().__init__(id, hass, config)
+    def __init__(self, hass: HomeAssistant, config: ConfigEntry):
+        super().__init__(hass, config)
 
     def get_files(self, max=None) -> list[IFileInfo]:
         ''' OVERRIDE '''

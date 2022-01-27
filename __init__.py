@@ -18,7 +18,7 @@ from .const import (CONF_API, CONF_CAMERA, CONF_CLEAN, CONF_COMPONENT,
                     CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_FILTER, CONF_FTP,
                     CONF_IMAP, CONF_INDEX, CONF_LISTENERS, CONF_MIMETYPE,
                     CONF_MQTT, CONF_PATH, CONF_PIPELINES, CONF_REGEX, CONF_SCHEDULER,
-                    CONF_SENSOR, CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
+                    CONF_SENSOR, CONF_SWITCH, CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
                     DEFAULT_TIME_INTERVAL, DOMAIN)
 
 _LOGGER = logging.getLogger(__name__)
@@ -36,6 +36,7 @@ class ComponentPlatforms(Enum):
 class SensorPlatforms(Enum):
     camera = CONF_CAMERA
     sensor = CONF_SENSOR
+    switch = CONF_SWITCH
 
 class TriggerPlatforms(Enum):
     SCHEDULER = CONF_SCHEDULER
@@ -182,8 +183,7 @@ SENSORS_GLOBAL_SCHEMA = vol.All(cv.ensure_list, [{
     vol.Required(CONF_ID): cv.string,
     vol.Required(CONF_PLATFORM): cv.enum(SensorPlatforms),
     vol.Optional(CONF_TYPE): cv.string,
-}
-])
+}])
 
 CONFIG_SCHEMA = vol.Schema(
     {
@@ -206,9 +206,10 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
     config = global_config[DOMAIN]
     pipelines = config[CONF_PIPELINES]
 
+    builder = Builder(hass, config)
+
     for pipeline in pipelines:
-        builder = Builder(hass, config, pipeline)
-        builder.build_pipeline()
+        builder.build()
         # builder = TransferBuilder(hass, config, entity_config)
         # builder.build()
 

@@ -11,10 +11,10 @@ from .FtpConn import FtpConn
 from .ftp_file_info import FtpFileInfo
 
 class FtpTransfer(TransferComponent):
-    platform = CONF_FTP
+    Platform = CONF_FTP
 
-    def __init__(self, id: TransferComponentId, hass: HomeAssistant, config: ConfigEntry):
-        super().__init__(id, hass, config)
+    def __init__(self, hass: HomeAssistant, config: ConfigEntry):
+        super().__init__(hass, config)
 
     def get_files(self, max=None) -> list[IFileInfo]:
         ''' OVERRIDE '''

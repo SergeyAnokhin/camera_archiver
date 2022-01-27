@@ -2,7 +2,7 @@ from abc import abstractmethod
 from datetime import datetime, timedelta
 from enum import Enum
 
-from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_ID, CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import (CALLBACK_TYPE, HassJob, HomeAssistant,
                                 ServiceCall)
 from homeassistant.helpers.event import async_track_point_in_time
@@ -12,23 +12,19 @@ from .. import getLogger
 from ..const import (ATTR_ENABLE, ATTR_SOURCE_COMPONENT, ATTR_TARGET_COMPONENT, ATTR_TARGET_FILE, CONF_CLEAN,
                      CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
                      CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH,
-                     DEFAULT_TIME_INTERVAL, DOMAIN, SERVICE_FIELD_COMPONENT,
+                     DOMAIN, SERVICE_FIELD_COMPONENT,
                      SERVICE_FIELD_INSTANCE, SERVICE_RUN)
 from .ifile_info import IFileInfo
-from .transfer_component_id import TransferComponentId, TransferType
 from .transfer_state import EventType
 
 
 class TransferComponent:
     platform: str = None
 
-    def __init__(self, id: TransferComponentId, hass: HomeAssistant, config: dict) -> None:
+    def __init__(self, hass: HomeAssistant, config: dict) -> None:
         self._hass = hass
-        self._id = id
-        if not self._id.Name:
-            self._id.Name = config.get(CONF_NAME, self.platform)
-        self._id.Platform = self.platform
-        self._logger = getLogger(__name__, self._id.id)
+        self._id = config[CONF_ID]
+        self._logger = getLogger(__name__, self._id)
         self._transfer_file = None
         self._config = config
         self._copied_per_run = config.get(CONF_COPIED_PER_RUN, 100)
@@ -43,9 +39,9 @@ class TransferComponent:
         self._job = HassJob(self.async_run)
         self._unsub_refresh: CALLBACK_TYPE = None
         self._next_run = None
-        if self._id.TransferType == TransferType.FROM:
-            self._schedule_refresh()
-            self.subscribe_to_service()
+        # if self._id.TransferType == TransferType.FROM:
+        #     self._schedule_refresh()
+        #     self.subscribe_to_service()
 
     @abstractmethod
     def file_read(self, file: IFileInfo) -> Any:
@@ -106,32 +102,32 @@ class TransferComponent:
 
         self._hass.services.async_register(DOMAIN, SERVICE_RUN, _service_run)
 
-    @property
-    def has_scheduler(self) -> bool:
-        return CONF_SCAN_INTERVAL in self._config
+    # @property
+    # def has_scheduler(self) -> bool:
+    #     return CONF_SCAN_INTERVAL in self._config
 
-    def schedule_off(self):
-        self._schedule_off()
-        self._invoke_scheduler_listeners()
+    # def schedule_off(self):
+    #     self._schedule_off()
+    #     self._invoke_scheduler_listeners()
         
-    def _schedule_off(self):
-        if self._unsub_refresh:
-            self._unsub_refresh()
-            self._unsub_refresh = None
-        self._next_run = None
+    # def _schedule_off(self):
+    #     if self._unsub_refresh:
+    #         self._unsub_refresh()
+    #         self._unsub_refresh = None
+    #     self._next_run = None
 
-    def _schedule_refresh(self):
-        self._schedule_off()
-        if not self.has_scheduler \
-            or not self._is_enabled[EventType.REPOSITORY]:
-            return
+    # def _schedule_refresh(self):
+    #     self._schedule_off()
+    #     if not self.has_scheduler \
+    #         or not self._is_enabled[EventType.REPOSITORY]:
+    #         return
 
-        scan_interval: timedelta = self._config[CONF_SCAN_INTERVAL]
-        self._next_run = datetime.now().replace(microsecond=0) + scan_interval
-        self._unsub_refresh = async_track_point_in_time(
-            self._hass, self._job, self._next_run,
-        )
-        self._invoke_scheduler_listeners()
+    #     scan_interval: timedelta = self._config[CONF_SCAN_INTERVAL]
+    #     self._next_run = datetime.now().replace(microsecond=0) + scan_interval
+    #     self._unsub_refresh = async_track_point_in_time(
+    #         self._hass, self._job, self._next_run,
+    #     )
+    #     self._invoke_scheduler_listeners()
 
     def add_listener(self, stateType: EventType, update_callback: CALLBACK_TYPE) -> None:
         """Listen for data updates."""
