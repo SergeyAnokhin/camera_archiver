@@ -15,7 +15,7 @@ from ..const import (ATTR_CAMERA, ATTR_EXT, ATTR_ID, ATTR_MIMETYPE, ATTR_SIZE,
                      ATTR_TIMESTAMP_STR_UTC, EVENT_CAMERA_ARCHIVER_FILE_COPIED)
 from .helper import getLogger, to_str_timestamp, to_utc
 from .ifile_info import IFileInfo
-from .transfer_component import TransferComponentId
+from .component import TransferComponentId
 from .transfer_state import TransferState
 
 mimetypes.init()

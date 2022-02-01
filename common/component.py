@@ -1,6 +1,8 @@
 from abc import abstractmethod
 from datetime import datetime, timedelta
 from enum import Enum
+from .event_objects import FilesEventObject, ReadEventObject, SaveEventObject, SetSchedulerEventObject
+from generic_listener import GenericListener
 
 from homeassistant.const import CONF_ID, CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import (CALLBACK_TYPE, HassJob, HomeAssistant,
@@ -18,7 +20,7 @@ from .ifile_info import IFileInfo
 from .transfer_state import EventType
 
 
-class TransferComponent:
+class Component(GenericListener):
     platform: str = None
 
     def __init__(self, hass: HomeAssistant, config: dict) -> None:
@@ -33,8 +35,6 @@ class TransferComponent:
         self._clean_dirs = self._clean.get(CONF_EMPTY_DIRECTORIES, False)
         self._clean_files = self._clean.get(CONF_FILES, list[str])
         self._is_enabled: dict[EventType] = {t: True for t in EventType}
-
-        self._listeners = {t: [] for t in EventType}
 
         self._job = HassJob(self.async_run)
         # if self._id.TransferType == TransferType.FROM:
@@ -65,7 +65,7 @@ class TransferComponent:
         self._logger.debug(f"Delete: [{file.basename}] @ {file.dirname}")
         self.file_delete(file)
 
-    def _new_file_readed(self, comp_id: TransferComponentId, file: IFileInfo, content) -> bool:
+    def _new_file_readed(self, file: IFileInfo, content) -> bool:
         if not self._is_enabled[EventType.SAVE]:
             return False
         if not content:
@@ -102,26 +102,23 @@ class TransferComponent:
 
     def add_listener(self, stateType: EventType, update_callback: CALLBACK_TYPE) -> None:
         """Listen for data updates."""
-        self._listeners[stateType].append(update_callback)
+        self.add_listener(update_callback)
 
     def _invoke_read_listeners(self, file: IFileInfo, content) -> bool:
-        results: list = []
-        for callback in self._listeners[EventType.READ]:
-            results.append(callback(self._id, file, content))
-
-        return True in results # check if any compinent recieved and saved file
+        eventObj = ReadEventObject()
+        eventObj.File = file
+        eventObj.Content = content
+        return self.invoke_listeners(eventObj)
 
     def _invoke_repo_listeners(self, files: list[IFileInfo]) -> None:
-        for callback in self._listeners[EventType.REPOSITORY]:
-            callback(self._id, files)
+        eventObj = FilesEventObject()
+        eventObj.Files = files
+        self.invoke_listeners(eventObj)
 
     def _invoke_save_listeners(self, file: IFileInfo) -> None:
-        for callback in self._listeners[EventType.SAVE]:
-            callback(self._id, file)
-
-    def _invoke_scheduler_listeners(self) -> None:
-        for callback in self._listeners[EventType.SET_SCHEDULER]:
-            callback(self._id, self._next_run)
+        eventObj = SaveEventObject()
+        eventObj.File = file
+        self.invoke_listeners(eventObj)
 
     def _run(self):
         self._logger.debug(f"Read from [{self._path}]: START")

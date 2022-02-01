@@ -12,14 +12,14 @@ from homeassistant.util.async_ import fire_coroutine_threadsafe
 
 from ..common.helper import local_ip
 from ..common.ifile_info import IFileInfo
-from ..common.transfer_component import TransferComponent, TransferComponentId
+from ..common.component import Component, TransferComponentId
 from ..common.transfer_state import TransferState
 from ..const import ATTR_SOURCE_HOST, CONF_MQTT, CONF_TOPIC
 from .mqtt_file_info import MqttFileInfo
 
 lock = threading.Lock()
 
-class MqttTransfer(TransferComponent):
+class MqttTransfer(Component):
     Platform = CONF_MQTT
 
     def __init__(self, hass: HomeAssistant, config: ConfigEntry):

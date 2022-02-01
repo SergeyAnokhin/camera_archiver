@@ -6,12 +6,12 @@ from homeassistant.core import HomeAssistant
 
 from ..common.helper import local_ip, mkdir_by
 from ..common.ifile_info import IFileInfo
-from ..common.transfer_component import TransferComponent
+from ..common.component import Component
 from ..const import ATTR_SOURCE_HOST, ATTR_TARGET_HOST, CONF_DATETIME_PATTERN, CONF_DIRECTORY
 from .file_info import FileInfo
 
 
-class DirectoryTransfer(TransferComponent):
+class DirectoryTransfer(Component):
     Platform = CONF_DIRECTORY
 
     def __init__(self, hass: HomeAssistant, config: ConfigEntry):

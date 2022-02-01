@@ -56,10 +56,17 @@ camera_archiver:
       user: toto
       password: tata
       path: Camera/Coocheer
+    - id: scheduler_3m
+      platform: scheduler
+      scan_interval: 
+        minutes: 3
 
   sensors:
     - id: camera last
       platform: camera
+    - id: repository_stat sensor
+      platform: sensor
+      type: repository_stat
     - id: transfer_stat sensor
       platform: sensor
       type: transfer_stat
@@ -75,17 +82,12 @@ camera_archiver:
 
   pipelines:
     - id: local
-      triggers:
-        - platform: scheduler
-          scan_interval: 
-            minutes: 3
+      component: scheduler_3m
       listeners:
         - sensor: timer sensor
-        - camera: camera
-          filter: 
-            mimetype: image
         - component: input local directory
           listeners:
+            - sensor: repository_stat sensor
             - component: output local directory
               listeners:
                 - sensor: transfer_stat sensor

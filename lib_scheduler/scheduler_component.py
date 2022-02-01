@@ -1,24 +1,23 @@
-
-from datetime import datetime, timedelta
-from sys import platform
-from ..transfer_state import EventType
-from .generic_trigger import GenericTrigger
-from homeassistant.const import CONF_SCAN_INTERVAL
-
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant
-from homeassistant.helpers.event import async_track_point_in_time
-
-from ...const import CONF_SCHEDULER
+from ..common.event_objects import SetSchedulerEventObject
+from ..const import CONF_SCHEDULER
+from homeassistant.core import HomeAssistant
+from ..common.component import Component
 
 
-class SchedulerTrigger(GenericTrigger):
-    platform = CONF_SCHEDULER
+class SchedulerComponent(Component):
+    Platform = CONF_SCHEDULER
 
     def __init__(self, hass: HomeAssistant, config: dict) -> None:
-        self._hass = hass
-        self._config = config
+        super().__init__(hass, config)
         self._unsub_refresh: CALLBACK_TYPE = None
         self._next_run = None
+
+
+    def _invoke_scheduler_listeners(self) -> None:
+        eventObj = SetSchedulerEventObject()
+        eventObj.File = file
+        self.invoke_listeners(eventObj)
+
 
     def schedule_off(self):
         self._schedule_off()
@@ -42,4 +41,3 @@ class SchedulerTrigger(GenericTrigger):
             self._hass, self._job, self._next_run,
         )
         self._invoke_scheduler_listeners()
-

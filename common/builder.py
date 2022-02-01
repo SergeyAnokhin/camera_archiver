@@ -10,7 +10,7 @@ from ..lib_elasticsearch.elasticsearch_component import ElasticsearchComponent
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from ..lib_imap.imap_component import ImapComponent
 from ..lib_mqtt.MqttTransfer import MqttTransfer
-from .transfer_component import TransferComponent
+from .component import Component
 from ..const import CONF_COMPONENTS, CONF_PIPELINES, CONF_TRIGGERS
 from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_SENSORS
 from homeassistant.core import HomeAssistant, callback
@@ -78,7 +78,7 @@ class Builder:
         self._sensors[f"Pipeline {id}"] = switch
         return pipeline
 
-    def get_component(self, comp_config) -> TransferComponent:
+    def get_component(self, comp_config) -> Component:
         return self._comp_constructor_by_platform(self._hass, comp_config)
 
     def get_sensor(self, sensor_config) -> SensorConnector:

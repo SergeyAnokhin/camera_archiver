@@ -12,7 +12,7 @@ from ..lib_mqtt.MqttTransfer import MqttTransfer
 from .helper import getLogger
 from .state_collector import (AbstractCollector, FileAppenderCollector,
                               FilesSetCollector, SetObjectCollector)
-from .transfer_component import TransferComponent, TransferComponentId
+from .component import Component, TransferComponentId
 from .transfer_component_id import TransferType
 from .transfer_entity_context import TransferEntityContext
 from .transfer_state import EventType
@@ -39,8 +39,8 @@ class TransferBuilder:
         self._name = self._config[CONF_NAME]
         self.logger = getLogger(__name__, self._name)
         self._context: TransferEntityContext = TransferEntityContext(config, hass)
-        self._from_comps: list[TransferComponent] = []
-        self._to_comps: list[TransferComponent] = []
+        self._from_comps: list[Component] = []
+        self._to_comps: list[Component] = []
         self._collectors: dict[TransferComponentId:  dict[EventType: AbstractCollector]] = {}
 
     def build(self):
@@ -97,8 +97,8 @@ class TransferBuilder:
         }
         return result
             
-    def build_components(self, config: dict, transferType: TransferType) -> list[TransferComponent]:
-        components: list[TransferComponent] = []
+    def build_components(self, config: dict, transferType: TransferType) -> list[Component]:
+        components: list[Component] = []
         components_by_platform = {c.platform: c for c in COMPONENTS_LIST}
 
         for value in config[transferType.value]:
@@ -109,7 +109,7 @@ class TransferBuilder:
             components.append(transfer)
         return components      
 
-    def build_collectors(self, comps: list[TransferComponent]) -> dict[TransferComponentId:  dict[EventType: AbstractCollector]]:
+    def build_collectors(self, comps: list[Component]) -> dict[TransferComponentId:  dict[EventType: AbstractCollector]]:
         return {
             comp.Id: self.build_collectors_by_state(comp.Id) 
             for comp in comps

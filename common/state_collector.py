@@ -7,7 +7,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from ..const import (ATTR_CONTENT, ATTR_ENABLE, ATTR_ID, ATTR_TRANSFER_STATE,
                      MIMETYPE_IMAGE)
 from .ifile_info import IFileInfo
-from .transfer_component import TransferComponentId
+from .component import TransferComponentId
 from .transfer_state import EventType, TransferState
 
 

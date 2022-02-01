@@ -4,13 +4,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from ..common.ifile_info import IFileInfo
-from ..common.transfer_component import TransferComponent, TransferComponentId
+from ..common.component import Component, TransferComponentId
 from ..const import ATTR_SOURCE_HOST, ATTR_TARGET_HOST, CONF_DATETIME_PATTERN, CONF_FTP
 
 from .FtpConn import FtpConn
 from .ftp_file_info import FtpFileInfo
 
-class FtpTransfer(TransferComponent):
+class FtpTransfer(Component):
     Platform = CONF_FTP
 
     def __init__(self, hass: HomeAssistant, config: ConfigEntry):
