@@ -37,8 +37,6 @@ class TransferComponent:
         self._listeners = {t: [] for t in EventType}
 
         self._job = HassJob(self.async_run)
-        self._unsub_refresh: CALLBACK_TYPE = None
-        self._next_run = None
         # if self._id.TransferType == TransferType.FROM:
         #     self._schedule_refresh()
         #     self.subscribe_to_service()
@@ -101,33 +99,6 @@ class TransferComponent:
             self.run()
 
         self._hass.services.async_register(DOMAIN, SERVICE_RUN, _service_run)
-
-    # @property
-    # def has_scheduler(self) -> bool:
-    #     return CONF_SCAN_INTERVAL in self._config
-
-    # def schedule_off(self):
-    #     self._schedule_off()
-    #     self._invoke_scheduler_listeners()
-        
-    # def _schedule_off(self):
-    #     if self._unsub_refresh:
-    #         self._unsub_refresh()
-    #         self._unsub_refresh = None
-    #     self._next_run = None
-
-    # def _schedule_refresh(self):
-    #     self._schedule_off()
-    #     if not self.has_scheduler \
-    #         or not self._is_enabled[EventType.REPOSITORY]:
-    #         return
-
-    #     scan_interval: timedelta = self._config[CONF_SCAN_INTERVAL]
-    #     self._next_run = datetime.now().replace(microsecond=0) + scan_interval
-    #     self._unsub_refresh = async_track_point_in_time(
-    #         self._hass, self._job, self._next_run,
-    #     )
-    #     self._invoke_scheduler_listeners()
 
     def add_listener(self, stateType: EventType, update_callback: CALLBACK_TYPE) -> None:
         """Listen for data updates."""

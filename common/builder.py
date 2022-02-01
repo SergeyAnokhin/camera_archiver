@@ -24,6 +24,10 @@ COMPONENTS_LIST = [
     ImapComponent
 ]
 
+TRIGGERS_LIST = [
+
+]
+
 class SensorConnector(GenericListener):
 
     def __init__(self, config) -> None:
@@ -33,16 +37,6 @@ class SensorConnector(GenericListener):
     def __init__(self, platform: SensorPlatforms) -> None:
         GenericListener.__init__(self)
         self._platform = platform.value
-
-
-class GenericTrigger:
-
-    def __init__(self, config) -> None:
-        self._config = config
-
-    @abstractmethod
-    def enable(self, is_enable: bool):
-        pass
 
 class PipelineBuilder:
 
