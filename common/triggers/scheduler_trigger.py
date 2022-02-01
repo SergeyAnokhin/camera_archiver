@@ -1,7 +1,8 @@
 
 from datetime import datetime, timedelta
 from sys import platform
-from config.custom_components.camera_archiver.common.transfer_state import EventType
+from ..transfer_state import EventType
+from .generic_trigger import GenericTrigger
 from homeassistant.const import CONF_SCAN_INTERVAL
 
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
@@ -10,7 +11,7 @@ from homeassistant.helpers.event import async_track_point_in_time
 from ...const import CONF_SCHEDULER
 
 
-class SchedulerTrigger:
+class SchedulerTrigger(GenericTrigger):
     platform = CONF_SCHEDULER
 
     def __init__(self, hass: HomeAssistant, config: dict) -> None:
