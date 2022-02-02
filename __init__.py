@@ -38,10 +38,12 @@ class SensorPlatforms(Enum):
     sensor = CONF_SENSOR
     switch = CONF_SWITCH
 
+
 class TriggerPlatforms(Enum):
     SCHEDULER = CONF_SCHEDULER
     MQTT = CONF_MQTT
     SENSOR = CONF_SENSOR
+
 
 COMPONENT_DEFAULT = vol.Schema({
     vol.Optional(CONF_ID): cv.string,
@@ -97,8 +99,13 @@ IMAP_SCHEMA = COMPONENT_DEFAULT.extend({
     vol.Required(CONF_PATH): cv.string,
 })
 
+SCHEDULER_SCHEMA = COMPONENT_DEFAULT.extend({
+    vol.Required(CONF_PLATFORM): CONF_SCHEDULER,
+    vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_TIME_INTERVAL): cv.time_period,
+})
+
 COMPONENTS_SCHEMA = vol.All(cv.ensure_list, [
-    vol.Any(FTP_SCHEMA, DIRECTORY_SCHEMA, MQTT_SCHEMA, IMAP_SCHEMA, API_SCHEMA, ELASTICSEARCH_SCHEMA)
+    vol.Any(FTP_SCHEMA, DIRECTORY_SCHEMA, MQTT_SCHEMA, IMAP_SCHEMA, API_SCHEMA, ELASTICSEARCH_SCHEMA, SCHEDULER_SCHEMA)
 ])
 
 FILTER_SCHEMA = vol.Schema({
@@ -126,31 +133,40 @@ SENSORS_SCHEMA = vol.All(cv.ensure_list, [
     }
 ])
 
-SCHEDULER_TRIGGER_SCHEMA = vol.Schema({
-    vol.Required(CONF_PLATFORM): CONF_SCHEDULER,
-    vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_TIME_INTERVAL): cv.time_period,
+# SCHEDULER_TRIGGER_SCHEMA = vol.Schema({
+#     vol.Required(CONF_PLATFORM): CONF_SCHEDULER,
+#     vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_TIME_INTERVAL): cv.time_period,
+# })
+
+# SENSOR_TRIGGER_SCHEMA = vol.Schema({
+#     vol.Required(CONF_PLATFORM): CONF_SENSOR,
+#     vol.Required(CONF_ENTITY_ID): cv.entity_id,
+# })
+
+# MQTT_TRIGGER_SCHEMA = vol.Schema({
+#     vol.Required(CONF_PLATFORM): CONF_MQTT,
+#     vol.Required(CONF_TOPIC): cv.string,
+# })
+
+# TRIGGERS_SCHEMA = vol.All(cv.ensure_list, [
+#     vol.Any(SCHEDULER_TRIGGER_SCHEMA, SENSOR_TRIGGER_SCHEMA, MQTT_TRIGGER_SCHEMA)
+# ])
+
+COMPONENT_REF_SCHEMA_L4 = REF_SCHEMA.extend({
+    vol.Required(CONF_COMPONENT): cv.string,
 })
 
-SENSOR_TRIGGER_SCHEMA = vol.Schema({
-    vol.Required(CONF_PLATFORM): CONF_SENSOR,
-    vol.Required(CONF_ENTITY_ID): cv.entity_id,
-})
-
-MQTT_TRIGGER_SCHEMA = vol.Schema({
-    vol.Required(CONF_PLATFORM): CONF_MQTT,
-    vol.Required(CONF_TOPIC): cv.string,
-})
-
-TRIGGERS_SCHEMA = vol.All(cv.ensure_list, [
-    vol.Any(SCHEDULER_TRIGGER_SCHEMA, SENSOR_TRIGGER_SCHEMA, MQTT_TRIGGER_SCHEMA)
+LISTENERS_SCHEMA_L4 = vol.All(cv.ensure_list, [
+    vol.Any(SENSOR_REF_SENSOR_SCHEMA, COMPONENT_REF_SCHEMA_L4, SENSOR_REF_CAMERA_SCHEMA)
 ])
 
 COMPONENT_REF_SCHEMA_L3 = REF_SCHEMA.extend({
     vol.Required(CONF_COMPONENT): cv.string,
+    vol.Optional(CONF_LISTENERS): LISTENERS_SCHEMA_L4,
 })
 
 LISTENERS_SCHEMA_L3 = vol.All(cv.ensure_list, [
-    vol.Any(SENSOR_REF_SENSOR_SCHEMA, COMPONENT_REF_SCHEMA_L3, SENSOR_REF_CAMERA_SCHEMA)
+    vol.Any(SENSOR_REF_SENSOR_SCHEMA, COMPONENT_REF_SCHEMA_L4, SENSOR_REF_CAMERA_SCHEMA)
 ])
 
 COMPONENT_REF_SCHEMA_L2 = REF_SCHEMA.extend({
@@ -174,7 +190,7 @@ LISTENERS_SCHEMA = vol.All(cv.ensure_list, [
 PIPELINES_SCHEMA = vol.All(cv.ensure_list, [
     {
         vol.Required(CONF_ID): cv.string,
-        vol.Required(CONF_TRIGGERS): TRIGGERS_SCHEMA,
+        vol.Required(CONF_COMPONENT): cv.string,
         vol.Required(CONF_LISTENERS): LISTENERS_SCHEMA,
     }
 ])
