@@ -1,0 +1,172 @@
+
+components:
+  - id: input local directory
+    platform: directory
+    path: ../home-assistant-core-data/input
+    datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
+    copied_per_run: 2
+    clean:
+      empty_directories: True
+  - id: Yi1080pWoodSouth ftp
+    platform: ftp
+    host: !secret Yi1080pWoodSouth_ip
+    user: !secret Yi1080pWoodSouth_user
+    password: !secret Yi1080pWoodSouth_pass
+    path: /tmp/sd/record
+    datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
+    copied_per_run: 2
+    clean:
+      empty_directories: True
+      files:
+        - index.dat
+        - ".*\\.tmp"
+  - id: Yi1080pWoodSouth mqtt
+    platform: mqtt
+    topic: yicam_1080p/motion_detection_image
+  - id: output local directory
+    platform: directory
+    path: ../home-assistant-core-data
+    datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
+  - id: elasticsearch
+    platform: elasticsearch
+    index: cameraarchivetest-*
+  - id: OpenCV api
+    platform: api
+    url: http://winserver:0000/process
+  - id: DiskStation ftp
+    platform: ftp
+    host: !secret server_ip
+    user: !secret server_user
+    password: !secret server_pass
+    path: /CameraArchive/Yi1080pWoodSouth
+    datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
+  - id: Coocheer mail
+    platform: imap
+    host: imap.gmail.com
+    user: toto
+    password: tata
+    path: Camera/Coocheer
+  - id: scheduler_3m
+    platform: scheduler
+    scan_interval: 
+      minutes: 3
+
+sensors:
+  - id: camera last
+    platform: camera
+  - id: repository_stat sensor
+    platform: sensor
+    type: repository_stat
+  - id: transfer_stat sensor
+    platform: sensor
+    type: transfer_stat
+  - id: timer sensor
+    platform: sensor
+    type: timer
+  - id: last file sensor
+    platform: sensor
+    type: last_file
+  - id: last time sensor
+    platform: sensor
+    type: last_time
+
+pipelines:
+  - id: local
+    component: scheduler_3m
+    listeners:
+      - sensor: timer sensor
+      - component: input local directory
+        listeners:
+          - sensor: repository_stat sensor
+          - component: output local directory
+            listeners:
+              - sensor: transfer_stat sensor
+              - sensor: last file sensor
+              - sensor: last time sensor
+
+  #     - id: Yi1080pWoodSouth ftp 
+  #       triggers:
+  #         - platform: scheduler
+  #           scan_interval: 
+  #             minutes: 3
+  #       listeners:
+  #         - sensor: timer sensor
+  #         - component: Yi1080pWoodSouth ftp
+  #           listeners: &diskstation_and_elasticsearch_listeners
+  #             - component: DiskStation ftp
+  #               listeners:
+  #                 - sensor: transfer_stat sensor
+  #                 - sensor: last file sensor
+  #                 - sensor: last time sensor
+  #                 - component: elasticsearch
+  #                 - component: OpenCV api
+  #                   filter: 
+  #                     mimetype: image
+
+  #     - id: Yi1080pWoodSouth mqtt
+  #       triggers:
+  #         - platform: mqtt
+  #           topic: yicam_1080p/motion_detection_image
+  #       listeners:
+  #         - component: Yi1080pWoodSouth mqtt
+  #           listeners:
+  #             <<: *diskstation_and_elasticsearch_listeners
+
+  #     - id: Coocheer gmail
+  #       triggers:
+  #         - platform: sensor
+  #           entity_id: sensor.imap_coocheer
+  #       listeners:
+  #         - component: Coocheer mail
+  #           listeners:
+  #             <<: *diskstation_and_elasticsearch_listeners
+
+
+
+# camera_archiver:
+#   entities:
+#     - name: Yi1080pWoodSouth
+#       local_storage: ./config/www/snapshot # intermediate storage can be used for display 'last' record
+#       from: ### any in this list
+#         # - name: directory
+#         #   platform: directory
+#         #   path: ../home-assistant-core-data/input
+#         #   datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
+#         #   copied_per_run: 2
+#         #   scan_interval: 
+#         #     seconds: 10
+#         #   clean:
+#         #     empty_directories: True
+#         - name: ftp
+#           platform: ftp
+#           host: !secret Yi1080pWoodSouth_ip
+#           user: !secret Yi1080pWoodSouth_user
+#           password: !secret Yi1080pWoodSouth_pass
+#           path: /tmp/sd/record
+#           datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
+#           copied_per_run: 2
+#           scan_interval: 
+#             minutes: 3
+#           clean:
+#             empty_directories: True
+#             files:
+#               - index.dat
+#               - ".*\\.tmp"
+#         - name: mqtt
+#           platform: mqtt
+#           topic: yicam_1080p/motion_detection_image
+#       to: ### all in this list
+#         # - name: directory
+#         #   platform: directory
+#         #   path: ../home-assistant-core-data
+#         #   datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
+#         - platform: camera
+#           filter: '.*\.jpg'
+#         - name: ftp
+#           platform: ftp
+#           host: !secret server_ip
+#           user: !secret server_user
+#           password: !secret server_pass
+#           path: /CameraArchive/Yi1080pWoodSouth
+#           datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
+
