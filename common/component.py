@@ -1,8 +1,6 @@
 from abc import abstractmethod
 from datetime import datetime, timedelta
 from enum import Enum
-from .event_objects import FilesEventObject, ReadEventObject, SaveEventObject, SetSchedulerEventObject
-from generic_listener import GenericListener
 
 from homeassistant.const import CONF_ID, CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import (CALLBACK_TYPE, HassJob, HomeAssistant,
@@ -10,18 +8,22 @@ from homeassistant.core import (CALLBACK_TYPE, HassJob, HomeAssistant,
 from homeassistant.helpers.event import async_track_point_in_time
 from voluptuous.validators import Any
 
+from generic_observable import GenericObservable
+
 from .. import getLogger
-from ..const import (ATTR_ENABLE, ATTR_SOURCE_COMPONENT, ATTR_TARGET_COMPONENT, ATTR_TARGET_FILE, CONF_CLEAN,
-                     CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
-                     CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH,
-                     DOMAIN, SERVICE_FIELD_COMPONENT,
+from ..const import (ATTR_ENABLE, ATTR_SOURCE_COMPONENT, ATTR_TARGET_COMPONENT,
+                     ATTR_TARGET_FILE, CONF_CLEAN, CONF_COPIED_PER_RUN,
+                     CONF_DATETIME_PATTERN, CONF_EMPTY_DIRECTORIES, CONF_FILES,
+                     CONF_PATH, DOMAIN, SERVICE_FIELD_COMPONENT,
                      SERVICE_FIELD_INSTANCE, SERVICE_RUN)
+from .event_objects import (FilesEventObject, ReadEventObject, SaveEventObject,
+                            SetSchedulerEventObject)
 from .ifile_info import IFileInfo
 from .transfer_state import EventType
 
 
-class Component(GenericListener):
-    platform: str = None
+class Component(GenericObservable):
+    Platform: str = None
 
     def __init__(self, hass: HomeAssistant, config: dict) -> None:
         self._hass = hass

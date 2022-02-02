@@ -1,7 +1,7 @@
 from homeassistant.core import CALLBACK_TYPE
 
 
-class GenericListener:
+class GenericObservable:
 
     def __init__(self) -> None:
         self._listeners = []

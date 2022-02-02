@@ -1,9 +1,11 @@
 from abc import abstractmethod
 from sys import platform
 from typing import Any, cast
+from config.custom_components.camera_archiver.common.types import SensorConnector
+
+from config.custom_components.camera_archiver.lib_service.service_component import ServiceComponent
 
 from .. import SensorPlatforms
-from .generic_listener import GenericListener
 from ..lib_api.api_component import ApiComponent
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_elasticsearch.elasticsearch_component import ElasticsearchComponent
@@ -11,38 +13,24 @@ from ..lib_ftp.FtpTransfer import FtpTransfer
 from ..lib_imap.imap_component import ImapComponent
 from ..lib_mqtt.MqttTransfer import MqttTransfer
 from .component import Component
-from ..const import CONF_COMPONENTS, CONF_PIPELINES, CONF_TRIGGERS
-from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_SENSORS
+from ..const import CONF_COMPONENTS
+from homeassistant.const import CONF_ID, CONF_SENSORS
 from homeassistant.core import HomeAssistant, callback
 
-COMPONENTS_LIST = [
+COMPONENTS_LIST: list[Component] = [
     FtpTransfer,
     DirectoryTransfer,
     MqttTransfer,
     ElasticsearchComponent,
     ApiComponent,
-    ImapComponent
+    ImapComponent,
+    ServiceComponent
 ]
-
-TRIGGERS_LIST = [
-
-]
-
-class SensorConnector(GenericListener):
-
-    def __init__(self, config) -> None:
-        GenericListener.__init__(self)
-        self._platform = config[CONF_PLATFORM]
-
-    def __init__(self, platform: SensorPlatforms) -> None:
-        GenericListener.__init__(self)
-        self._platform = platform.value
 
 class PipelineBuilder:
 
     def __init__(self, config) -> None:
         self._config = config
-        self._triggers = [GenericTrigger(c) for c in config[CONF_TRIGGERS]]
 
     @callback
     def enable(self, event_content):
@@ -54,8 +42,8 @@ class Builder:
     def __init__(self, hass: HomeAssistant, config: dict) -> None:
         self._hass = hass
         self._config = config
-        self._components: dict[str, Any] = {}
-        self._sensors: dict[str, Any] = {}
+        self._components: dict[str, Component] = {}
+        self._sensors: dict[str, SensorConnector] = {}
         self._comp_constructor_by_platform: dict[str, Any] = {c.Platform: c for c in COMPONENTS_LIST}
 
     def build_components(self):
@@ -85,4 +73,4 @@ class Builder:
         return SensorConnector(sensor_config)
 
     def get_pipeline(self, pipe_config) -> PipelineBuilder:
-        return PipelineBuilder(pipe_config)
+        pipelineBuilder = PipelineBuilder(pipe_config)
