@@ -34,7 +34,7 @@ class Component(GenericListener):
         self._clean = config.get(CONF_CLEAN, {})
         self._clean_dirs = self._clean.get(CONF_EMPTY_DIRECTORIES, False)
         self._clean_files = self._clean.get(CONF_FILES, list[str])
-        self._is_enabled: dict[EventType] = {t: True for t in EventType}
+        self._is_enabled: bool = True
 
         self._job = HassJob(self.async_run)
         # if self._id.TransferType == TransferType.FROM:
@@ -76,29 +76,14 @@ class Component(GenericListener):
         self._invoke_save_listeners(file)
         return True # need ack for file delete permission
 
-    def settings_changed(self, stateType: EventType, data) -> None:
-        if self._is_enabled[stateType] == data[ATTR_ENABLE]:
+    def enabled_change(self, is_enabled: bool) -> None:
+        if self._is_enabled == is_enabled:
             return
-        self._is_enabled[stateType] = data[ATTR_ENABLE]
-        if stateType == EventType.REPOSITORY:
-            if self._is_enabled[stateType]:
-                self._schedule_refresh()
-            else:
-                self.schedule_off()
-
-    def subscribe_to_service(self) -> None:
-        async def _service_run(call: ServiceCall) -> None:
-            self._logger.info("service camera archive call")
-            data = dict(call.data)
-            if self._id.Entity != data[SERVICE_FIELD_INSTANCE]:
-                return
-            if self._id.Name != data[SERVICE_FIELD_COMPONENT]:
-                return
-            if self._id.TransferType != TransferType.FROM:
-                return
-            self.run()
-
-        self._hass.services.async_register(DOMAIN, SERVICE_RUN, _service_run)
+        self.enabled_changed()
+        
+    @abstractmethod
+    def enabled_changed(self):
+        pass
 
     def add_listener(self, stateType: EventType, update_callback: CALLBACK_TYPE) -> None:
         """Listen for data updates."""

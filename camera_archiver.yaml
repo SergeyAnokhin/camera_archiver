@@ -50,6 +50,8 @@ components:
     platform: scheduler
     scan_interval: 
       minutes: 3
+  - id: service_run
+    platform: service
 
 sensors:
   - id: camera last

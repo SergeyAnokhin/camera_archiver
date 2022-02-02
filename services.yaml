@@ -1,22 +1,10 @@
 run:
-  name: archive
+  name: run archiving
   description: Start files archiving
   fields:
-    instance: 
-      name: instance name
-      description: Instance name in config->camera_archiver->entities->name
-      example: 'Yi1080pWoodSouth'
-      default: 'Yi1080pWoodSouth'
+    component: 
+      name: serice type component
+      description: id of component with type 'service' in camera_archiver config
+      example: 'service_run'
+      default: 'service_run'
       required: true
-    component:
-      name: component name to run
-      description: component type in config->camera_archiver->entities->from->name (or platform)
-      example: 'ftp'
-      default: 'ftp'
-      required: true
-      selector:
-        select:
-          options:
-            - "ftp"
-            - "directory"
-            - "mqtt"

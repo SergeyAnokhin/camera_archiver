@@ -1,6 +1,10 @@
+from datetime import datetime, timedelta
+
+from homeassistant.const import CONF_SCAN_INTERVAL
+from homeassistant.helpers.event import async_track_point_in_time
 from ..common.event_objects import SetSchedulerEventObject
 from ..const import CONF_SCHEDULER
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from ..common.component import Component
 
 
@@ -11,28 +15,29 @@ class SchedulerComponent(Component):
         super().__init__(hass, config)
         self._unsub_refresh: CALLBACK_TYPE = None
         self._next_run = None
+        self._schedule_refresh()
 
-
-    def _invoke_scheduler_listeners(self) -> None:
+    def _invoke_listeners(self, nextRun: datetime) -> None:
         eventObj = SetSchedulerEventObject()
-        eventObj.File = file
-        self.invoke_listeners(eventObj)
+        eventObj.NextRun = nextRun
+        super().invoke_listeners(eventObj)
 
-
-    def schedule_off(self):
-        self._schedule_off()
-        self._invoke_scheduler_listeners()
+    def enabled_changed(self):
+        if self._is_enabled:
+            self._schedule_refresh()
+        else:
+            self._schedule_off()
         
     def _schedule_off(self):
         if self._unsub_refresh:
             self._unsub_refresh()
             self._unsub_refresh = None
         self._next_run = None
+        self._invoke_listeners(None)
 
     def _schedule_refresh(self):
         self._schedule_off()
-        if not self.has_scheduler \
-            or not self._is_enabled[EventType.REPOSITORY]:
+        if not self._is_enabled:
             return
 
         scan_interval: timedelta = self._config[CONF_SCAN_INTERVAL]
@@ -40,4 +45,4 @@ class SchedulerComponent(Component):
         self._unsub_refresh = async_track_point_in_time(
             self._hass, self._job, self._next_run,
         )
-        self._invoke_scheduler_listeners()
+        self._invoke_listeners(self._next_run)

@@ -32,6 +32,7 @@ CONF_EMPTY_DIRECTORIES = "empty_directories"
 CONF_FILES = "files"
 CONF_COMPONENTS = "components"
 CONF_PIPELINES = "pipelines"
+CONF_SERVICE = "service"
 
 MIMETYPE_IMAGE = "image"
 MIMETYPE_VIDEO = "video"
