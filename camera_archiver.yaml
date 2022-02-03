@@ -54,7 +54,7 @@ components:
     platform: service
 
 sensors:
-  - id: camera last
+  - id: camera last image
     platform: camera
   - id: repository_stat sensor
     platform: sensor
@@ -105,14 +105,15 @@ pipelines:
   #                   filter: 
   #                     mimetype: image
 
-  #     - id: Yi1080pWoodSouth mqtt
-  #       triggers:
-  #         - platform: mqtt
-  #           topic: yicam_1080p/motion_detection_image
+  # - id: Yi1080pWoodSouth mqtt
+  #   component: Yi1080pWoodSouth mqtt
+  #   listeners:
+  #     - sensor: camera last image
+  #       filter: 
+  #         mimetype: image
+  #     - component: Yi1080pWoodSouth mqtt
   #       listeners:
-  #         - component: Yi1080pWoodSouth mqtt
-  #           listeners:
-  #             <<: *diskstation_and_elasticsearch_listeners
+  #         <<: *diskstation_and_elasticsearch_listeners
 
   #     - id: Coocheer gmail
   #       triggers:

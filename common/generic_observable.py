@@ -1,3 +1,4 @@
+from config.custom_components.camera_archiver.common.event_objects import EventObject
 from homeassistant.core import CALLBACK_TYPE
 
 
@@ -16,3 +17,6 @@ class GenericObservable:
             results.append(result)
 
         return False not in results # check if any component recieved and saved file
+
+    def callback(self, eventObject: EventObject):
+        pass
