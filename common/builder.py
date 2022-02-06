@@ -2,7 +2,7 @@ from typing import Any
 
 from config.custom_components.camera_archiver.lib_service.service_component import \
     ServiceComponent
-from homeassistant.const import CONF_ID, CONF_SENSORS
+from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_SENSORS, CONF_TYPE
 from homeassistant.core import HomeAssistant, callback
 
 from .. import SensorPlatforms
@@ -48,10 +48,10 @@ class Builder:
             for value in self._config[CONF_SENSORS]
         }
 
-    def build_pipeline(self, pipeline_config: dict):
+    def build_pipeline(self, pipeline_config: dict) -> list[SensorConnector]:
         id = pipeline_config[CONF_ID]
-        self.get_pipeline(pipeline_config)
-        # return pipeline
+        sensors = self.get_pipeline(pipeline_config)
+        return sensors
 
     def get_component(self, comp_config) -> Component:
         return self._comp_constructor_by_platform(self._hass, comp_config)
@@ -59,10 +59,14 @@ class Builder:
     def get_sensor(self, sensor_config) -> SensorConnector:
         return SensorConnector(sensor_config)
 
-    def get_pipeline(self, pipe_config) -> PipelineBuilder:
+    def get_pipeline(self, pipe_config) -> list[SensorConnector]:
         pipelineBuilder = PipelineBuilder(pipe_config, self._components, self._sensors)
+        sensors = pipelineBuilder.build()
         root_component = pipelineBuilder.component
-        switch = SensorConnector(SensorPlatforms.switch)
+        switch = SensorConnector({
+            CONF_ID: f"Pipeline {id}",
+            CONF_PLATFORM: SensorPlatforms.switch
+        })
         switch.add_listener(root_component.callback)
-        self._sensors[f"Pipeline {id}"] = switch
-
+        sensors.append(switch)
+        return sensors

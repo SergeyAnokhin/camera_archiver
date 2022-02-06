@@ -2,23 +2,25 @@ import logging
 from enum import Enum
 
 import voluptuous as vol
-from homeassistant.const import (CONF_ENTITY_ID, CONF_HOST, CONF_ID,
-                                 CONF_PASSWORD, CONF_PLATFORM,
-                                 CONF_SCAN_INTERVAL, CONF_SENSORS, CONF_TYPE,
-                                 CONF_URL)
+from homeassistant.components import discovery
+from homeassistant.const import (ATTR_NAME, CONF_HOST, CONF_ID, CONF_NAME, CONF_PASSWORD,
+                                 CONF_PLATFORM, CONF_SCAN_INTERVAL,
+                                 CONF_SENSORS, CONF_TYPE, CONF_URL)
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from sqlalchemy import true
 
 from .common.builder import Builder
 from .common.helper import getLogger
-from .const import (CONF_API, CONF_CAMERA, CONF_CLEAN, CONF_COMPONENT,
+from .common.memory_storage import MemoryStorage
+from .const import (ATTR_SENSORS, CONF_API, CONF_CAMERA, CONF_CLEAN, CONF_COMPONENT,
                     CONF_COMPONENTS, CONF_COPIED_PER_RUN,
                     CONF_DATETIME_PATTERN, CONF_DIRECTORY, CONF_ELASTICSEARCH,
                     CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_FILTER, CONF_FTP,
                     CONF_IMAP, CONF_INDEX, CONF_LISTENERS, CONF_MIMETYPE,
-                    CONF_MQTT, CONF_PATH, CONF_PIPELINES, CONF_REGEX, CONF_SCHEDULER,
-                    CONF_SENSOR, CONF_SERVICE, CONF_SWITCH, CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
+                    CONF_MQTT, CONF_PATH, CONF_PIPELINES, CONF_REGEX,
+                    CONF_SCHEDULER, CONF_SENSOR, CONF_SERVICE, CONF_SWITCH,
+                    CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
                     DEFAULT_TIME_INTERVAL, DOMAIN)
 
 _LOGGER = logging.getLogger(__name__)
@@ -215,7 +217,7 @@ CONFIG_SCHEMA = vol.Schema(
             }, extra=vol.ALLOW_EXTRA)
     }, extra=vol.ALLOW_EXTRA)
 
-PLATFORMS = ["sensor", "switch", "camera"]  # , "timer", "binary_sensor", "media_player"
+PLATFORMS = ["sensor"]  # , "switch", "camera", "timer", "binary_sensor", "media_player"
 
 # HISTORY EXAMPLE : homeassistant\components\history_stats\sensor.py 228
 
@@ -229,18 +231,20 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
     builder = Builder(hass, config)
 
     for pipeline in pipelines:
-        builder.build()
-        # builder = TransferBuilder(hass, config, entity_config)
-        # builder.build()
-
-        # name = entity_config[CONF_NAME]
+        sensors = builder.build_pipeline(pipeline)
+        name = pipeline[CONF_NAME]
         # storage = MemoryStorage(hass, name)
-        # storage.coordinators = builder.build_coordinators_dict()
-        # logger = getLogger(__name__, name)
-        # logger.info(f"Init of manager finished with succes")
+        # storage.sensors = sensors
+        logger = getLogger(__name__, name)
+        logger.info(f"Init of pipeline finished with succes")
 
-        # for component in PLATFORMS:
-        #     hass.async_create_task(discovery.async_load_platform(
-        #         hass, component, DOMAIN, entity_config, global_config))
+        discovery_info = {
+            ATTR_NAME: name,
+            ATTR_SENSORS: sensors
+        }
+
+        for component in PLATFORMS:
+            hass.async_create_task(discovery.async_load_platform(
+                hass, component, DOMAIN, discovery_info, global_config))
 
     return True

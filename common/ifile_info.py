@@ -10,6 +10,8 @@ class IFileInfo:
         self._fullname: str = None
         self._datetime: datetime = None
         self.metadata = {}
+        self.processing_path = ""
+        self.source_file = None
 
     @property
     def size(self) -> int:
@@ -59,6 +61,9 @@ class IFileInfo:
             return "unknown"
         mimestart = mimetypes.guess_type(self.basename)[0] or "unknown/ext"
         return mimestart.split('/')[0]
+
+    def add_processing_path(self, path: str):
+        self.processing_path += f"/{path}"
 
     def __str__(self):
          return f"{self.basename} @{self.dirname} {self.files_size_mb}Mb"

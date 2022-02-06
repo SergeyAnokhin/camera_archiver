@@ -4,7 +4,7 @@ from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.helpers.event import async_track_point_in_time
 from ..common.event_objects import SetSchedulerEventObject
 from ..const import CONF_SCHEDULER
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant
 from ..common.component import Component
 
 
@@ -15,10 +15,11 @@ class SchedulerComponent(Component):
         super().__init__(hass, config)
         self._unsub_refresh: CALLBACK_TYPE = None
         self._next_run = None
+        self._job = HassJob(self.async_run)
         self._schedule_refresh()
 
     def _invoke_listeners(self, nextRun: datetime) -> None:
-        eventObj = SetSchedulerEventObject()
+        eventObj = SetSchedulerEventObject(self)
         eventObj.NextRun = nextRun
         super().invoke_listeners(eventObj)
 
@@ -46,3 +47,8 @@ class SchedulerComponent(Component):
             self._hass, self._job, self._next_run,
         )
         self._invoke_listeners(self._next_run)
+
+    async def async_run(self, args):
+        ''' External call force start '''
+        return self._run()
+

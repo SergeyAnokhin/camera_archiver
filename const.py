@@ -33,6 +33,12 @@ CONF_FILES = "files"
 CONF_COMPONENTS = "components"
 CONF_PIPELINES = "pipelines"
 CONF_SERVICE = "service"
+CONF_SENSOR_TYPE_REPOSITORY_STAT = "repository_stat"
+CONF_SENSOR_TYPE_TRANSFER_STAT = "transfer_stat"
+CONF_SENSOR_TYPE_TIMER = "timer"
+CONF_SENSOR_TYPE_LAST_FILE = "last_file"
+CONF_SENSOR_TYPE_LAST_TIME = "last_time"
+
 
 MIMETYPE_IMAGE = "image"
 MIMETYPE_VIDEO = "video"
@@ -106,7 +112,9 @@ ATTR_LAST_DATETIME_FULL = "Last full datetime"
 ATTR_TRANSFER_STATE = "TransferState"
 ATTR_CONTENT = "Content"
 ATTR_ENABLE = "enable"
+ATTR_SENSORS = "sensors"
 ATTR_HASS_STORAGE_COORDINATORS = "Coordinators"
+ATTR_HASS_STORAGE_SENSORS = "Sensors"
 ATTR_HASS_STORAGE_FILES = "MemoryStorage"
 
 

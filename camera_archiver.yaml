@@ -52,23 +52,31 @@ components:
       minutes: 3
   - id: service_run
     platform: service
+  - id: filter image
+    platform: filter
+    mimetype: image
 
 sensors:
   - id: camera last image
     platform: camera
-  - id: repository_stat sensor
+  - id: repository_stat
     platform: sensor
     type: repository_stat
-  - id: transfer_stat sensor
+  - id: transfer_stat
     platform: sensor
     type: transfer_stat
-  - id: timer sensor
+  - id: timer
     platform: sensor
     type: timer
-  - id: last file sensor
+  - id: last video
     platform: sensor
     type: last_file
-  - id: last time sensor
+    icon: mdi:file-video
+  - id: last image
+    platform: sensor
+    type: last_file
+    icon: mdi:file-jpg-box
+  - id: last time
     platform: sensor
     type: last_time
 
@@ -76,34 +84,34 @@ pipelines:
   - id: local
     component: scheduler_3m
     listeners:
-      - sensor: timer sensor
+      - sensor: timer
       - component: input local directory
         listeners:
-          - sensor: repository_stat sensor
+          - sensor: repository_stat
           - component: output local directory
             listeners:
-              - sensor: transfer_stat sensor
-              - sensor: last file sensor
-              - sensor: last time sensor
+              - sensor: transfer_stat
+              - sensor: last video
+              - sensor: last time
 
-  #     - id: Yi1080pWoodSouth ftp 
-  #       triggers:
-  #         - platform: scheduler
-  #           scan_interval: 
-  #             minutes: 3
-  #       listeners:
-  #         - sensor: timer sensor
-  #         - component: Yi1080pWoodSouth ftp
-  #           listeners: &diskstation_and_elasticsearch_listeners
-  #             - component: DiskStation ftp
-  #               listeners:
-  #                 - sensor: transfer_stat sensor
-  #                 - sensor: last file sensor
-  #                 - sensor: last time sensor
-  #                 - component: elasticsearch
-  #                 - component: OpenCV api
-  #                   filter: 
-  #                     mimetype: image
+      # - id: Yi1080pWoodSouth ftp 
+      #   triggers:
+      #     - platform: scheduler
+      #       scan_interval: 
+      #         minutes: 3
+      #   listeners:
+      #     - sensor: timer sensor
+      #     - component: Yi1080pWoodSouth ftp
+      #       listeners: &diskstation_and_elasticsearch_listeners
+      #         - component: DiskStation ftp
+      #           listeners:
+      #             - sensor: transfer_stat sensor
+      #             - sensor: last file sensor
+      #             - sensor: last time sensor
+      #             - component: elasticsearch
+      #             - component: filter image
+      #               listeners:
+      #                 - component: OpenCV api
 
   # - id: Yi1080pWoodSouth mqtt
   #   component: Yi1080pWoodSouth mqtt

@@ -7,9 +7,9 @@ from .ifile_info import IFileInfo
 
 class EventType(Enum):
     REPOSITORY = "Repository"  # Read repository
-    READ = "Read"  # Read files from repository in memory
-    SAVE = "Save"  # Save file from memory to new repository
+    FILE = "File"  # Read files from repository in memory
     SET_SCHEDULER = "set_scheduler" # scheduler updated
+    START = "start" # start process (scan repository, etc)
 
 class TransferState:
     def __init__(self, type: EventType = None) -> None:
@@ -90,7 +90,7 @@ class TransferState:
         return round(self.files_size / 1024 / 1024, 2)
 
     def __str__(self):
-        result = f"[Stat:{self._type.name}] Files: {self.files_count} "
+        result = f"[Stat Files: {self.files_count} "
         result += f" Size: {(self.files_size_mb):.1f}Mb"
         result += " Extensions: "
         result += self.files_ext
