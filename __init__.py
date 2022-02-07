@@ -1,51 +1,29 @@
 import logging
-from enum import Enum
 
 import voluptuous as vol
+
+from .common.types import SensorPlatforms
+from .common.helper import getLogger
 from homeassistant.components import discovery
-from homeassistant.const import (ATTR_NAME, CONF_HOST, CONF_ID, CONF_NAME, CONF_PASSWORD,
-                                 CONF_PLATFORM, CONF_SCAN_INTERVAL,
-                                 CONF_SENSORS, CONF_TYPE, CONF_URL)
+from homeassistant.const import (ATTR_NAME, CONF_HOST, CONF_ID, CONF_NAME,
+                                 CONF_PASSWORD, CONF_PLATFORM,
+                                 CONF_SCAN_INTERVAL, CONF_SENSORS, CONF_TYPE,
+                                 CONF_URL)
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.helpers import config_validation as cv
-from sqlalchemy import true
 
 from .common.builder import Builder
-from .common.helper import getLogger
-from .common.memory_storage import MemoryStorage
-from .const import (ATTR_SENSORS, CONF_API, CONF_CAMERA, CONF_CLEAN, CONF_COMPONENT,
-                    CONF_COMPONENTS, CONF_COPIED_PER_RUN,
+from .const import (ATTR_SENSORS, CONF_API, CONF_CAMERA, CONF_CLEAN,
+                    CONF_COMPONENT, CONF_COMPONENTS, CONF_COPIED_PER_RUN,
                     CONF_DATETIME_PATTERN, CONF_DIRECTORY, CONF_ELASTICSEARCH,
                     CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_FILTER, CONF_FTP,
                     CONF_IMAP, CONF_INDEX, CONF_LISTENERS, CONF_MIMETYPE,
                     CONF_MQTT, CONF_PATH, CONF_PIPELINES, CONF_REGEX,
-                    CONF_SCHEDULER, CONF_SENSOR, CONF_SERVICE, CONF_SWITCH,
-                    CONF_TOPIC, CONF_TRIGGERS, CONF_USER,
+                    CONF_SCHEDULER, CONF_SENSOR, CONF_SERVICE,
+                    CONF_TOPIC, CONF_USER,
                     DEFAULT_TIME_INTERVAL, DOMAIN)
 
 _LOGGER = logging.getLogger(__name__)
-
-
-class ComponentPlatforms(Enum):
-    MQTT = CONF_MQTT
-    DIRECTORY: CONF_DIRECTORY
-    FTP = CONF_FTP
-    ELASTICSEARCH = CONF_ELASTICSEARCH
-    API = CONF_API
-    IMAP = CONF_IMAP
-
-
-class SensorPlatforms(Enum):
-    camera = CONF_CAMERA
-    sensor = CONF_SENSOR
-    switch = CONF_SWITCH
-
-
-class TriggerPlatforms(Enum):
-    SCHEDULER = CONF_SCHEDULER
-    MQTT = CONF_MQTT
-    SENSOR = CONF_SENSOR
-
 
 COMPONENT_DEFAULT = vol.Schema({
     vol.Optional(CONF_ID): cv.string,
@@ -236,7 +214,7 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
         # storage = MemoryStorage(hass, name)
         # storage.sensors = sensors
         logger = getLogger(__name__, name)
-        logger.info(f"Init of pipeline finished with succes")
+        logger.info(f"{name}:: Init of pipeline finished with succes")
 
         discovery_info = {
             ATTR_NAME: name,

@@ -1,6 +1,6 @@
 from typing import Any
 
-from config.custom_components.camera_archiver.lib_service.service_component import \
+from ..lib_service.service_component import \
     ServiceComponent
 from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_SENSORS, CONF_TYPE
 from homeassistant.core import HomeAssistant, callback

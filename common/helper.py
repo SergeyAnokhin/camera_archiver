@@ -1,9 +1,10 @@
 import logging
+import socket
 from datetime import datetime, timedelta
 from pathlib import Path
-import socket
 
 import pytz
+
 
 def getLogger(name: str, instance: str = "", component: str = "") -> logging.Logger:
     name = name.replace("custom_components.camera_archiver", "CamArc")

@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 import pytz
-from config.custom_components.camera_archiver.common.ifile_info import IFileInfo
+from ..common.ifile_info import IFileInfo
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 
@@ -11,7 +11,7 @@ from ..const import (ATTR_CAMERA, ATTR_EXT, ATTR_ID, ATTR_MIMETYPE, ATTR_SIZE,
                      ATTR_TIMESTAMP, ATTR_TIMESTAMP_STR,
                      ATTR_TIMESTAMP_STR_UTC, CONF_ELASTICSEARCH,
                      EVENT_CAMERA_ARCHIVER_FILE_COPIED)
-from ..common.helper import getLogger, to_str_timestamp, to_utc
+from ..common.helper import to_str_timestamp, to_utc
 
 class ElasticsearchComponent(Component):
     Platform = CONF_ELASTICSEARCH

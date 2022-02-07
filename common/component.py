@@ -2,24 +2,17 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import cast
 
-from homeassistant.const import CONF_ID, CONF_NAME, CONF_SCAN_INTERVAL
-from homeassistant.core import (CALLBACK_TYPE, HassJob, HomeAssistant,
-                                ServiceCall)
-from homeassistant.helpers.event import async_track_point_in_time
+from homeassistant.const import CONF_ID
+from homeassistant.core import HomeAssistant
 from voluptuous.validators import Any
 
-from generic_observable import GenericObservable
-
-from .. import getLogger
-from ..const import (ATTR_ENABLE, ATTR_SOURCE_COMPONENT, ATTR_SOURCE_FILE,
-                     ATTR_TARGET_COMPONENT, ATTR_TARGET_FILE, CONF_CLEAN,
+from ..const import (ATTR_SOURCE_COMPONENT, ATTR_TARGET_FILE, CONF_CLEAN,
                      CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
-                     CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH, DOMAIN,
-                     SERVICE_FIELD_COMPONENT, SERVICE_FIELD_INSTANCE,
-                     SERVICE_RUN)
-from .event_objects import (FileEventObject, FilesEventObject, ReadEventObject,
-                            RepositoryEventObject, SaveEventObject,
-                            SetSchedulerEventObject, StartEventObject)
+                     CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH)
+from .event_objects import (FileEventObject, RepositoryEventObject,
+                            StartEventObject)
+from .generic_observable import GenericObservable
+from .helper import getLogger
 from .ifile_info import IFileInfo
 from .transfer_state import EventType
 

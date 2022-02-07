@@ -1,13 +1,12 @@
 from datetime import datetime
 
-from config.custom_components.camera_archiver.common.generic_observable import GenericObservable
 from .ifile_info import IFileInfo
 from .transfer_state import EventType
 
 class EventObject:
     EventType = None 
 
-    def __init__(self, sender: GenericObservable) -> None:
+    def __init__(self, sender) -> None:
         self.sender = sender
 
 class FileEventObject(EventObject):

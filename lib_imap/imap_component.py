@@ -1,7 +1,6 @@
 from homeassistant.core import HomeAssistant
 
 from ..common.component import Component
-from ..common.transfer_component_id import TransferComponentId
 from ..const import CONF_IMAP
 
 

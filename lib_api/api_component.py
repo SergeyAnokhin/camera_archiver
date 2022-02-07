@@ -1,4 +1,4 @@
-from config.custom_components.camera_archiver.const import CONF_API
+from ..const import CONF_API
 from homeassistant.core import HomeAssistant
 from ..common.component import Component
 
