@@ -53,10 +53,10 @@ class ComponentDescriptor:
 
 class SensorConnector(GenericObservable):
 
-    def __init__(self, config) -> None:
+    def __init__(self, config: dict) -> None:
         GenericObservable.__init__(self)
         self.id = config[CONF_ID]
-        self.platform = config[CONF_PLATFORM]
+        self.platform: SensorPlatforms = config[CONF_PLATFORM]
         self.icon = config.get(CONF_ICON, ICON_DEFAULT)
         self.type = config.get(CONF_TYPE, None)
         self.pipeline_path: str = None

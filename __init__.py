@@ -218,7 +218,7 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
 
     for pipeline in pipelines:
         sensors = builder.build_pipeline(pipeline)
-        name = pipeline[CONF_NAME]
+        name = pipeline[CONF_ID]
         # storage = MemoryStorage(hass, name)
         # storage.sensors = sensors
         logger = getLogger(__name__, name)

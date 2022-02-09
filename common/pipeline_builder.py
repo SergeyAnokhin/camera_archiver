@@ -1,5 +1,5 @@
 import copy
-from typing import Any, cast
+from typing import Any
 from distutils.command.config import config
 
 from homeassistant.core import HomeAssistant
@@ -16,7 +16,7 @@ class PipelineBuilder:
         self._config = config
         self._hass = hass
         self.component: Component = None
-        self._components: dict[str, Component] = components
+        self._components: dict[str, ComponentDescriptor] = components
         self._sensors: dict[str, SensorConnector] = sensors
         self._id = self._config[CONF_ID]
         self._logger = getLogger(__name__, self._id)
@@ -39,7 +39,7 @@ class PipelineBuilder:
                 parent.add_listener(sensor.callback)
                 self._sensors_to_create.append(sensor)
             if CONF_COMPONENT in l:
-                component = self.get_component(l, parent)
+                component = self.get_component(l, parent.pipeline_path)
                 parent.add_listener(component.callback)
                 self.build_listeners(component, l)
                 
@@ -49,13 +49,14 @@ class PipelineBuilder:
             error = f"Cant found sensor id '{sensor_id}' in sensor list. Pipeline: {self._id}"
             self._logger.error(error)
             raise Exception(error)
-        clone: SensorConnector = cast(copy.deepcopy(self._sensors[sensor_id]), SensorConnector)
-        clone.pipeline_path = f"{parent.pipeline_path}/{clone.id}"
+        sensor = self._sensors[sensor_id]
+        clone: SensorConnector = copy.deepcopy(sensor)
+        clone.pipeline_path = f"{parent.pipeline_path}/{sensor_id}"
         clone.parent = parent.id
         clone.pipeline_id = self._id
         return clone
 
-    def get_component(self, config, parent: Component):
+    def get_component(self, config, pipeline_path: str) -> Component:
         component_id = config[CONF_COMPONENT]
         # platform = comp_config[CONF_PLATFORM]
         # ctor = self._comp_constructor_by_platform[platform]
@@ -66,6 +67,6 @@ class PipelineBuilder:
             self._logger.error(error)
             raise Exception(error)
         desc = self._components[component_id]
-        comp: Component = self._comp_constructor_by_platform[desc.Platform](self._hass, desc._config) 
-        comp.pipeline_path = f"{parent.pipeline_path}/{comp.id}"
+        comp: Component = self._comp_constructor_by_platform[desc.Platform](self._hass, desc.config) 
+        comp.pipeline_path = f"{pipeline_path}/{comp.id}"
         return comp

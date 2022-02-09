@@ -95,19 +95,18 @@ class Component(GenericObservable):
 
     def _run(self):
         self._logger.debug(f"Read from [{self._path}]: START")
-        if not self._is_enabled[EventType.REPOSITORY]:
+        if not self._is_enabled:
             return
 
-        if self._is_enabled[EventType.READ]:
-            files: list[IFileInfo] = self.get_files(self._copied_per_run)
-            self._logger.debug(f"Found files for copy: {len(files)}")
-            for file in files:
-                self._logger.debug(f"Read: [{file.fullname}]")
-                file.add_processing_path(self.id)
-                content = self.file_read(file)
-                file.metadata[ATTR_SOURCE_COMPONENT] = self._id.Name
-                if self._invoke_file_listeners(file, content):
-                    self.file_delete(file)
+        files: list[IFileInfo] = self.get_files(self._copied_per_run)
+        self._logger.debug(f"Found files for copy: {len(files)}")
+        for file in files:
+            self._logger.debug(f"Read: [{file.fullname}]")
+            file.add_processing_path(self.id)
+            content = self.file_read(file)
+            file.metadata[ATTR_SOURCE_COMPONENT] = self._id.Name
+            if self._invoke_file_listeners(file, content):
+                self.file_delete(file)
 
         files = self.get_files(max=100)
         self._invoke_repo_listeners(files)

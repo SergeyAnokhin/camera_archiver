@@ -50,6 +50,10 @@ components:
     platform: scheduler
     scan_interval: 
       minutes: 3
+  - id: scheduler_10s
+    platform: scheduler
+    scan_interval: 
+      seconds: 10
   - id: service_run
     platform: service
   - id: filter image
@@ -82,7 +86,7 @@ sensors:
 
 pipelines:
   - id: local
-    component: scheduler_3m
+    component: scheduler_10s
     listeners:
       - sensor: timer
       - component: input local directory

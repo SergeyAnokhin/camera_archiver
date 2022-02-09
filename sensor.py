@@ -6,7 +6,7 @@ from .common.types import SensorConnector
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_NAME
+from homeassistant.const import ATTR_NAME, CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -85,8 +85,10 @@ class TransferCoordinatorSensor(ConnectorSensor):
     def __init__(self, connector: SensorConnector):
         ConnectorSensor.__init__(self, connector)
         self._attr_name = f"{self._name_prefix} files"
+        self._state = TransferState()
 
-    def update(self, state: TransferState):
+    def update(self):
+        state = self._state
         self._attr_native_value = state.files_count
         self.set_attr(ATTR_SIZE_MB, state.files_size_mb)
         self.set_attr(ATTR_EXTENSIONS, state.files_ext)
@@ -99,8 +101,9 @@ class TransferCoordinatorSensor(ConnectorSensor):
 
 class ComponentLastTimeSensor(ConnectorSensor):
     def __init__(self, connector: SensorConnector):
-        super().__init__(connector, icon=ICON_LAST)
+        super().__init__(connector)
         self._attr_name = f"{self._name_prefix}: last time"
+        self._attr_icon = ICON_LAST
 
     def onFileEvent(self, event: FileEventObject):
         self._attr_native_value = to_human_readable(event.File)
@@ -115,21 +118,23 @@ class ComponentLastFileSensor(ConnectorSensor):
 
 class ComponentRepoSensor(TransferCoordinatorSensor):
     def __init__(self, connector: SensorConnector):
-        super().__init__(connector, icon=ICON_TO_COPY)
+        super().__init__(connector)
+        self._attr_icon = ICON_TO_COPY
 
     def onRepositoryEvent(self, event: RepositoryEventObject):
-        state = TransferState()
-        state.extend(event.Files)
-        self.update(state)
+        self._state = TransferState()
+        self._state.extend(event.Files)
+        self.update()
 
 class ComponentFileSensor(TransferCoordinatorSensor):
     def __init__(self, connector: SensorConnector):
-        super().__init__(connector, icon=ICON_COPIED)
+        super().__init__(connector)
         self._state = TransferState()
+        self._attr_icon = ICON_COPIED
 
     def onFileEvent(self, event: FileEventObject):
         self._state.append(event.File)
-        self.update(self._state)
+        self.update()
 
 
 _SENSOR_TYPES = {
@@ -150,14 +155,14 @@ class SensorBuilder:
         return ctor(self._description)
 
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
-    instName = discovery_info[CONF_NAME]
+    # instName = discovery_info[ATTR_NAME]
     sensors_desc: list[SensorConnector] = discovery_info[ATTR_SENSORS]
     # storage = MemoryStorage(hass, instName)
 
 
     sensors = []
     for desc in sensors_desc:
-        if desc.platform != _PLATFORM:
+        if desc.platform.value != _PLATFORM:
             continue
 
         ctor = _SENSOR_TYPES[desc.type]
