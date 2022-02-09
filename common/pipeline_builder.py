@@ -1,24 +1,27 @@
 import copy
-from typing import cast
+from typing import Any, cast
 from distutils.command.config import config
+
+from homeassistant.core import HomeAssistant
 from .. import SensorPlatforms
 from .helper import getLogger
 from homeassistant.const import CONF_ID
 from ..const import CONF_COMPONENT, CONF_LISTENERS, CONF_SENSOR
-from .types import SensorConnector
+from .types import COMPONENTS_LIST, ComponentDescriptor, SensorConnector
 from .component import Component
-
 
 class PipelineBuilder:
 
-    def __init__(self, config, components: dict[str, Component], sensors: dict[str, SensorConnector]) -> None:
+    def __init__(self, hass: HomeAssistant, config, components: dict[str, ComponentDescriptor], sensors: dict[str, SensorConnector]) -> None:
         self._config = config
+        self._hass = hass
         self.component: Component = None
         self._components: dict[str, Component] = components
         self._sensors: dict[str, SensorConnector] = sensors
         self._id = self._config[CONF_ID]
         self._logger = getLogger(__name__, self._id)
         self._sensors_to_create: list[SensorConnector] = []
+        self._comp_constructor_by_platform: dict[str, Any] = {c.Platform: c for c in COMPONENTS_LIST}
 
     def build(self) -> list[SensorConnector]:
         self.component = self.get_component(self._config, f"{self._id}::")
@@ -54,10 +57,15 @@ class PipelineBuilder:
 
     def get_component(self, config, parent: Component):
         component_id = config[CONF_COMPONENT]
+        # platform = comp_config[CONF_PLATFORM]
+        # ctor = self._comp_constructor_by_platform[platform]
+        # return ctor(self._hass, comp_config)
+
         if component_id not in self._components:
             error = f"Cant found component id '{component_id}' in component list. Pipeline: {self._id}"
             self._logger.error(error)
             raise Exception(error)
-        clone: Component = cast(copy.deepcopy(self._components[component_id]), Component)
-        clone.pipeline_path = f"{parent.pipeline_path}/{clone.id}"
-        return clone
+        desc = self._components[component_id]
+        comp: Component = self._comp_constructor_by_platform[desc.Platform](self._hass, desc._config) 
+        comp.pipeline_path = f"{parent.pipeline_path}/{comp.id}"
+        return comp

@@ -21,10 +21,11 @@ class Component(GenericObservable):
     Platform: str = None
 
     def __init__(self, hass: HomeAssistant, config: dict) -> None:
+        super().__init__()
         self._hass = hass
         self.id = config[CONF_ID]
         self.pipeline_path = None
-        self._logger = getLogger(__name__, self._id)
+        self._logger = getLogger(__name__, self.id)
         self._transfer_file = None
         self._config = config
         self._copied_per_run = config.get(CONF_COPIED_PER_RUN, 100)

@@ -56,6 +56,11 @@ DIRECTORY_SCHEMA = COMPONENT_DEFAULT.extend({
     vol.Optional(CONF_CLEAN): CLEAN_SCHEMA,
 })
 
+FILTER_SCHEMA = COMPONENT_DEFAULT.extend({
+    vol.Required(CONF_PLATFORM): CONF_FILTER,
+    vol.Optional(CONF_MIMETYPE): cv.string,
+})
+
 MQTT_SCHEMA = COMPONENT_DEFAULT.extend({
     vol.Required(CONF_PLATFORM): CONF_MQTT,
     vol.Required(CONF_TOPIC): cv.string,
@@ -89,7 +94,8 @@ SCHEDULER_SCHEMA = COMPONENT_DEFAULT.extend({
 })
 
 COMPONENTS_SCHEMA = vol.All(cv.ensure_list, [
-    vol.Any(FTP_SCHEMA, DIRECTORY_SCHEMA, MQTT_SCHEMA, IMAP_SCHEMA, API_SCHEMA, ELASTICSEARCH_SCHEMA, SCHEDULER_SCHEMA, SERVICE_SCHEMA)
+    vol.Any(FTP_SCHEMA, DIRECTORY_SCHEMA, MQTT_SCHEMA, IMAP_SCHEMA, API_SCHEMA,  
+    ELASTICSEARCH_SCHEMA, SCHEDULER_SCHEMA, SERVICE_SCHEMA, FILTER_SCHEMA)
 ])
 
 FILTER_SCHEMA = vol.Schema({
@@ -207,6 +213,8 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
     pipelines = config[CONF_PIPELINES]
 
     builder = Builder(hass, config)
+    builder.build_components()
+    builder.build_sensors()
 
     for pipeline in pipelines:
         sensors = builder.build_pipeline(pipeline)
