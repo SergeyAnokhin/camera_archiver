@@ -10,11 +10,11 @@ from homeassistant.const import ATTR_NAME, CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .common.helper import (to_human_readable, to_short_human_readable,
+from .common.helper import (getLogger, to_human_readable, to_short_human_readable,
                             to_short_human_readable_delta)
 from .common.transfer_state import EventType, TransferState
 from .const import (ATTR_ENABLE, ATTR_EXTENSIONS, ATTR_LAST_DATETIME,
-                    ATTR_LAST_DATETIME_FULL, ATTR_LAST_IMAGE, ATTR_LAST_VIDEO,
+                    ATTR_LAST_DATETIME_FULL, ATTR_LAST_IMAGE, ATTR_LAST_VIDEO, ATTR_PIPELINE_PATH,
                     ATTR_SENSORS, ATTR_SIZE_MB, ATTR_TRANSFER_STATE, CONF_SENSOR_TYPE_LAST_FILE, CONF_SENSOR_TYPE_LAST_TIME, CONF_SENSOR_TYPE_REPOSITORY_STAT, CONF_SENSOR_TYPE_TIMER, CONF_SENSOR_TYPE_TRANSFER_STAT,
                     ICON_COPIED, ICON_DEFAULT, ICON_LAST, ICON_SCREENSHOT,
                     ICON_TIMER, ICON_TO_COPY, ICON_VIDEO)
@@ -32,6 +32,7 @@ class ConnectorSensor(SensorEntity):
         self.connector = connector
         self.connector.add_listener(self.callback)
         self._name_prefix = f"{connector.pipeline_id}: {connector.parent}"
+        self.set_attr(ATTR_PIPELINE_PATH, connector.pipeline_path)
 
     def callback(self, eventObj: EventObject):
         if isinstance(eventObj, FileEventObject):
@@ -155,10 +156,10 @@ class SensorBuilder:
         return ctor(self._description)
 
 async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
-    # instName = discovery_info[ATTR_NAME]
+    instName = discovery_info[ATTR_NAME]
     sensors_desc: list[SensorConnector] = discovery_info[ATTR_SENSORS]
     # storage = MemoryStorage(hass, instName)
-
+    logger = getLogger(__name__, instName)
 
     sensors = []
     for desc in sensors_desc:
@@ -168,6 +169,7 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
         ctor = _SENSOR_TYPES[desc.type]
         sensor = ctor(desc)
         sensors.append(sensor)
+        logger.debug(f"Add sensor -> path: '{desc.pipeline_path}'; name: '{sensor.name}'")
 
     add_entities(sensors)
 

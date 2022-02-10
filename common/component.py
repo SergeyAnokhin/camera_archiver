@@ -44,7 +44,7 @@ class Component(GenericObservable):
         NotImplementedError()
 
     @abstractmethod
-    def get_files(self) -> list[IFileInfo]:
+    def get_files(self, max: int) -> list[IFileInfo]:
         NotImplementedError()
 
     @abstractmethod
@@ -98,8 +98,11 @@ class Component(GenericObservable):
         if not self._is_enabled:
             return
 
-        files: list[IFileInfo] = self.get_files(self._copied_per_run)
-        self._logger.debug(f"Found files for copy: {len(files)}")
+        files: list[IFileInfo] = self.get_files(max=100)
+        self._invoke_repo_listeners(files)
+        self._logger.debug(f"Found files: {len(files)}")
+        files_to_read = max(len(files), self._copied_per_run)
+        files = files[0:files_to_read]
         for file in files:
             self._logger.debug(f"Read: [{file.fullname}]")
             file.add_processing_path(self.id)
@@ -108,8 +111,6 @@ class Component(GenericObservable):
             if self._invoke_file_listeners(file, content):
                 self.file_delete(file)
 
-        files = self.get_files(max=100)
-        self._invoke_repo_listeners(files)
         self._logger.debug(f"Read from [{self._path}]: END")
 
     def run(self, args):
