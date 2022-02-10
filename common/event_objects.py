@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from sqlalchemy import false
+
 from .ifile_info import IFileInfo
 from .transfer_state import EventType
 
@@ -37,3 +39,10 @@ class SetSchedulerEventObject(EventObject):
     def __init__(self, sender) -> None:
         super().__init__(sender)
         self.NextRun: datetime = None
+
+class SwitchEventObject(EventObject):
+    EventType = EventType.SWITCH
+
+    def __init__(self, sender) -> None:
+        super().__init__(sender)
+        self.enable: bool = false

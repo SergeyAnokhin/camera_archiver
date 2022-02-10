@@ -1,23 +1,28 @@
 import logging
 from datetime import datetime
 from typing import cast
-from .common.event_objects import EventObject, FileEventObject, RepositoryEventObject, SetSchedulerEventObject, StartEventObject
-from .common.types import SensorConnector
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_NAME, CONF_NAME
+from homeassistant.const import ATTR_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .common.helper import (getLogger, to_human_readable, to_short_human_readable,
+from .common.event_objects import (EventObject, FileEventObject,
+                                   RepositoryEventObject,
+                                   SetSchedulerEventObject, StartEventObject)
+from .common.helper import (getLogger, to_human_readable,
+                            to_short_human_readable,
                             to_short_human_readable_delta)
-from .common.transfer_state import EventType, TransferState
-from .const import (ATTR_ENABLE, ATTR_EXTENSIONS, ATTR_LAST_DATETIME,
-                    ATTR_LAST_DATETIME_FULL, ATTR_LAST_IMAGE, ATTR_LAST_VIDEO, ATTR_PIPELINE_PATH,
-                    ATTR_SENSORS, ATTR_SIZE_MB, ATTR_TRANSFER_STATE, CONF_SENSOR_TYPE_LAST_FILE, CONF_SENSOR_TYPE_LAST_TIME, CONF_SENSOR_TYPE_REPOSITORY_STAT, CONF_SENSOR_TYPE_TIMER, CONF_SENSOR_TYPE_TRANSFER_STAT,
-                    ICON_COPIED, ICON_DEFAULT, ICON_LAST, ICON_SCREENSHOT,
-                    ICON_TIMER, ICON_TO_COPY, ICON_VIDEO)
+from .common.transfer_state import TransferState
+from .common.types import SensorConnector
+from .const import (ATTR_EXTENSIONS, ATTR_LAST_DATETIME,
+                    ATTR_LAST_DATETIME_FULL, ATTR_LAST_IMAGE, ATTR_LAST_VIDEO,
+                    ATTR_PIPELINE_PATH, ATTR_SENSORS, ATTR_SIZE_MB,
+                    CONF_SENSOR_TYPE_LAST_FILE, CONF_SENSOR_TYPE_LAST_TIME,
+                    CONF_SENSOR_TYPE_REPOSITORY_STAT, CONF_SENSOR_TYPE_TIMER,
+                    CONF_SENSOR_TYPE_TRANSFER_STAT, ICON_COPIED, ICON_DEFAULT,
+                    ICON_LAST, ICON_TIMER, ICON_TO_COPY)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,6 +38,7 @@ class ConnectorSensor(SensorEntity):
         self.connector.add_listener(self.callback)
         self._name_prefix = f"{connector.pipeline_id}: {connector.parent}"
         self.set_attr(ATTR_PIPELINE_PATH, connector.pipeline_path)
+        self._logger = getLogger(__name__, connector.pipeline_id, connector.id)
 
     def callback(self, eventObj: EventObject):
         if isinstance(eventObj, FileEventObject):

@@ -44,9 +44,11 @@ class Builder:
         sensors = pipelineBuilder.build()
         root_component = pipelineBuilder.component
         switch = SensorConnector({
-            CONF_ID: f"Pipeline {id}",
+            CONF_ID: f"Pipeline {pipe_config[CONF_ID]}",
             CONF_PLATFORM: SensorPlatforms.switch
         })
+        switch.pipeline_id = pipe_config[CONF_ID]
+        switch.pipeline_path = f"{pipe_config[CONF_ID]}/enabler"
         switch.add_listener(root_component.callback)
         sensors.append(switch)
         return sensors

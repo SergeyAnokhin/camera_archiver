@@ -1,14 +1,14 @@
 import copy
 from typing import Any
-from distutils.command.config import config
 
-from homeassistant.core import HomeAssistant
-from .. import SensorPlatforms
-from .helper import getLogger
 from homeassistant.const import CONF_ID
+from homeassistant.core import HomeAssistant
+
 from ..const import CONF_COMPONENT, CONF_LISTENERS, CONF_SENSOR
-from .types import COMPONENTS_LIST, ComponentDescriptor, SensorConnector
 from .component import Component
+from .helper import getLogger
+from .types import COMPONENTS_LIST, ComponentDescriptor, SensorConnector
+
 
 class PipelineBuilder:
 

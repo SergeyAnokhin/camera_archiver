@@ -86,7 +86,7 @@ sensors:
 
 pipelines:
   - id: local
-    component: scheduler_fast
+    component: scheduler_3m
     listeners:
       - sensor: timer
       - component: input local directory

@@ -201,7 +201,7 @@ CONFIG_SCHEMA = vol.Schema(
             }, extra=vol.ALLOW_EXTRA)
     }, extra=vol.ALLOW_EXTRA)
 
-PLATFORMS = ["sensor"]  # , "switch", "camera", "timer", "binary_sensor", "media_player"
+PLATFORMS = ["sensor", "switch"]  # , "camera", "timer", "binary_sensor", "media_player"
 
 # HISTORY EXAMPLE : homeassistant\components\history_stats\sensor.py 228
 

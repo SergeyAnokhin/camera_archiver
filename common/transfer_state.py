@@ -10,6 +10,7 @@ class EventType(Enum):
     FILE = "File"  # Read files from repository in memory
     SET_SCHEDULER = "set_scheduler" # scheduler updated
     START = "start" # start process (scan repository, etc)
+    SWITCH = "switch" # enable/disable
 
 class TransferState:
     def __init__(self, type: EventType = None) -> None:

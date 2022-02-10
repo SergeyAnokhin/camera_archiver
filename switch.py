@@ -1,30 +1,89 @@
-# import logging
-# from abc import abstractmethod
-# from typing import Dict
+from homeassistant.components.switch import DEVICE_CLASS_SWITCH
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import ATTR_NAME, STATE_OFF, STATE_ON
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import ToggleEntity
+from homeassistant.helpers.restore_state import RestoreEntity
 
-# from homeassistant.components.switch import DEVICE_CLASS_SWITCH
-# from homeassistant.config_entries import ConfigEntry
-# from homeassistant.const import CONF_NAME, STATE_OFF, STATE_ON
-# from homeassistant.core import HomeAssistant
-# from homeassistant.helpers.entity import ToggleEntity
-# from homeassistant.helpers.restore_state import RestoreEntity
-# from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from .common.event_objects import SwitchEventObject
+from .common.helper import getLogger
+from .common.types import SensorConnector
+from .const import ATTR_PIPELINE_PATH, ATTR_SENSORS
 
-# from .common.memory_storage import MemoryStorage
-# from .common.transfer_component_id import TransferComponentId, TransferType
-# from .common.transfer_state import EventType
-# from .const import ATTR_ENABLE, ATTR_HASS_STORAGE_COORDINATORS, DOMAIN
+_PLATFORM = "switch"
 
-# _LOGGER = logging.getLogger(__name__)
+class GenericEnabler(RestoreEntity, ToggleEntity):
+
+    def __init__(self, connector: SensorConnector):
+        self.connector = connector
+        self._attr_extra_state_attributes = {}
+        self._attr_state = None
+        self._attr_is_on = False
+        self._attr_available = True
+        self._attr_device_class = DEVICE_CLASS_SWITCH
+        self._device_name = f"{connector.id}"
+        self._attr_name = self._device_name
+        self.set_attr(ATTR_PIPELINE_PATH, connector.pipeline_path)
+        self._logger = getLogger(__name__, connector.pipeline_id, connector.id)
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the light on."""
+        self._attr_state = STATE_ON
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        self._attr_state = STATE_OFF
+
+    async def async_added_to_hass(self):
+        last_state = await self.async_get_last_state()
+        if last_state and last_state.state:
+            self._attr_state = last_state.state
+            self._logger.debug(f"Restored state: '{self._attr_state.upper()}'")
+            await self.async_update()
+
+    def set_attr(self, key: str, value) -> None:
+        if value:
+            self._attr_extra_state_attributes[key] = value
+        elif key in self._attr_extra_state_attributes:
+            del(self._attr_extra_state_attributes[key])
+
+    async def async_update(self, **kwargs):
+        curr_state = self._attr_state == STATE_ON
+        if curr_state != self._attr_is_on:
+            self._attr_is_on = curr_state
+            self._logger.debug(f"Switch state to '{self._attr_is_on}'")
+            # self.schedule_update_ha_state()
+            switchEO = SwitchEventObject(self)
+            switchEO.enable = self._attr_is_on
+            self.connector.invoke_listeners(switchEO)
+
+class ComponentEnabler(GenericEnabler):
+
+    def __init__(self, connector: SensorConnector):
+        super().__init__(connector)
+
+_SWITCH_TYPES = {
+    "": ComponentEnabler,
+}
 
 
-# async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry, async_add_entities):
-#     pass
+async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
+    sensors_desc: list[SensorConnector] = discovery_info[ATTR_SENSORS]
+    instName = discovery_info[ATTR_NAME]
+    logger = getLogger(__name__, instName)
 
+    switches = []
+    for desc in sensors_desc:
+        if desc.platform.value != _PLATFORM:
+            continue
 
-# async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
-#     entity_config = discovery_info
-#     instName = entity_config[CONF_NAME]
+        ctor = _SWITCH_TYPES[desc.type]
+        switch: GenericEnabler = ctor(desc)
+        switches.append(switch)
+        logger.debug(f"Add switch -> path: '{desc.pipeline_path}'; name: '{switch.name}'")
+
+    add_entities(switches)
+
 #     storage = MemoryStorage(hass, instName)
     
 #     switches = []
@@ -46,49 +105,6 @@
 
 #     # switches.append(CameraArchiverEnabler(entity_config, coordinators_list))
 #     add_entities(switches)
-
-
-# class GenericEnabler(RestoreEntity, ToggleEntity):
-
-#     def __init__(self):
-#         self._attr_state = None
-#         self._attr_is_on = False
-#         self._attr_available = True
-#         self._attr_device_class = DEVICE_CLASS_SWITCH
-
-#     async def async_turn_on(self, **kwargs):
-#         """Turn the light on."""
-#         self._attr_state = STATE_ON
-
-#     async def async_turn_off(self, **kwargs):
-#         """Turn the entity off."""
-#         self._attr_state = STATE_OFF
-
-#     async def async_added_to_hass(self):
-#         last_state = await self.async_get_last_state()
-#         if last_state and last_state.state:
-#             self._attr_state = last_state.state
-#             _LOGGER.debug(f"::{self._attr_name} STATE: '{self._attr_state.upper()}'")
-#             await self.async_update()
-
-#     @abstractmethod
-#     async def async_update(self, **kwargs):
-#         NotImplementedError()
-
-
-# class ComponentEnabler(GenericEnabler):
-
-#     def __init__(self, comp_id: TransferComponentId, stateType: EventType, coordinator: DataUpdateCoordinator):
-#         super().__init__()
-#         self.coordinator: DataUpdateCoordinator = coordinator
-#         self._device_name = f"{comp_id.Entity}: {comp_id.Name} {stateType.value}"
-#         self._attr_name = self._device_name
-
-#     async def async_update(self, **kwargs):
-#         self._attr_is_on = self._attr_state == STATE_ON
-#         # self.schedule_update_ha_state()
-#         self.coordinator.data[ATTR_ENABLE] = self._attr_is_on
-#         self.coordinator.async_set_updated_data(self.coordinator.data)
 
 
 # class CameraArchiverEnabler(GenericEnabler):

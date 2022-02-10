@@ -10,7 +10,7 @@ from ..const import (ATTR_SOURCE_COMPONENT, ATTR_TARGET_FILE, CONF_CLEAN,
                      CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
                      CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH)
 from .event_objects import (FileEventObject, RepositoryEventObject,
-                            StartEventObject)
+                            StartEventObject, SwitchEventObject)
 from .generic_observable import GenericObservable
 from .helper import getLogger
 from .ifile_info import IFileInfo
@@ -62,6 +62,9 @@ class Component(GenericObservable):
     def callback(self, eventObj) -> bool:
         if isinstance(eventObj, StartEventObject):
             self._run()
+        if isinstance(eventObj, SwitchEventObject):
+            switchEO = cast(SwitchEventObject, eventObj)
+            self.enabled_change(switchEO.enable)
         elif isinstance(eventObj, FileEventObject):
             readEO = cast(FileEventObject, eventObj)
             if not readEO.Content:
@@ -76,6 +79,7 @@ class Component(GenericObservable):
     def enabled_change(self, is_enabled: bool) -> None:
         if self._is_enabled == is_enabled:
             return
+        self._is_enabled = is_enabled
         self.enabled_changed()
         
     @abstractmethod
