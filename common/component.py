@@ -101,7 +101,7 @@ class Component(GenericObservable):
         files: list[IFileInfo] = self.get_files(max=100)
         self._invoke_repo_listeners(files)
         self._logger.debug(f"Found files: {len(files)}")
-        files_to_read = max(len(files), self._copied_per_run)
+        files_to_read = min(len(files), self._copied_per_run)
         files = files[0:files_to_read]
         for file in files:
             self._logger.debug(f"Read: [{file.fullname}]")

@@ -26,6 +26,7 @@ class SchedulerComponent(Component):
     async def _invoke_start_listeners(self, args) -> None:
         eventObj = StartEventObject(self)
         super().invoke_listeners(eventObj)
+        self._schedule_refresh()
 
     def enabled_changed(self):
         if self._is_enabled:
@@ -38,7 +39,7 @@ class SchedulerComponent(Component):
             self._unsub_refresh()
             self._unsub_refresh = None
         self._next_run = None
-        self._invoke_set_listeners(None)
+        # self._invoke_set_listeners(None)
 
     def _schedule_refresh(self):
         self._schedule_off()
@@ -47,6 +48,7 @@ class SchedulerComponent(Component):
 
         scan_interval: timedelta = self._config[CONF_SCAN_INTERVAL]
         self._next_run = datetime.now().replace(microsecond=0) + scan_interval
+        self._logger.debug(f"Set next run @ {self._next_run.strftime('%H:%M:%S')}")
         self._unsub_refresh = async_track_point_in_time(
             self._hass, self._job, self._next_run,
         )
