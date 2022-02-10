@@ -69,8 +69,8 @@ class Component(GenericObservable):
             file = readEO.File
             new_file = self.file_save(file, readEO.Content)
             new_file.source_file = file
-            self._logger.debug(f"Saved: [{file.metadata[ATTR_TARGET_FILE]}] content type: {type(readEO.Content)}")
-            self._invoke_file_listeners(file)
+            self._logger.debug(f"Saved: [{new_file}] content type: {type(readEO.Content)}")
+            self._invoke_file_listeners(new_file, None)
             return True # need ack for file delete permission
 
     def enabled_change(self, is_enabled: bool) -> None:
@@ -107,7 +107,7 @@ class Component(GenericObservable):
             self._logger.debug(f"Read: [{file.fullname}]")
             file.add_processing_path(self.id)
             content = self.file_read(file)
-            file.metadata[ATTR_SOURCE_COMPONENT] = self._id.Name
+            file.metadata[ATTR_SOURCE_COMPONENT] = self.id
             if self._invoke_file_listeners(file, content):
                 self.file_delete(file)
 

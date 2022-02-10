@@ -58,9 +58,6 @@ class PipelineBuilder:
 
     def get_component(self, config, pipeline_path: str) -> Component:
         component_id = config[CONF_COMPONENT]
-        # platform = comp_config[CONF_PLATFORM]
-        # ctor = self._comp_constructor_by_platform[platform]
-        # return ctor(self._hass, comp_config)
 
         if component_id not in self._components:
             error = f"Cant found component id '{component_id}' in component list. Pipeline: {self._id}"

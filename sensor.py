@@ -107,7 +107,7 @@ class ComponentLastTimeSensor(ConnectorSensor):
         self._attr_icon = ICON_LAST
 
     def onFileEvent(self, event: FileEventObject):
-        self._attr_native_value = to_human_readable(event.File)
+        self._attr_native_value = to_human_readable(event.File.datetime)
 
 class ComponentLastFileSensor(ConnectorSensor):
     def __init__(self, connector: SensorConnector):

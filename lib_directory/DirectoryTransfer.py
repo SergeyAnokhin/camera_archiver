@@ -46,7 +46,7 @@ class DirectoryTransfer(Component):
         ''' OVERRIDE '''
         os.remove(file.fullname)
 
-    def file_save(self, file: IFileInfo, content) -> str:
+    def file_save(self, file: IFileInfo, content) -> IFileInfo:
         ''' OVERRIDE '''
         file.metadata[ATTR_TARGET_HOST] = local_ip()
         rel_path = file.datetime.strftime(self._config[CONF_DATETIME_PATTERN])
@@ -58,5 +58,5 @@ class DirectoryTransfer(Component):
         else:
             raise Exception(f'Unknown content type to save: {type(content)}')
 
-        return filename
+        return FileInfo(filename)
 

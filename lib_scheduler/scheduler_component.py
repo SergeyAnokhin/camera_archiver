@@ -15,7 +15,7 @@ class SchedulerComponent(Component):
         super().__init__(hass, config)
         self._unsub_refresh: CALLBACK_TYPE = None
         self._next_run = None
-        self._job = HassJob(self.async_run)
+        self._job = HassJob(self._invoke_start_listeners)
         self._schedule_refresh()
 
     def _invoke_set_listeners(self, nextRun: datetime) -> None:
@@ -23,7 +23,7 @@ class SchedulerComponent(Component):
         eventObj.NextRun = nextRun
         super().invoke_listeners(eventObj)
 
-    def _invoke_start_listeners(self, nextRun: datetime) -> None:
+    async def _invoke_start_listeners(self, args) -> None:
         eventObj = StartEventObject(self)
         super().invoke_listeners(eventObj)
 
@@ -51,8 +51,4 @@ class SchedulerComponent(Component):
             self._hass, self._job, self._next_run,
         )
         self._invoke_set_listeners(self._next_run)
-
-    async def async_run(self, args):
-        ''' External call force start '''
-        return self._run()
 
