@@ -4,6 +4,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytz
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+
+from homeassistant.core import CoreState, HomeAssistant
 
 
 def getLogger(name: str, instance: str = "", component: str = "") -> logging.Logger:
@@ -71,3 +74,11 @@ def relative_name(fullname: str, root: str) -> str:
 def local_ip():
     hostname = socket.gethostname()
     return socket.gethostbyname(hostname)
+
+def start_after_ha_started(hass: HomeAssistant, callback):
+    if hass.state == CoreState.running:
+        callback()
+    else:
+        hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STARTED, lambda *_: callback()
+        )

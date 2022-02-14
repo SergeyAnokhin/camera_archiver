@@ -39,7 +39,7 @@ class GenericEnabler(RestoreEntity, ToggleEntity):
         if last_state and last_state.state:
             self._attr_state = last_state.state
             self._logger.debug(f"Restored state: '{self._attr_state.upper()}'")
-            await self.async_update()
+            await self.async_update(force_update=True)
 
     def set_attr(self, key: str, value) -> None:
         if value:
@@ -47,9 +47,9 @@ class GenericEnabler(RestoreEntity, ToggleEntity):
         elif key in self._attr_extra_state_attributes:
             del(self._attr_extra_state_attributes[key])
 
-    async def async_update(self, **kwargs):
+    async def async_update(self, force_update = False):
         curr_state = self._attr_state == STATE_ON
-        if curr_state != self._attr_is_on:
+        if curr_state != self._attr_is_on or force_update:
             self._attr_is_on = curr_state
             self._logger.debug(f"Switch state to '{self._attr_is_on}'")
             # self.schedule_update_ha_state()

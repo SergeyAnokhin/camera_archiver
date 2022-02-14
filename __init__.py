@@ -50,7 +50,7 @@ FTP_SCHEMA = COMPONENT_DEFAULT.extend({
 
 DIRECTORY_SCHEMA = COMPONENT_DEFAULT.extend({
     vol.Required(CONF_PLATFORM): CONF_DIRECTORY,
-    vol.Required(CONF_PATH): cv.isdir,
+    vol.Required(CONF_PATH): cv.string,
     vol.Required(CONF_DATETIME_PATTERN): cv.string,
     vol.Optional(CONF_COPIED_PER_RUN, default=100): cv.positive_int,
     vol.Optional(CONF_CLEAN): CLEAN_SCHEMA,

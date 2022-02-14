@@ -17,7 +17,7 @@ from .common.helper import (getLogger, to_human_readable,
 from .common.transfer_state import TransferState
 from .common.types import SensorConnector
 from .const import (ATTR_EXTENSIONS, ATTR_LAST_DATETIME,
-                    ATTR_LAST_DATETIME_FULL, ATTR_LAST_IMAGE, ATTR_LAST_VIDEO,
+                    ATTR_LAST_DATETIME_FULL, ATTR_LAST_IMAGE, ATTR_LAST_VIDEO, ATTR_NEXT_RUN,
                     ATTR_PIPELINE_PATH, ATTR_SENSORS, ATTR_SIZE_MB,
                     CONF_SENSOR_TYPE_LAST_FILE, CONF_SENSOR_TYPE_LAST_TIME,
                     CONF_SENSOR_TYPE_REPOSITORY_STAT, CONF_SENSOR_TYPE_TIMER,
@@ -77,15 +77,27 @@ class TimerCoordinatorSensor(ConnectorSensor):
         ConnectorSensor.__init__(self, connector, icon=ICON_TIMER)
         self._attr_name = f"{self._name_prefix} timer"
         self._attr_should_poll = True
+        self._next_run = None
 
     @property
     def should_poll(self) -> bool:
         """No need to poll. Coordinator notifies entity of updates."""
         return True
 
-    def onSetSchedulerEvent(self, event: SetSchedulerEventObject):
-        delta = event.NextRun - datetime.now()
+    @property
+    def available(self):
+        return self._next_run is not None
+
+    @property
+    def state(self):
+        delta = self._next_run - datetime.now()
         self._attr_native_value = to_short_human_readable_delta(delta)
+        return self._attr_native_value
+
+    def onSetSchedulerEvent(self, event: SetSchedulerEventObject):
+        self._next_run = event.NextRun
+        self.set_attr(ATTR_NEXT_RUN, to_short_human_readable(self._next_run))
+        self.async_device_update()
 
 class TransferCoordinatorSensor(ConnectorSensor):
 

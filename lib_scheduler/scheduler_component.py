@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta
 
 from homeassistant.const import CONF_SCAN_INTERVAL
-from homeassistant.helpers.event import async_track_point_in_time
-from ..common.event_objects import SetSchedulerEventObject, StartEventObject
-from ..const import CONF_SCHEDULER
 from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant
+from homeassistant.helpers.event import async_track_point_in_time
+
 from ..common.component import Component
+from ..common.event_objects import SetSchedulerEventObject, StartEventObject
+from ..common.helper import start_after_ha_started
+from ..const import CONF_SCHEDULER
 
 
 class SchedulerComponent(Component):
@@ -18,9 +20,9 @@ class SchedulerComponent(Component):
         self._job = HassJob(self._invoke_start_listeners)
         self._schedule_refresh()
 
-    def _invoke_set_listeners(self, nextRun: datetime) -> None:
+    def _invoke_set_listeners(self, next_run = None) -> None:
         eventObj = SetSchedulerEventObject(self)
-        eventObj.NextRun = nextRun
+        eventObj.NextRun = next_run if next_run else self._next_run
         super().invoke_listeners(eventObj)
 
     async def _invoke_start_listeners(self, args) -> None:
@@ -47,10 +49,11 @@ class SchedulerComponent(Component):
             return
 
         scan_interval: timedelta = self._config[CONF_SCAN_INTERVAL]
-        self._next_run = datetime.now().replace(microsecond=0) + scan_interval
+        next_run = self._next_run = datetime.now().replace(microsecond=0) + scan_interval
         self._logger.debug(f"Set next run @ {self._next_run.strftime('%H:%M:%S')}")
         self._unsub_refresh = async_track_point_in_time(
             self._hass, self._job, self._next_run,
         )
-        self._invoke_set_listeners(self._next_run)
+        
+        start_after_ha_started(self._hass, lambda: self._invoke_set_listeners(next_run))
 
