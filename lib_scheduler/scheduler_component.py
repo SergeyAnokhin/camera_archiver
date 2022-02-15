@@ -17,8 +17,8 @@ class SchedulerComponent(Component):
         super().__init__(hass, config)
         self._unsub_refresh: CALLBACK_TYPE = None
         self._next_run = None
-        self._job = HassJob(self._invoke_start_listeners)
-        self._schedule_refresh()
+        self._job = HassJob(self._invoke_start_listeners)       
+        start_after_ha_started(self._hass, lambda: self._schedule_refresh())
 
     def _invoke_set_listeners(self, next_run = None) -> None:
         eventObj = SetSchedulerEventObject(self)
@@ -41,7 +41,7 @@ class SchedulerComponent(Component):
             self._unsub_refresh()
             self._unsub_refresh = None
         self._next_run = None
-        # self._invoke_set_listeners(None)
+        self._invoke_set_listeners(None)
 
     def _schedule_refresh(self):
         self._schedule_off()
@@ -55,5 +55,5 @@ class SchedulerComponent(Component):
             self._hass, self._job, self._next_run,
         )
         
-        start_after_ha_started(self._hass, lambda: self._invoke_set_listeners(next_run))
+        self._invoke_set_listeners(next_run)
 

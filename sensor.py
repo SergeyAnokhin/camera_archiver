@@ -97,7 +97,7 @@ class TimerCoordinatorSensor(ConnectorSensor):
     def onSetSchedulerEvent(self, event: SetSchedulerEventObject):
         self._next_run = event.NextRun
         self.set_attr(ATTR_NEXT_RUN, to_short_human_readable(self._next_run))
-        self.async_device_update()
+        self.hass.add_job(self.async_device_update()) 
 
 class TransferCoordinatorSensor(ConnectorSensor):
 

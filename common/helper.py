@@ -54,7 +54,7 @@ def to_short_human_readable_delta(delta: timedelta) -> str:
     mins = round(delta.seconds / 60)
     if mins > 1:
         return f"{mins}m"
-    if hours == 1:
+    if mins == 1:
         return f"<1m"
 
     if delta.seconds > 1:
