@@ -46,7 +46,7 @@ components:
     user: toto
     password: tata
     path: Camera/Coocheer
-  - id: scheduler_3m
+  - id: scheduler
     platform: scheduler
     scan_interval: 
       minutes: 3
@@ -59,6 +59,9 @@ components:
   - id: filter image
     platform: filter
     mimetype: image
+  - id: filter video
+    platform: filter
+    mimetype: video
 
 sensors:
   - id: camera last image
@@ -85,37 +88,36 @@ sensors:
     type: last_time
 
 pipelines:
-  - id: local
-    component: scheduler_3m
+  # - id: local
+  #   component: scheduler
+  #   listeners:
+  #     - sensor: timer
+  #     - component: input local directory
+  #       listeners:
+  #         - sensor: repository_stat
+  #         - component: output local directory
+  #           listeners:
+  #             - sensor: transfer_stat
+  #             - sensor: last video
+  #             - sensor: last time
+
+  - id: Yi1080pWoodSouth ftp 
+    component: scheduler
     listeners:
       - sensor: timer
-      - component: input local directory
-        listeners:
-          - sensor: repository_stat
-          - component: output local directory
+      - component: Yi1080pWoodSouth ftp
+        listeners: &diskstation_and_elasticsearch_listeners
+          - component: DiskStation ftp
             listeners:
               - sensor: transfer_stat
-              - sensor: last video
               - sensor: last time
-
-      # - id: Yi1080pWoodSouth ftp 
-      #   triggers:
-      #     - platform: scheduler
-      #       scan_interval: 
-      #         minutes: 3
-      #   listeners:
-      #     - sensor: timer sensor
-      #     - component: Yi1080pWoodSouth ftp
-      #       listeners: &diskstation_and_elasticsearch_listeners
-      #         - component: DiskStation ftp
-      #           listeners:
-      #             - sensor: transfer_stat sensor
-      #             - sensor: last file sensor
-      #             - sensor: last time sensor
-      #             - component: elasticsearch
-      #             - component: filter image
-      #               listeners:
-      #                 - component: OpenCV api
+              - component: elasticsearch
+              - component: filter image
+                listeners:
+                  - sensor: last image
+              - component: filter video
+                listeners:
+                  - sensor: last video
 
   # - id: Yi1080pWoodSouth mqtt
   #   component: Yi1080pWoodSouth mqtt

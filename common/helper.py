@@ -40,22 +40,16 @@ def to_short_human_readable(dt: datetime) -> str:
 def to_short_human_readable_delta(delta: timedelta) -> str:
     if not delta:
         return None
-    if delta.days > 1:
+    if delta.days >= 1:
         return f"{delta.days}d"
-    if delta.days == 1:
-        return f"<1d"
 
     hours = round(delta.seconds / 3600)
-    if hours > 1:
+    if hours >= 1:
         return f"{hours}h"
-    if hours == 1:
-        return f"<1h"
 
     mins = round(delta.seconds / 60)
-    if mins > 1:
+    if mins >= 1:
         return f"{mins}m"
-    if mins == 1:
-        return f"<1m"
 
     if delta.seconds > 1:
         return f"{delta.seconds}s"

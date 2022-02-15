@@ -29,11 +29,12 @@ _LOGGER = logging.getLogger(__name__)
 _PLATFORM = "sensor"
 
 class ConnectorSensor(SensorEntity):
-    def __init__(self, connector: SensorConnector, icon=ICON_DEFAULT, unit=""):
+    def __init__(self, connector: SensorConnector, hass: HomeAssistant, icon=ICON_DEFAULT, unit=""):
         self._attr_unit_of_measurement = unit
         self._attr_icon = icon
         self._attr_native_value = None
         self._attr_extra_state_attributes = {}
+        self.hass = hass
         self.connector = connector
         self.connector.add_listener(self.callback)
         self._name_prefix = f"{connector.pipeline_id}: {connector.parent}"
@@ -73,8 +74,8 @@ class ConnectorSensor(SensorEntity):
             del(self._attr_extra_state_attributes[key])
 
 class TimerCoordinatorSensor(ConnectorSensor):
-    def __init__(self, connector: SensorConnector):
-        ConnectorSensor.__init__(self, connector, icon=ICON_TIMER)
+    def __init__(self, connector: SensorConnector, hass: HomeAssistant):
+        ConnectorSensor.__init__(self, connector, hass, icon=ICON_TIMER)
         self._attr_name = f"{self._name_prefix} timer"
         self._attr_should_poll = True
         self._next_run = None
@@ -101,8 +102,8 @@ class TimerCoordinatorSensor(ConnectorSensor):
 
 class TransferCoordinatorSensor(ConnectorSensor):
 
-    def __init__(self, connector: SensorConnector):
-        ConnectorSensor.__init__(self, connector)
+    def __init__(self, connector: SensorConnector, hass: HomeAssistant):
+        ConnectorSensor.__init__(self, connector, hass)
         self._attr_name = f"{self._name_prefix} files"
         self._state = TransferState()
 
@@ -119,8 +120,8 @@ class TransferCoordinatorSensor(ConnectorSensor):
         self.set_attr(ATTR_LAST_DATETIME_FULL, last_time)
 
 class ComponentLastTimeSensor(ConnectorSensor):
-    def __init__(self, connector: SensorConnector):
-        super().__init__(connector)
+    def __init__(self, connector: SensorConnector, hass: HomeAssistant):
+        super().__init__(connector, hass)
         self._attr_name = f"{self._name_prefix}: last time"
         self._attr_icon = ICON_LAST
 
@@ -128,16 +129,16 @@ class ComponentLastTimeSensor(ConnectorSensor):
         self._attr_native_value = to_human_readable(event.File.datetime)
 
 class ComponentLastFileSensor(ConnectorSensor):
-    def __init__(self, connector: SensorConnector):
-        super().__init__(connector, icon=connector.icon)
+    def __init__(self, connector: SensorConnector, hass: HomeAssistant):
+        super().__init__(connector, hass, icon=connector.icon)
         self._attr_name = f"{self._name_prefix} {connector.id}"
 
     def onFileEvent(self, event: FileEventObject):
         self._attr_native_value = event.File.fullname
 
 class ComponentRepoSensor(TransferCoordinatorSensor):
-    def __init__(self, connector: SensorConnector):
-        super().__init__(connector)
+    def __init__(self, connector: SensorConnector, hass: HomeAssistant):
+        super().__init__(connector, hass)
         self._attr_icon = ICON_TO_COPY
 
     def onRepositoryEvent(self, event: RepositoryEventObject):
@@ -146,8 +147,8 @@ class ComponentRepoSensor(TransferCoordinatorSensor):
         self.update()
 
 class ComponentFileSensor(TransferCoordinatorSensor):
-    def __init__(self, connector: SensorConnector):
-        super().__init__(connector)
+    def __init__(self, connector: SensorConnector, hass: HomeAssistant):
+        super().__init__(connector, hass)
         self._state = TransferState()
         self._attr_icon = ICON_COPIED
 
@@ -185,7 +186,7 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
             continue
 
         ctor = _SENSOR_TYPES[desc.type]
-        sensor = ctor(desc)
+        sensor = ctor(desc, hass)
         sensors.append(sensor)
         logger.debug(f"Add sensor -> path: '{desc.pipeline_path}'; name: '{sensor.name}'")
 

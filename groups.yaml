@@ -1,3 +1,7 @@
+local:
+  entities:
+    - switch.pipeline_local
+
 Yi1080pWoodSouth:
   entities:
     - sensor.yi1080pwoodsouth_ftp_read_files
