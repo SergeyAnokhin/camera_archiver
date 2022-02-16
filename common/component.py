@@ -67,8 +67,6 @@ class Component(GenericObservable):
             self.enabled_change(switchEO.enable)
         elif isinstance(eventObj, FileEventObject):
             readEO = cast(FileEventObject, eventObj)
-            if not readEO.Content:
-                raise Exception(f'Content is empty. Components: {readEO.sender.id} -> {self.id}. Pipeline path: {self.pipeline_path}')
             file = readEO.File
             new_file = self.file_save(file, readEO.Content)
             new_file.source_file = file

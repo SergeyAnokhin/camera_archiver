@@ -11,7 +11,7 @@ class IFileInfo:
         self._datetime: datetime = None
         self.metadata = {}
         self.processing_path = ""
-        self.source_file = None
+        self.source_file: IFileInfo = None
 
     @property
     def size(self) -> int:

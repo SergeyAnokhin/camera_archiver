@@ -6,7 +6,7 @@ from .common.types import SensorPlatforms
 from .common.helper import getLogger
 from homeassistant.components import discovery
 from homeassistant.const import (ATTR_NAME, CONF_HOST, CONF_ID, CONF_NAME,
-                                 CONF_PASSWORD, CONF_PLATFORM,
+                                 CONF_PASSWORD, CONF_PLATFORM, CONF_PORT,
                                  CONF_SCAN_INTERVAL, CONF_SENSORS, CONF_TYPE,
                                  CONF_URL)
 from homeassistant.core import Config, HomeAssistant
@@ -69,6 +69,8 @@ MQTT_SCHEMA = COMPONENT_DEFAULT.extend({
 ELASTICSEARCH_SCHEMA = COMPONENT_DEFAULT.extend({
     vol.Required(CONF_PLATFORM): CONF_ELASTICSEARCH,
     vol.Required(CONF_INDEX): cv.string,
+    vol.Required(CONF_HOST): cv.string,
+    vol.Optional(CONF_PORT): cv.string,
 })
 
 API_SCHEMA = COMPONENT_DEFAULT.extend({

@@ -53,6 +53,8 @@ class FtpTransfer(Component):
 
     def file_save(self, file: IFileInfo, content) -> None:
         ''' OVERRIDE '''
+        if not content:
+            raise Exception(f"Content is empty. Component: {self.id}. Pipeline path: {self.pipeline_path}")
         rel_path = file.datetime.strftime(self._config[CONF_DATETIME_PATTERN])
         filename = f"{self._path}/{rel_path}.{file.ext}"
         file.metadata[ATTR_TARGET_HOST] = self._config[CONF_HOST]

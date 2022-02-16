@@ -48,6 +48,8 @@ class DirectoryTransfer(Component):
 
     def file_save(self, file: IFileInfo, content) -> IFileInfo:
         ''' OVERRIDE '''
+        if not content:
+            raise Exception(f"Content is empty. Component: {self.id}. Pipeline path: {self.pipeline_path}")
         file.metadata[ATTR_TARGET_HOST] = local_ip()
         rel_path = file.datetime.strftime(self._config[CONF_DATETIME_PATTERN])
         filename = f"{self._path}/{rel_path}.{file.ext}"

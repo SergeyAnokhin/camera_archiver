@@ -29,7 +29,9 @@ components:
     datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
   - id: elasticsearch
     platform: elasticsearch
-    index: cameraarchivetest-*
+    index: cameraarchivetest-%Y-%m
+    host: !secret es_ip
+    port: !secret es_port
   - id: OpenCV api
     platform: api
     url: http://winserver:0000/process
@@ -46,11 +48,11 @@ components:
     user: toto
     password: tata
     path: Camera/Coocheer
-  - id: scheduler
+  - id: scheduler_3m
     platform: scheduler
     scan_interval: 
       minutes: 3
-  - id: scheduler_fast
+  - id: scheduler
     platform: scheduler
     scan_interval: 
       seconds: 20
@@ -88,28 +90,17 @@ sensors:
     type: last_time
 
 pipelines:
-  # - id: local
-  #   component: scheduler
-  #   listeners:
-  #     - sensor: timer
-  #     - component: input local directory
-  #       listeners:
-  #         - sensor: repository_stat
-  #         - component: output local directory
-  #           listeners:
-  #             - sensor: transfer_stat
-  #             - sensor: last video
-  #             - sensor: last time
-
-  - id: Yi1080pWoodSouth ftp 
+  - id: local
     component: scheduler
     listeners:
       - sensor: timer
-      - component: Yi1080pWoodSouth ftp
-        listeners: &diskstation_and_elasticsearch_listeners
-          - component: DiskStation ftp
+      - component: input local directory
+        listeners:
+          - sensor: repository_stat
+          - component: output local directory
             listeners:
               - sensor: transfer_stat
+              - sensor: last video
               - sensor: last time
               - component: elasticsearch
               - component: filter image
@@ -118,6 +109,24 @@ pipelines:
               - component: filter video
                 listeners:
                   - sensor: last video
+
+  # - id: Yi1080pWoodSouth ftp 
+  #   component: scheduler
+  #   listeners:
+  #     - sensor: timer
+  #     - component: Yi1080pWoodSouth ftp
+  #       listeners: &diskstation_and_elasticsearch_listeners
+  #         - component: DiskStation ftp
+  #           listeners:
+  #             - sensor: transfer_stat
+  #             - sensor: last time
+  #             - component: elasticsearch
+  #             - component: filter image
+  #               listeners:
+  #                 - sensor: last image
+  #             - component: filter video
+  #               listeners:
+  #                 - sensor: last video
 
   # - id: Yi1080pWoodSouth mqtt
   #   component: Yi1080pWoodSouth mqtt
