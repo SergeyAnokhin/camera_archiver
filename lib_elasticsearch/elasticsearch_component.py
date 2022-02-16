@@ -31,7 +31,6 @@ class ElasticsearchComponent(Component):
         self._port = config.get(CONF_PORT, 9200)
         self._host = config[CONF_HOST]
         self._index = config[CONF_INDEX]
-        self._camera = config[CONF_NAME]
 
     def file_save(self, file: IFileInfo, _) -> None:
         dt = file.datetime # .replace(year=2031)  # TODO: remove replace
@@ -66,6 +65,7 @@ class ElasticsearchComponent(Component):
         source_host = "????????????"
         target_host = "???????????"
         target_component = "???????????"
+        camera = "????????"
         source_component = "????? ftp directory mqtt gmail etc"
         websession = async_get_clientsession(self._hass, False)
         method = "POST"
@@ -76,31 +76,36 @@ class ElasticsearchComponent(Component):
             "accept": "application/json, text/html",
             hdrs.CONTENT_TYPE: "application/json; charset=utf-8"
         } 
-        payload = f"""
+
+        origin = {
+              "pipeline_path": self.pipeline_path,
+              "modif_time": modif_timestamp_str,
+              "host": source_host,
+              "filename": file.source_file.fullname
+            }
+        if ftp_date:
+            origin["ftp_date"] = ftp_date
+        target = {
+              "component": target_component,
+              "host": target_host
+            }
+        payload = {
             "doc": "event",
-            "@timestamp": "{timestamp_str_utc}",
-            "event_start": "{timestamp_str}",
-            "camera": "{self._camera}",
-            "ext": "{file.ext}",
-            "mimitype": "{file.mimetype}",
-            "path": "{file.fullname}",
-            "origin": {
-              "pipeline_path": "{self.pipeline_path}",
-              { "\"ftp_date\": \"{ftp_date },\"" if ftp_date and ftp_date != '' else "" }
-              "modif_time": "{modif_timestamp_str}",
-              "host": "{source_host}",
-              "filename": "{ file.source_file.fullname }"
-            },
-            "target": {
-              "component": "{ target_component }",
-              "host": "{ target_host }"
-            },
-            "source_type": "{ source_component }",
+            "@timestamp": timestamp_str_utc,
+            "event_start": timestamp_str,
+            "camera": camera,
+            "ext": file.ext,
+            "mimitype": file.mimetype,
+            "path": file.fullname,
+            "origin": origin,
+            "target": target,
+            "source_type": source_component,
             "tags": "synology_cameraarchive hassio",
-            "value": { file.size },
+            "value": file.size,
             "volume": "/volume2"
-        """            
-        # json_data = json.dumps(dict, indent=4, sort_keys=True)
+        }    
+        json_data = json.dumps(payload, indent=4, sort_keys=True)
+        self._logger.debug(json_data)
         # print('{}@{}'.format(config.camera, file.to.get_timestamp_utc()), json_data)
         # es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
         # res = es.index(index="cameraarchive-" + file.to.get_month_id_utc(),
@@ -108,32 +113,32 @@ class ElasticsearchComponent(Component):
         #                body=json_data,
         #                id='{}@{}'.format(config.camera, file.to.get_timestamp_utc()))
 
-        try:
-            with getattr(websession, method)(
-                url,
-                data=payload,
-                headers=headers,
-                timeout=timeout
-            ) as response:
+        # try:
+        #     with getattr(websession, method)(
+        #         url,
+        #         data=payload,
+        #         headers=headers,
+        #         timeout=timeout
+        #     ) as response:
 
-                if response.status < HTTPStatus.BAD_REQUEST:
-                    self._logger.debug(
-                        "Success. Url: %s. Status code: %d. Payload: %s",
-                        response.url,
-                        response.status,
-                        payload,
-                    )
-                else:
-                    self._logger.warning(
-                        "Error. Url: %s. Status code %d. Payload: %s",
-                        response.url,
-                        response.status,
-                        payload,
-                    )
+        #         if response.status < HTTPStatus.BAD_REQUEST:
+        #             self._logger.debug(
+        #                 "Success. Url: %s. Status code: %d. Payload: %s",
+        #                 response.url,
+        #                 response.status,
+        #                 payload,
+        #             )
+        #         else:
+        #             self._logger.warning(
+        #                 "Error. Url: %s. Status code %d. Payload: %s",
+        #                 response.url,
+        #                 response.status,
+        #                 payload,
+        #             )
 
-        except asyncio.TimeoutError:
-            self._logger.warning("Timeout call %s", url)
+        # except asyncio.TimeoutError:
+        #     self._logger.warning("Timeout call %s", url)
 
-        except aiohttp.ClientError:
-            self._logger.error("Client error %s", url)
+        # except aiohttp.ClientError:
+        #     self._logger.error("Client error %s", url)
 

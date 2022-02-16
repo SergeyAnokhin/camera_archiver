@@ -36,11 +36,9 @@ class PipelineBuilder:
         for l in listeners:
             if CONF_SENSOR in l:
                 sensor = self.get_sensor(l, parent)
-                parent.add_listener(sensor.callback)
                 self._sensors_to_create.append(sensor)
             if CONF_COMPONENT in l:
-                component = self.get_component(l, parent.pipeline_path)
-                parent.add_listener(component.callback)
+                component = self.get_component(l, parent)
                 self.build_listeners(component, l)
                 
     def get_sensor(self, config, parent: Component) -> SensorConnector:
@@ -54,9 +52,10 @@ class PipelineBuilder:
         clone.pipeline_path = f"{parent.pipeline_path}/{sensor_id}"
         clone.parent = parent.id
         clone.pipeline_id = self._id
+        parent.add_listener(clone.callback)
         return clone
 
-    def get_component(self, config, pipeline_path: str) -> Component:
+    def get_component(self, config, parent: Component) -> Component:
         component_id = config[CONF_COMPONENT]
 
         if component_id not in self._components:
@@ -65,5 +64,8 @@ class PipelineBuilder:
             raise Exception(error)
         desc = self._components[component_id]
         comp: Component = self._comp_constructor_by_platform[desc.Platform](self._hass, desc.config) 
-        comp.pipeline_path = f"{pipeline_path}/{comp.id}"
+        comp.pipeline_path = f"{parent.pipeline_path}/{comp.id}"
+        comp.pipeline_id = self._id
+        comp.parent = parent
+        parent.add_listener(comp.callback)
         return comp

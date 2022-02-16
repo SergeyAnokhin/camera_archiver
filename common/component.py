@@ -24,7 +24,9 @@ class Component(GenericObservable):
         super().__init__()
         self._hass = hass
         self.id = config[CONF_ID]
-        self.pipeline_path = None
+        self.pipeline_path: str = None
+        self.pipeline_id: str = None
+        self.parent: Component = None
         self._logger = getLogger(__name__, self.id)
         self._transfer_file = None
         self._config = config
