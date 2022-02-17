@@ -17,6 +17,10 @@ class IFileInfo:
     def size(self) -> int:
         return self._size
 
+    @size.setter
+    def size(self, value):
+        self._size = value
+
     @property
     def basename(self) -> str:
         pass
@@ -25,6 +29,10 @@ class IFileInfo:
     def dirname(self) -> str:
         path = Path(self.fullname)
         return path.parent
+
+    @fullname.setter
+    def fullname(self, value):
+        self._fullname = value
 
     @property
     def fullname(self) -> str:
@@ -64,6 +72,13 @@ class IFileInfo:
 
     def add_processing_path(self, path: str):
         self.processing_path += f"/{path}"
+
+    def clone(self, new_fullname) -> 'IFileInfo':
+        new = IFileInfo()
+        new.fullname = new_fullname
+        new.datetime = self._datetime
+        new.size = self._size
+        return new
 
     def __str__(self):
          return f"{self.basename} @{self.dirname} {self.files_size_mb}Mb"

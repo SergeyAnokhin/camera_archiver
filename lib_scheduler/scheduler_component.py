@@ -25,7 +25,7 @@ class SchedulerComponent(Component):
         eventObj.NextRun = next_run if next_run else self._next_run
         super().invoke_listeners(eventObj)
 
-    async def _invoke_start_listeners(self, args) -> None:
+    def _invoke_start_listeners(self, args) -> None:
         eventObj = StartEventObject(self)
         super().invoke_listeners(eventObj)
         self._schedule_refresh()

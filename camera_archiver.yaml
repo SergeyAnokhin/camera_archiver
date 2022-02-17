@@ -93,13 +93,13 @@ pipelines:
   - id: local
     component: scheduler
     listeners:
-      # - sensor: timer
+      - sensor: timer
       - component: input local directory
         listeners:
-          # - sensor: repository_stat
+          - sensor: repository_stat
           - component: output local directory
             listeners:
-              # - sensor: transfer_stat
+              - sensor: transfer_stat
               # - sensor: last video
               # - sensor: last time
               - component: elasticsearch

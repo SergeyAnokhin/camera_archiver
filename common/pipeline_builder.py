@@ -24,7 +24,7 @@ class PipelineBuilder:
         self._comp_constructor_by_platform: dict[str, Any] = {c.Platform: c for c in COMPONENTS_LIST}
 
     def build(self) -> list[SensorConnector]:
-        self.component = self.get_component(self._config, f"{self._id}::")
+        self.component = self.get_component(self._config, None)
         self.build_listeners(self.component, self._config)
         return self._sensors_to_create
 
@@ -64,8 +64,11 @@ class PipelineBuilder:
             raise Exception(error)
         desc = self._components[component_id]
         comp: Component = self._comp_constructor_by_platform[desc.Platform](self._hass, desc.config) 
-        comp.pipeline_path = f"{parent.pipeline_path}/{comp.id}"
         comp.pipeline_id = self._id
-        comp.parent = parent
-        parent.add_listener(comp.callback)
+        if parent:
+            comp.pipeline_path = f"{parent.pipeline_path}/{comp.id}"
+            comp.parent = parent
+            parent.add_listener(comp.callback)
+        else:
+            comp.pipeline_path = f"{self._id}::{comp.id}"
         return comp

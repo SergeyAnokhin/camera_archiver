@@ -60,5 +60,7 @@ class DirectoryTransfer(Component):
         else:
             raise Exception(f'Unknown content type to save: {type(content)}')
 
-        return FileInfo(filename)
+        new_file = FileInfo(filename)
+        new_file.datetime = file.datetime
+        return new_file
 
