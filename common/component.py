@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from voluptuous.validators import Any
 
 from ..const import (ATTR_SOURCE_COMPONENT, ATTR_TARGET_FILE, CONF_CLEAN,
-                     CONF_COPIED_PER_RUN, CONF_DATETIME_PATTERN,
+                     CONF_COPIED_PER_RUN, CONF_DATA, CONF_DATETIME_PATTERN,
                      CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH)
 from .event_objects import (FileEventObject, RepositoryEventObject,
                             StartEventObject, SwitchEventObject)
@@ -30,6 +30,7 @@ class Component(GenericObservable):
         self._logger = getLogger(__name__, self.id)
         self._transfer_file = None
         self._config = config
+        self._data: list = config.get(CONF_DATA, [])
         self._copied_per_run = config.get(CONF_COPIED_PER_RUN, 100)
         self._path = config.get(CONF_PATH, "")
         self._clean = config.get(CONF_CLEAN, {})

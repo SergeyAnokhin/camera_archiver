@@ -64,6 +64,8 @@ components:
   - id: filter video
     platform: filter
     mimetype: video
+  - id: metadata
+    platform: metadata
 
 sensors:
   - id: camera last image
@@ -102,7 +104,11 @@ pipelines:
               - sensor: transfer_stat
               # - sensor: last video
               # - sensor: last time
-              - component: elasticsearch
+              - component: metadata
+                data:
+                  camera: Yi1080pWoodSouth
+                listeners:
+                  - component: elasticsearch
               # - component: filter image
               #   listeners:
               #     - sensor: last image

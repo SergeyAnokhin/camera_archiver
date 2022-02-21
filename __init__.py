@@ -14,10 +14,10 @@ from homeassistant.helpers import config_validation as cv
 
 from .common.builder import Builder
 from .const import (ATTR_SENSORS, CONF_API, CONF_CAMERA, CONF_CLEAN,
-                    CONF_COMPONENT, CONF_COMPONENTS, CONF_COPIED_PER_RUN,
+                    CONF_COMPONENT, CONF_COMPONENTS, CONF_COPIED_PER_RUN, CONF_DATA,
                     CONF_DATETIME_PATTERN, CONF_DIRECTORY, CONF_ELASTICSEARCH,
                     CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_FILTER, CONF_FTP,
-                    CONF_IMAP, CONF_INDEX, CONF_LISTENERS, CONF_MIMETYPE,
+                    CONF_IMAP, CONF_INDEX, CONF_LISTENERS, CONF_METADATA, CONF_MIMETYPE,
                     CONF_MQTT, CONF_PATH, CONF_PIPELINES, CONF_REGEX,
                     CONF_SCHEDULER, CONF_SENSOR, CONF_SERVICE,
                     CONF_TOPIC, CONF_USER,
@@ -66,6 +66,10 @@ MQTT_SCHEMA = COMPONENT_DEFAULT.extend({
     vol.Required(CONF_TOPIC): cv.string,
 })
 
+METADATA_SCHEMA = COMPONENT_DEFAULT.extend({
+    vol.Required(CONF_PLATFORM): CONF_METADATA,
+})
+
 ELASTICSEARCH_SCHEMA = COMPONENT_DEFAULT.extend({
     vol.Required(CONF_PLATFORM): CONF_ELASTICSEARCH,
     vol.Required(CONF_INDEX): cv.string,
@@ -97,7 +101,7 @@ SCHEDULER_SCHEMA = COMPONENT_DEFAULT.extend({
 
 COMPONENTS_SCHEMA = vol.All(cv.ensure_list, [
     vol.Any(FTP_SCHEMA, DIRECTORY_SCHEMA, MQTT_SCHEMA, IMAP_SCHEMA, API_SCHEMA,  
-    ELASTICSEARCH_SCHEMA, SCHEDULER_SCHEMA, SERVICE_SCHEMA, FILTER_SCHEMA)
+    ELASTICSEARCH_SCHEMA, SCHEDULER_SCHEMA, SERVICE_SCHEMA, FILTER_SCHEMA, METADATA_SCHEMA)
 ])
 
 FILTER_SCHEMA = vol.Schema({
@@ -125,28 +129,10 @@ SENSORS_SCHEMA = vol.All(cv.ensure_list, [
     }
 ])
 
-# SCHEDULER_TRIGGER_SCHEMA = vol.Schema({
-#     vol.Required(CONF_PLATFORM): CONF_SCHEDULER,
-#     vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_TIME_INTERVAL): cv.time_period,
-# })
-
-# SENSOR_TRIGGER_SCHEMA = vol.Schema({
-#     vol.Required(CONF_PLATFORM): CONF_SENSOR,
-#     vol.Required(CONF_ENTITY_ID): cv.entity_id,
-# })
-
-# MQTT_TRIGGER_SCHEMA = vol.Schema({
-#     vol.Required(CONF_PLATFORM): CONF_MQTT,
-#     vol.Required(CONF_TOPIC): cv.string,
-# })
-
-# TRIGGERS_SCHEMA = vol.All(cv.ensure_list, [
-#     vol.Any(SCHEDULER_TRIGGER_SCHEMA, SENSOR_TRIGGER_SCHEMA, MQTT_TRIGGER_SCHEMA)
-# ])
-
 ### LEVEL 5 ###
 COMPONENT_REF_SCHEMA_L5 = REF_SCHEMA.extend({
     vol.Required(CONF_COMPONENT): cv.string,
+    vol.Optional(CONF_DATA): cv.ensure_list,
 })
 
 LISTENERS_SCHEMA_L5 = vol.All(cv.ensure_list, [
@@ -157,6 +143,7 @@ LISTENERS_SCHEMA_L5 = vol.All(cv.ensure_list, [
 ### LEVEL 4 ###
 COMPONENT_REF_SCHEMA_L4 = REF_SCHEMA.extend({
     vol.Optional(CONF_LISTENERS): LISTENERS_SCHEMA_L5,
+    vol.Optional(CONF_DATA): cv.ensure_list,
     vol.Required(CONF_COMPONENT): cv.string,
 })
 
@@ -167,6 +154,7 @@ LISTENERS_SCHEMA_L4 = vol.All(cv.ensure_list, [
 ### LEVEL 3 ###
 COMPONENT_REF_SCHEMA_L3 = REF_SCHEMA.extend({
     vol.Required(CONF_COMPONENT): cv.string,
+    vol.Optional(CONF_DATA): cv.ensure_list,
     vol.Optional(CONF_LISTENERS): LISTENERS_SCHEMA_L4,
 })
 
@@ -177,6 +165,7 @@ LISTENERS_SCHEMA_L3 = vol.All(cv.ensure_list, [
 ### LEVEL 2 ###
 COMPONENT_REF_SCHEMA_L2 = REF_SCHEMA.extend({
     vol.Required(CONF_COMPONENT): cv.string,
+    vol.Optional(CONF_DATA): cv.ensure_list,
     vol.Optional(CONF_LISTENERS): LISTENERS_SCHEMA_L3,
 })
 
@@ -187,6 +176,7 @@ LISTENERS_SCHEMA_L2 = vol.All(cv.ensure_list, [
 ### LEVEL 1 ###
 COMPONENT_REF_SCHEMA = REF_SCHEMA.extend({
     vol.Required(CONF_COMPONENT): cv.string,
+    vol.Optional(CONF_DATA): cv.ensure_list,
     vol.Optional(CONF_LISTENERS): LISTENERS_SCHEMA_L2,
 })
 

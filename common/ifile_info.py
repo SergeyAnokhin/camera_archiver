@@ -30,13 +30,13 @@ class IFileInfo:
         path = Path(self.fullname)
         return path.parent
 
-    @fullname.setter
-    def fullname(self, value):
-        self._fullname = value
-
     @property
     def fullname(self) -> str:
         return self._fullname
+
+    @fullname.setter
+    def fullname(self, value):
+        self._fullname = value
 
     @property
     def modif_datetime(self) -> datetime:

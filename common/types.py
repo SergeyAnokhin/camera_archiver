@@ -1,4 +1,6 @@
 from enum import Enum
+
+from ..lib_metadata.metadata_component import MetadataComponent
 from .component import Component
 from ..lib_api.api_component import ApiComponent
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
@@ -90,5 +92,6 @@ COMPONENTS_LIST: list[Component] = [
     ImapComponent,
     ServiceComponent,
     SchedulerComponent,
-    FilterComponent
+    FilterComponent,
+    MetadataComponent
 ]
