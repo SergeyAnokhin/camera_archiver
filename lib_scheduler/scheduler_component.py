@@ -17,10 +17,10 @@ class SchedulerComponent(Component):
         super().__init__(hass, config)
         self._unsub_refresh: CALLBACK_TYPE = None
         self._next_run = None
-        self._job = HassJob(self._invoke_start_listeners)       
+        self._job = HassJob(self._invoke_start_listeners)
         start_after_ha_started(self._hass, lambda: self._schedule_refresh())
 
-    def _invoke_set_listeners(self, next_run = None) -> None:
+    def _invoke_set_listeners(self, next_run=None) -> None:
         eventObj = SetSchedulerEventObject(self)
         eventObj.NextRun = next_run if next_run else self._next_run
         super().invoke_listeners(eventObj)
@@ -35,7 +35,7 @@ class SchedulerComponent(Component):
             self._schedule_refresh()
         else:
             self._schedule_off()
-        
+
     def _schedule_off(self):
         if self._unsub_refresh:
             self._unsub_refresh()
@@ -49,11 +49,14 @@ class SchedulerComponent(Component):
             return
 
         scan_interval: timedelta = self._config[CONF_SCAN_INTERVAL]
-        next_run = self._next_run = datetime.now().replace(microsecond=0) + scan_interval
+        next_run = self._next_run = (
+            datetime.now().replace(microsecond=0) + scan_interval
+        )
         self._logger.debug(f"Set next run @ {self._next_run.strftime('%H:%M:%S')}")
         self._unsub_refresh = async_track_point_in_time(
-            self._hass, self._job, self._next_run,
+            self._hass,
+            self._job,
+            self._next_run,
         )
-        
-        self._invoke_set_listeners(next_run)
 
+        self._invoke_set_listeners(next_run)

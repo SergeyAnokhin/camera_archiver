@@ -2,7 +2,7 @@
 components:
   - id: input local directory
     platform: directory
-    path: ../home-assistant-core-data/input
+    path: ../data/input
     datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
     copied_per_run: 2
     clean:
@@ -25,7 +25,7 @@ components:
     topic: yicam_1080p/motion_detection_image
   - id: output local directory
     platform: directory
-    path: ../home-assistant-core-data
+    path: ../data
     datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
   - id: elasticsearch
     platform: elasticsearch
@@ -50,11 +50,11 @@ components:
     path: Camera/Coocheer
   - id: scheduler_3m
     platform: scheduler
-    scan_interval: 
+    scan_interval:
       minutes: 3
   - id: scheduler
     platform: scheduler
-    scan_interval: 
+    scan_interval:
       seconds: 20
   - id: service_run
     platform: service
@@ -116,7 +116,7 @@ pipelines:
               #   listeners:
               #     - sensor: last video
 
-  # - id: Yi1080pWoodSouth ftp 
+  # - id: Yi1080pWoodSouth ftp
   #   component: scheduler
   #   listeners:
   #     - sensor: timer
@@ -138,7 +138,7 @@ pipelines:
   #   component: Yi1080pWoodSouth mqtt
   #   listeners:
   #     - sensor: camera last image
-  #       filter: 
+  #       filter:
   #         mimetype: image
   #     - component: Yi1080pWoodSouth mqtt
   #       listeners:
@@ -162,10 +162,10 @@ pipelines:
 #       from: ### any in this list
 #         # - name: directory
 #         #   platform: directory
-#         #   path: ../home-assistant-core-data/input
+#         #   path: ../data/input
 #         #   datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
 #         #   copied_per_run: 2
-#         #   scan_interval: 
+#         #   scan_interval:
 #         #     seconds: 10
 #         #   clean:
 #         #     empty_directories: True
@@ -177,7 +177,7 @@ pipelines:
 #           path: /tmp/sd/record
 #           datetime_pattern: "%YY%mM%dD%HH/E1%MM%SS%f" # use python datetime format here
 #           copied_per_run: 2
-#           scan_interval: 
+#           scan_interval:
 #             minutes: 3
 #           clean:
 #             empty_directories: True
@@ -190,7 +190,7 @@ pipelines:
 #       to: ### all in this list
 #         # - name: directory
 #         #   platform: directory
-#         #   path: ../home-assistant-core-data
+#         #   path: ../data
 #         #   datetime_pattern: "%Y-%m/%d/Yi1080pWoodSouth_%Y-%m-%d_%H-%M-%S" # use python datetime format here
 #         - platform: camera
 #           filter: '.*\.jpg'

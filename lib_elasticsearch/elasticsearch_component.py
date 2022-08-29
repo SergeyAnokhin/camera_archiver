@@ -3,20 +3,29 @@ from datetime import datetime
 from http import HTTPStatus
 import json
 import pytz
-from homeassistant.async_timeout_backcompat import timeout
 
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from ..common.ifile_info import IFileInfo
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT
 from homeassistant.core import HomeAssistant
- 
+
 
 from ..common.component import Component
-from ..const import (ATTR_CAMERA, ATTR_EXT, ATTR_ID, ATTR_MIMETYPE, ATTR_SIZE,
-                     ATTR_SOURCE_FILE, ATTR_SOURCE_FILE_CREATED,
-                     ATTR_TIMESTAMP, ATTR_TIMESTAMP_STR,
-                     ATTR_TIMESTAMP_STR_UTC, CONF_ELASTICSEARCH, CONF_INDEX,
-                     EVENT_CAMERA_ARCHIVER_FILE_COPIED)
+from ..const import (
+    ATTR_CAMERA,
+    ATTR_EXT,
+    ATTR_ID,
+    ATTR_MIMETYPE,
+    ATTR_SIZE,
+    ATTR_SOURCE_FILE,
+    ATTR_SOURCE_FILE_CREATED,
+    ATTR_TIMESTAMP,
+    ATTR_TIMESTAMP_STR,
+    ATTR_TIMESTAMP_STR_UTC,
+    CONF_ELASTICSEARCH,
+    CONF_INDEX,
+    EVENT_CAMERA_ARCHIVER_FILE_COPIED,
+)
 from ..common.helper import to_str_timestamp, to_utc
 from aiohttp import hdrs
 import aiohttp
@@ -33,7 +42,7 @@ class ElasticsearchComponent(Component):
         self._index = config[CONF_INDEX]
 
     def file_save(self, file: IFileInfo, _) -> None:
-        dt = file.datetime # .replace(year=2031)  # TODO: remove replace
+        dt = file.datetime  # .replace(year=2031)  # TODO: remove replace
         dt = self.local.localize(dt)
         dt_utc = to_utc(dt)
         timestamp = datetime.timestamp(dt)
@@ -74,21 +83,18 @@ class ElasticsearchComponent(Component):
         timeout = 10
         headers = {
             "accept": "application/json, text/html",
-            hdrs.CONTENT_TYPE: "application/json; charset=utf-8"
-        } 
+            hdrs.CONTENT_TYPE: "application/json; charset=utf-8",
+        }
 
         origin = {
-              "pipeline_path": self.pipeline_path,
-              "modif_time": modif_timestamp_str,
-              "host": source_host,
-              "filename": file.source_file.fullname
-            }
+            "pipeline_path": self.pipeline_path,
+            "modif_time": modif_timestamp_str,
+            "host": source_host,
+            "filename": file.source_file.fullname,
+        }
         if ftp_date:
             origin["ftp_date"] = ftp_date
-        target = {
-              "component": target_component,
-              "host": target_host
-            }
+        target = {"component": target_component, "host": target_host}
         payload = {
             "doc": "event",
             "@timestamp": timestamp_str_utc,
@@ -102,8 +108,8 @@ class ElasticsearchComponent(Component):
             "source_type": source_component,
             "tags": "synology_cameraarchive hassio",
             "value": file.size,
-            "volume": "/volume2"
-        }    
+            "volume": "/volume2",
+        }
         json_data = json.dumps(payload, indent=4, sort_keys=True)
         self._logger.debug(json_data)
         # print('{}@{}'.format(config.camera, file.to.get_timestamp_utc()), json_data)
@@ -141,4 +147,3 @@ class ElasticsearchComponent(Component):
 
         # except aiohttp.ClientError:
         #     self._logger.error("Client error %s", url)
-
