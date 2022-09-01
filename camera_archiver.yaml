@@ -58,6 +58,8 @@ components:
       seconds: 20
   - id: service_run
     platform: service
+  - id: log
+    platform: service_caller
   - id: filter image
     platform: filter
     mimetype: image
@@ -95,26 +97,27 @@ pipelines:
   - id: local
     component: scheduler
     listeners:
-      - sensor: timer
-      - component: input local directory
-        listeners:
-          - sensor: repository_stat
-          - component: output local directory
-            listeners:
-              - sensor: transfer_stat
-              # - sensor: last video
-              # - sensor: last time
-              - component: metadata
-                data:
-                  camera: Yi1080pWoodSouth
-                listeners:
-                  - component: elasticsearch
-              # - component: filter image
-              #   listeners:
-              #     - sensor: last image
-              # - component: filter video
-              #   listeners:
-              #     - sensor: last video
+      - component: log
+      # - sensor: timer
+      # - component: input local directory
+      #   listeners:
+      #     - sensor: repository_stat
+      #     - component: output local directory
+      #       listeners:
+      #         - sensor: transfer_stat
+      #         # - sensor: last video
+      #         # - sensor: last time
+      #         - component: metadata
+      #           data:
+      #             camera: Yi1080pWoodSouth
+      #           listeners:
+      #             - component: elasticsearch
+      #         # - component: filter image
+      #         #   listeners:
+      #         #     - sensor: last image
+      #         # - component: filter video
+      #         #   listeners:
+      #         #     - sensor: last video
 
   # - id: Yi1080pWoodSouth ftp
   #   component: scheduler

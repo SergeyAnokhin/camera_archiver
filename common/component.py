@@ -1,16 +1,28 @@
 from abc import abstractmethod
 from datetime import datetime
 from typing import cast
+from voluptuous.validators import Any
 
 from homeassistant.const import CONF_ID
 from homeassistant.core import HomeAssistant
-from voluptuous.validators import Any
 
-from ..const import (ATTR_SOURCE_COMPONENT, ATTR_TARGET_FILE, CONF_CLEAN,
-                     CONF_COPIED_PER_RUN, CONF_DATA, CONF_DATETIME_PATTERN,
-                     CONF_EMPTY_DIRECTORIES, CONF_FILES, CONF_PATH)
-from .event_objects import (FileEventObject, RepositoryEventObject,
-                            StartEventObject, SwitchEventObject)
+from ..const import (
+    ATTR_SOURCE_COMPONENT,
+    ATTR_TARGET_FILE,
+    CONF_CLEAN,
+    CONF_COPIED_PER_RUN,
+    CONF_DATA,
+    CONF_DATETIME_PATTERN,
+    CONF_EMPTY_DIRECTORIES,
+    CONF_FILES,
+    CONF_PATH,
+)
+from .event_objects import (
+    FileEventObject,
+    RepositoryEventObject,
+    StartEventObject,
+    SwitchEventObject,
+)
 from .generic_observable import GenericObservable
 from .helper import getLogger
 from .ifile_info import IFileInfo
@@ -73,16 +85,18 @@ class Component(GenericObservable):
             file = readEO.File
             new_file = self.file_save(file, readEO.Content)
             new_file.source_file = file
-            self._logger.debug(f"Saved: [{new_file}] content type: {type(readEO.Content)}")
+            self._logger.debug(
+                f"Saved: [{new_file}] content type: {type(readEO.Content)}"
+            )
             self._invoke_file_listeners(new_file, None)
-            return True # need ack for file delete permission
+            return True  # need ack for file delete permission
 
     def enabled_change(self, is_enabled: bool) -> None:
         if self._is_enabled == is_enabled:
             return
         self._is_enabled = is_enabled
         self.enabled_changed()
-        
+
     @abstractmethod
     def enabled_changed(self):
         pass
@@ -119,7 +133,7 @@ class Component(GenericObservable):
         self._logger.debug(f"Read from [{self._path}]: END")
 
     def run(self, args):
-        ''' External call force start '''
+        """External call force start"""
         return self._run()
 
     def validate_file(self, file: IFileInfo) -> bool:
@@ -130,13 +144,17 @@ class Component(GenericObservable):
         return True
 
     def filename_datetime(self, file: IFileInfo):
-        #p = re.compile(".*(?P<year>\d{4})Y(?P<month>\d\d)M(?P<day>\d\d)D(?P<hour>\d\d)H/E1(?P<min>\d\d)M(?P<sec>\d\d)S(?P<msec>\d\d).*")
-        #m = p.match(self.fullname())
-        #d = m.groupdict()
+        # p = re.compile(".*(?P<year>\d{4})Y(?P<month>\d\d)M(?P<day>\d\d)D(?P<hour>\d\d)H/E1(?P<min>\d\d)M(?P<sec>\d\d)S(?P<msec>\d\d).*")
+        # m = p.match(self.fullname())
+        # d = m.groupdict()
         try:
-            path = file.fullnameWithoutExt.replace(self._path, '').lstrip('\\').lstrip('/')
+            path = (
+                file.fullnameWithoutExt.replace(self._path, "").lstrip("\\").lstrip("/")
+            )
             pattern = self._config[CONF_DATETIME_PATTERN]
             return datetime.strptime(path, pattern)
         except Exception as e:
-            self._logger.warn(f"Can't parse datetime from: '{path}' pattern: '{pattern}' Exception: {e}")
+            self._logger.warn(
+                f"Can't parse datetime from: '{path}' pattern: '{pattern}' Exception: {e}"
+            )
             return None

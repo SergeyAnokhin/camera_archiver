@@ -1,31 +1,41 @@
 from enum import Enum
 
-from ..lib_metadata.metadata_component import MetadataComponent
-from .component import Component
+from homeassistant.const import CONF_ICON, CONF_ID, CONF_PLATFORM, CONF_TYPE
+
+from ..const import (
+    CONF_API,
+    CONF_CAMERA,
+    CONF_DIRECTORY,
+    CONF_ELASTICSEARCH,
+    CONF_FTP,
+    CONF_IMAP,
+    CONF_MQTT,
+    CONF_SCHEDULER,
+    CONF_SENSOR,
+    CONF_SWITCH,
+    ICON_DEFAULT,
+)
 from ..lib_api.api_component import ApiComponent
 from ..lib_directory.DirectoryTransfer import DirectoryTransfer
 from ..lib_elasticsearch.elasticsearch_component import ElasticsearchComponent
 from ..lib_filter.filter_component import FilterComponent
 from ..lib_ftp.FtpTransfer import FtpTransfer
 from ..lib_imap.imap_component import ImapComponent
+from ..lib_metadata.metadata_component import MetadataComponent
 from ..lib_mqtt.MqttTransfer import MqttTransfer
 from ..lib_scheduler.scheduler_component import SchedulerComponent
+from ..lib_service.service_caller_component import ServiceCallerComponent
 from ..lib_service.service_component import ServiceComponent
-
-from homeassistant.const import CONF_ICON, CONF_ID, CONF_PLATFORM, CONF_TYPE
-
-from ..const import (CONF_API, CONF_CAMERA, CONF_DIRECTORY, CONF_ELASTICSEARCH,
-                     CONF_FTP, CONF_IMAP, CONF_MQTT, CONF_SCHEDULER,
-                     CONF_SENSOR, CONF_SWITCH, ICON_DEFAULT)
+from .component import Component
 from .event_objects import EventObject
 from .generic_observable import GenericObservable
 
 
 class Pipeline:
-
     def __init__(self, config: dict) -> None:
         self.id = config[CONF_ID]
         self.component = None
+
 
 class ComponentPlatforms(Enum):
     MQTT = CONF_MQTT
@@ -47,22 +57,21 @@ class TriggerPlatforms(Enum):
     MQTT = CONF_MQTT
     SENSOR = CONF_SENSOR
 
-class ComponentDescriptor:
 
+class ComponentDescriptor:
     def __init__(self, config) -> None:
         self.config = config
         self.id = config[CONF_ID]
         self.Platform = config[CONF_PLATFORM]
 
     def __str__(self):
-         return f"CompDesc: #{self.id} @{self.Platform}"
+        return f"CompDesc: #{self.id} @{self.Platform}"
 
     def __repr__(self):
         return self.__str__()
 
 
 class SensorConnector(GenericObservable):
-
     def __init__(self, config: dict) -> None:
         GenericObservable.__init__(self)
         self.id = config[CONF_ID]
@@ -77,7 +86,7 @@ class SensorConnector(GenericObservable):
         self.invoke_listeners(eventObject)
 
     def __str__(self):
-         return f"#{self.id} [{self.platform}] Listeners:{len(self._listeners)} Path: {self.pipeline_path}"
+        return f"#{self.id} [{self.platform}] Listeners:{len(self._listeners)} Path: {self.pipeline_path}"
 
     def __repr__(self):
         return self.__str__()
@@ -91,7 +100,8 @@ COMPONENTS_LIST: list[Component] = [
     ApiComponent,
     ImapComponent,
     ServiceComponent,
+    ServiceCallerComponent,
     SchedulerComponent,
     FilterComponent,
-    MetadataComponent
+    MetadataComponent,
 ]

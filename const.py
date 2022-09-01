@@ -1,6 +1,6 @@
 DOMAIN = "camera_archiver"
 
-DEFAULT_TIME_INTERVAL = '00:01:00'
+DEFAULT_TIME_INTERVAL = "00:01:00"
 
 CONF_LOCAL_STORAGE = "local_storage"
 CONF_COPIED_PER_RUN = "copied_per_run"
@@ -35,6 +35,8 @@ CONF_FILES = "files"
 CONF_COMPONENTS = "components"
 CONF_PIPELINES = "pipelines"
 CONF_SERVICE = "service"
+CONF_SERVICE_LISTENER = "service_listener"
+CONF_SERVICE_CALLER = "service_caller"
 CONF_SENSOR_TYPE_REPOSITORY_STAT = "repository_stat"
 CONF_SENSOR_TYPE_TRANSFER_STAT = "transfer_stat"
 CONF_SENSOR_TYPE_TIMER = "timer"
@@ -62,16 +64,16 @@ SENSOR_NAME_MEGABYTES_COPIED_LAST = "Mb copied"
 SENSOR_NAME_MEGABYTES_COPIED_24_HOURS = "Mb copied 24 hours"
 SENSOR_NAME_MEGABYTES_COPIED_LAST_7_DAYS = "Mb copied 7 days"
 
-ICON_VIDEO = 'mdi:file-video'
-ICON_SCREENSHOT = 'mdi:file-jpg-box'
-ICON_COPIED = 'mdi:file-check'
-ICON_TO_COPY = 'mdi:file-clock'
-ICON_LAST = 'mdi:page-last'
-ICON_24HOURS = 'mdi:hours-24'
-ICON_7DAYS = 'mdi:calendar-week'
-ICON_DEFAULT = 'mdi:upload'
-ICON_CAMERA = 'mdi:camera-plus'
-ICON_TIMER = 'mdi:timer-outline'
+ICON_VIDEO = "mdi:file-video"
+ICON_SCREENSHOT = "mdi:file-jpg-box"
+ICON_COPIED = "mdi:file-check"
+ICON_TO_COPY = "mdi:file-clock"
+ICON_LAST = "mdi:page-last"
+ICON_24HOURS = "mdi:hours-24"
+ICON_7DAYS = "mdi:calendar-week"
+ICON_DEFAULT = "mdi:upload"
+ICON_CAMERA = "mdi:camera-plus"
+ICON_TIMER = "mdi:timer-outline"
 
 ATTR_FROM = "From"
 ATTR_DURATION = "Duration"

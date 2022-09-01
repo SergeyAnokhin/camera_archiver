@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from homeassistant.const import CONF_SCAN_INTERVAL
-from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, callback
 from homeassistant.helpers.event import async_track_point_in_time
 
 from ..common.component import Component
@@ -17,14 +17,15 @@ class SchedulerComponent(Component):
         super().__init__(hass, config)
         self._unsub_refresh: CALLBACK_TYPE = None
         self._next_run = None
-        self._job = HassJob(self._invoke_start_listeners)
-        start_after_ha_started(self._hass, lambda: self._schedule_refresh())
+        # self._job = HassJob(self._invoke_start_listeners)
+        start_after_ha_started(self._hass, self._schedule_refresh)
 
     def _invoke_set_listeners(self, next_run=None) -> None:
         eventObj = SetSchedulerEventObject(self)
         eventObj.NextRun = next_run if next_run else self._next_run
         super().invoke_listeners(eventObj)
 
+    @callback
     def _invoke_start_listeners(self, args) -> None:
         eventObj = StartEventObject(self)
         super().invoke_listeners(eventObj)
@@ -43,6 +44,7 @@ class SchedulerComponent(Component):
         self._next_run = None
         self._invoke_set_listeners(None)
 
+    @callback
     def _schedule_refresh(self):
         self._schedule_off()
         if not self._is_enabled:
@@ -55,7 +57,7 @@ class SchedulerComponent(Component):
         self._logger.debug(f"Set next run @ {self._next_run.strftime('%H:%M:%S')}")
         self._unsub_refresh = async_track_point_in_time(
             self._hass,
-            self._job,
+            self._invoke_start_listeners,
             self._next_run,
         )
 
