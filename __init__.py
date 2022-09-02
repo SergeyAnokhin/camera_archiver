@@ -1,10 +1,8 @@
 import logging
 
 import voluptuous as vol
-
-from .common.types import SensorPlatforms
-from .common.helper import getLogger
 from homeassistant.components import discovery
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_NAME,
     CONF_HOST,
@@ -22,6 +20,8 @@ from homeassistant.core import Config, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
 from .common.builder import Builder
+from .common.helper import getLogger
+from .common.types import SensorPlatforms
 from .const import (
     ATTR_SENSORS,
     CONF_API,
@@ -323,10 +323,18 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-PLATFORMS = ["sensor", "switch", "timer"]  # , "camera", "binary_sensor", "media_player"
+PLATFORMS = ["sensor", "switch", "timer", "camera"]  # , "binary_sensor", "media_player"
 PLATFORMS_NOMEDIA = ["camera", "sensor", "switch"]
 
 # HISTORY EXAMPLE : homeassistant\components\history_stats\sensor.py 228
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up from a config entry."""
+    for component in PLATFORMS:
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, component)
+        )
 
 
 async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
@@ -356,9 +364,10 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
                 )
             )
 
-        # for component in PLATFORMS:
-        #     hass.async_create_task(
-        #         hass.config_entries.async_forward_entry_setup(entry, component)
-        #     )
+        # hass.config_entries.async_forward_entry_setup(entry, component)
+    # for component in PLATFORMS:
+    #     hass.async_create_task(
+    #         hass.config_entries.async_forward_entry_setup(global_config, component)
+    #     )
 
     return True

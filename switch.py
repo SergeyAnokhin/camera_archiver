@@ -12,8 +12,8 @@ from .const import ATTR_PIPELINE_PATH, ATTR_SENSORS
 
 _PLATFORM = "switch"
 
-class GenericEnabler(RestoreEntity, ToggleEntity):
 
+class GenericEnabler(RestoreEntity, ToggleEntity):
     def __init__(self, connector: SensorConnector):
         self.connector = connector
         self._attr_extra_state_attributes = {}
@@ -45,9 +45,9 @@ class GenericEnabler(RestoreEntity, ToggleEntity):
         if value:
             self._attr_extra_state_attributes[key] = value
         elif key in self._attr_extra_state_attributes:
-            del(self._attr_extra_state_attributes[key])
+            del self._attr_extra_state_attributes[key]
 
-    async def async_update(self, force_update = False):
+    async def async_update(self, force_update=False):
         curr_state = self._attr_state == STATE_ON
         if curr_state != self._attr_is_on or force_update:
             self._attr_is_on = curr_state
@@ -57,17 +57,26 @@ class GenericEnabler(RestoreEntity, ToggleEntity):
             switchEO.enable = self._attr_is_on
             self.connector.invoke_listeners(switchEO)
 
-class ComponentEnabler(GenericEnabler):
 
+class ComponentEnabler(GenericEnabler):
     def __init__(self, connector: SensorConnector):
         super().__init__(connector)
+
 
 _SWITCH_TYPES = {
     "": ComponentEnabler,
 }
 
 
-async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
+async def async_setup_entry(
+    hass: HomeAssistant, config: ConfigEntry, async_add_entities
+):
+    pass
+
+
+async def async_setup_platform(
+    hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None
+):
     sensors_desc: list[SensorConnector] = discovery_info[ATTR_SENSORS]
     instName = discovery_info[ATTR_NAME]
     logger = getLogger(__name__, instName)
@@ -80,12 +89,15 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
         ctor = _SWITCH_TYPES[desc.type]
         switch: GenericEnabler = ctor(desc)
         switches.append(switch)
-        logger.debug(f"Add switch -> path: '{desc.pipeline_path}'; name: '{switch.name}'")
+        logger.debug(
+            f"Add switch -> path: '{desc.pipeline_path}'; name: '{switch.name}'"
+        )
 
     add_entities(switches)
 
+
 #     storage = MemoryStorage(hass, instName)
-    
+
 #     switches = []
 #     coordinators_list = []
 

@@ -8,28 +8,56 @@ from homeassistant.const import ATTR_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .common.event_objects import (EventObject, FileEventObject,
-                                   RepositoryEventObject,
-                                   SetSchedulerEventObject, StartEventObject)
-from .common.helper import (getLogger, to_human_readable,
-                            to_short_human_readable,
-                            to_short_human_readable_delta)
+from .common.event_objects import (
+    EventObject,
+    FileEventObject,
+    RepositoryEventObject,
+    SetSchedulerEventObject,
+    StartEventObject,
+)
+from .common.helper import (
+    getLogger,
+    to_human_readable,
+    to_short_human_readable,
+    to_short_human_readable_delta,
+)
 from .common.transfer_state import TransferState
 from .common.types import SensorConnector
-from .const import (ATTR_EXTENSIONS, ATTR_LAST_DATETIME,
-                    ATTR_LAST_DATETIME_FULL, ATTR_LAST_IMAGE, ATTR_LAST_VIDEO, ATTR_NEXT_RUN,
-                    ATTR_PIPELINE_PATH, ATTR_SENSORS, ATTR_SIZE_MB,
-                    CONF_SENSOR_TYPE_LAST_FILE, CONF_SENSOR_TYPE_LAST_TIME,
-                    CONF_SENSOR_TYPE_REPOSITORY_STAT, CONF_SENSOR_TYPE_TIMER,
-                    CONF_SENSOR_TYPE_TRANSFER_STAT, ICON_COPIED, ICON_DEFAULT,
-                    ICON_LAST, ICON_TIMER, ICON_TO_COPY)
+from .const import (
+    ATTR_EXTENSIONS,
+    ATTR_LAST_DATETIME,
+    ATTR_LAST_DATETIME_FULL,
+    ATTR_LAST_IMAGE,
+    ATTR_LAST_VIDEO,
+    ATTR_NEXT_RUN,
+    ATTR_PIPELINE_PATH,
+    ATTR_SENSORS,
+    ATTR_SIZE_MB,
+    CONF_SENSOR_TYPE_LAST_FILE,
+    CONF_SENSOR_TYPE_LAST_TIME,
+    CONF_SENSOR_TYPE_REPOSITORY_STAT,
+    CONF_SENSOR_TYPE_TIMER,
+    CONF_SENSOR_TYPE_TRANSFER_STAT,
+    ICON_COPIED,
+    ICON_DEFAULT,
+    ICON_LAST,
+    ICON_TIMER,
+    ICON_TO_COPY,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 _PLATFORM = "sensor"
 
+
 class ConnectorSensor(SensorEntity):
-    def __init__(self, connector: SensorConnector, hass: HomeAssistant, icon=ICON_DEFAULT, unit=""):
+    def __init__(
+        self,
+        connector: SensorConnector,
+        hass: HomeAssistant,
+        icon=ICON_DEFAULT,
+        unit="",
+    ):
         self._attr_unit_of_measurement = unit
         self._attr_icon = icon
         self._attr_native_value = None
@@ -71,7 +99,8 @@ class ConnectorSensor(SensorEntity):
         if value:
             self._attr_extra_state_attributes[key] = value
         elif key in self._attr_extra_state_attributes:
-            del(self._attr_extra_state_attributes[key])
+            del self._attr_extra_state_attributes[key]
+
 
 class TimerCoordinatorSensor(ConnectorSensor):
     def __init__(self, connector: SensorConnector, hass: HomeAssistant):
@@ -98,10 +127,10 @@ class TimerCoordinatorSensor(ConnectorSensor):
     def onSetSchedulerEvent(self, event: SetSchedulerEventObject):
         self._next_run = event.NextRun
         self.set_attr(ATTR_NEXT_RUN, to_short_human_readable(self._next_run))
-        self.hass.add_job(self.async_device_update()) 
+        self.hass.add_job(self.async_device_update())
+
 
 class TransferCoordinatorSensor(ConnectorSensor):
-
     def __init__(self, connector: SensorConnector, hass: HomeAssistant):
         ConnectorSensor.__init__(self, connector, hass)
         self._attr_name = f"{self._name_prefix} files"
@@ -119,6 +148,7 @@ class TransferCoordinatorSensor(ConnectorSensor):
         last_time = to_human_readable(state.last_datetime)
         self.set_attr(ATTR_LAST_DATETIME_FULL, last_time)
 
+
 class ComponentLastTimeSensor(ConnectorSensor):
     def __init__(self, connector: SensorConnector, hass: HomeAssistant):
         super().__init__(connector, hass)
@@ -128,6 +158,7 @@ class ComponentLastTimeSensor(ConnectorSensor):
     def onFileEvent(self, event: FileEventObject):
         self._attr_native_value = to_human_readable(event.File.datetime)
 
+
 class ComponentLastFileSensor(ConnectorSensor):
     def __init__(self, connector: SensorConnector, hass: HomeAssistant):
         super().__init__(connector, hass, icon=connector.icon)
@@ -135,6 +166,7 @@ class ComponentLastFileSensor(ConnectorSensor):
 
     def onFileEvent(self, event: FileEventObject):
         self._attr_native_value = event.File.fullname
+
 
 class ComponentRepoSensor(TransferCoordinatorSensor):
     def __init__(self, connector: SensorConnector, hass: HomeAssistant):
@@ -145,6 +177,7 @@ class ComponentRepoSensor(TransferCoordinatorSensor):
         self._state = TransferState()
         self._state.extend(event.Files)
         self.update()
+
 
 class ComponentFileSensor(TransferCoordinatorSensor):
     def __init__(self, connector: SensorConnector, hass: HomeAssistant):
@@ -162,11 +195,11 @@ _SENSOR_TYPES = {
     CONF_SENSOR_TYPE_TRANSFER_STAT: ComponentFileSensor,
     CONF_SENSOR_TYPE_TIMER: TimerCoordinatorSensor,
     CONF_SENSOR_TYPE_LAST_FILE: ComponentLastFileSensor,
-    CONF_SENSOR_TYPE_LAST_TIME: ComponentLastTimeSensor
+    CONF_SENSOR_TYPE_LAST_TIME: ComponentLastTimeSensor,
 }
 
-class SensorBuilder:
 
+class SensorBuilder:
     def __init__(self, desc: SensorConnector) -> None:
         self._description = desc
 
@@ -174,7 +207,16 @@ class SensorBuilder:
         ctor = _SENSOR_TYPES[self._description.type]
         return ctor(self._description)
 
-async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None):
+
+async def async_setup_entry(
+    hass: HomeAssistant, config: ConfigEntry, async_add_entities
+):
+    pass
+
+
+async def async_setup_platform(
+    hass: HomeAssistant, config: ConfigEntry, add_entities, discovery_info=None
+):
     instName = discovery_info[ATTR_NAME]
     sensors_desc: list[SensorConnector] = discovery_info[ATTR_SENSORS]
     # storage = MemoryStorage(hass, instName)
@@ -188,8 +230,8 @@ async def async_setup_platform(hass: HomeAssistant, config: ConfigEntry, add_ent
         ctor = _SENSOR_TYPES[desc.type]
         sensor = ctor(desc, hass)
         sensors.append(sensor)
-        logger.debug(f"Add sensor -> path: '{desc.pipeline_path}'; name: '{sensor.name}'")
+        logger.debug(
+            f"Add sensor -> path: '{desc.pipeline_path}'; name: '{sensor.name}'"
+        )
 
     add_entities(sensors)
-
-
