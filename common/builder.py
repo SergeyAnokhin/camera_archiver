@@ -3,13 +3,13 @@ from typing import Any
 from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_SENSORS
 from homeassistant.core import HomeAssistant
 
-from .. import SensorPlatforms
+from .types import SensorPlatforms
 from ..const import CONF_COMPONENTS
 from .pipeline_builder import PipelineBuilder
 from .types import ComponentDescriptor, SensorConnector
 
-class Builder:
 
+class Builder:
     def __init__(self, hass: HomeAssistant, config: dict) -> None:
         self._hass = hass
         self._config = config
@@ -24,7 +24,7 @@ class Builder:
 
     def build_sensors(self):
         self._sensors = {
-            value[CONF_ID]: self.get_sensor(value) 
+            value[CONF_ID]: self.get_sensor(value)
             for value in self._config[CONF_SENSORS]
         }
 
@@ -40,13 +40,17 @@ class Builder:
         return SensorConnector(sensor_config)
 
     def get_pipeline(self, pipe_config) -> list[SensorConnector]:
-        pipelineBuilder = PipelineBuilder(self._hass, pipe_config, self._components, self._sensors)
+        pipelineBuilder = PipelineBuilder(
+            self._hass, pipe_config, self._components, self._sensors
+        )
         sensors = pipelineBuilder.build()
         root_component = pipelineBuilder.component
-        switch = SensorConnector({
-            CONF_ID: f"Pipeline {pipe_config[CONF_ID]}",
-            CONF_PLATFORM: SensorPlatforms.switch
-        })
+        switch = SensorConnector(
+            {
+                CONF_ID: f"Pipeline {pipe_config[CONF_ID]}",
+                CONF_PLATFORM: SensorPlatforms.switch,
+            }
+        )
         switch.pipeline_id = pipe_config[CONF_ID]
         switch.pipeline_path = f"{pipe_config[CONF_ID]}/enabler"
         switch.add_listener(root_component.callback)
