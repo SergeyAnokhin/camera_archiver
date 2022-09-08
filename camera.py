@@ -37,14 +37,14 @@ class ToCamera(CoordinatorEntity, Camera):
     def __init__(
         self,
         hass: HomeAssistant,
-        id: TransferComponentId,
+        # id,
         coordinator: DataUpdateCoordinator,
     ):
         """Initialize the MQTT Camera."""
         CoordinatorEntity.__init__(self, coordinator)
         Camera.__init__(self)
 
-        self._comp_id = id
+        # self._comp_id = id
         self._attr_name = f"{id.Entity}: {id.Name} last file"
         self._attr_icon = ICON_CAMERA
         self._last_image: bytes = None

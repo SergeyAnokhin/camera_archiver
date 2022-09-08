@@ -6,6 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 
 _PLATFORM = "timer"
+PLATFORM = "timer"
 
 
 async def async_setup_entry(

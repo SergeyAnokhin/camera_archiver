@@ -15,6 +15,7 @@ from homeassistant.const import (
     CONF_SENSORS,
     CONF_TYPE,
     CONF_URL,
+    Platform,
 )
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.helpers import config_validation as cv
@@ -323,7 +324,9 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-PLATFORMS = ["sensor", "switch", "timer", "camera"]  # , "binary_sensor", "media_player"
+PLATFORMS = [Platform.CAMERA, Platform.SENSOR, Platform.SWITCH, "timer"]
+
+# PLATFORMS = ["sensor", "switch", "camera"]  # , "binary_sensor", "media_player"
 PLATFORMS_NOMEDIA = ["camera", "sensor", "switch"]
 
 # HISTORY EXAMPLE : homeassistant\components\history_stats\sensor.py 228
@@ -331,10 +334,12 @@ PLATFORMS_NOMEDIA = ["camera", "sensor", "switch"]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up from a config entry."""
-    for component in PLATFORMS:
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, component)
-        )
+    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
+    # for component in PLATFORMS:
+    #     hass.async_create_task(
+    #         hass.config_entries.async_forward_entry_setup(entry, component)
+    #     )
+    return True
 
 
 async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
@@ -346,6 +351,8 @@ async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
     builder = Builder(hass, config)
     builder.build_components()
     builder.build_sensors()
+
+    # hass.states.set("timer.mytimer", "0")
 
     for pipeline in pipelines:
         sensors = builder.build_pipeline(pipeline)

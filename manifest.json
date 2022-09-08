@@ -2,9 +2,9 @@
   "domain": "camera_archiver",
   "name": "Camera Archiver",
   "documentation": "https://github.com/SergeyAnokhin/camera_archiver",
-  "dependencies": ["mqtt"],
+  "dependencies": ["mqtt", "timer"],
   "codeowners": ["@SergeyAnokhin"],
   "iot_class": "local_push",
-  "config_flow": false,
+  "config_flow": true,
   "version": "v0.1.0"
 }
