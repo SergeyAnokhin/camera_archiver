@@ -2,6 +2,7 @@ import logging
 
 import voluptuous as vol
 from homeassistant.components import discovery
+from homeassistant.components.timer import Timer
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_NAME,
@@ -21,7 +22,7 @@ from homeassistant.core import Config, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
 from .common.builder import Builder
-from .common.helper import getLogger
+from .common.helper import add_entity, getLogger
 from .common.types import SensorPlatforms
 from .const import (
     ATTR_SENSORS,
@@ -344,6 +345,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_setup(hass: HomeAssistant, global_config: Config) -> bool:
     """Set up this integration using YAML."""
+
+    timer = Timer(
+        {
+            "id": "ca_timer",
+            "name": "ca_timer",
+            "icon": "mdi:youtube",
+            "duration": "00:00:10",
+        }
+    )
+    timer.entity_id = "timer.ca_timer"
+
+    await add_entity(hass, "timer", timer)
 
     config = global_config[DOMAIN]
     pipelines = config[CONF_PIPELINES]
