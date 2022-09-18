@@ -101,6 +101,7 @@ def create_platform(hass, name):
     gather(bootstrap.async_setup_component(hass, name, {}))
 
 
+# from https://community.home-assistant.io/t/add-device-of-different-domain-in-custom-component/253189/6
 async def add_entity(hass, platform_name, entity):
     platform = get_platform(hass, platform_name)
     await platform.async_add_entities([entity], True)
