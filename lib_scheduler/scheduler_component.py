@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
-from homeassistant.components.timer import Timer
 
-from homeassistant.const import CONF_SCAN_INTERVAL
-from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, callback
+from homeassistant.components.timer import EVENT_TIMER_FINISHED, Timer
+from homeassistant.const import ATTR_ENTITY_ID, CONF_SCAN_INTERVAL
+from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, callback, Event
 from homeassistant.helpers.event import async_track_point_in_time
 
 from ..common.component import Component
@@ -16,8 +16,8 @@ class SchedulerComponent(Component):
 
     def __init__(self, hass: HomeAssistant, config: dict) -> None:
         super().__init__(hass, config)
-        self._unsub_refresh: CALLBACK_TYPE = None
-        self._next_run = None
+        # self._unsub_refresh: CALLBACK_TYPE = None
+        # self._next_run = None
         # self._job = HassJob(self._invoke_start_listeners)
         # start_after_ha_started(self._hass, self._schedule_refresh)
         self.create_timer()
@@ -37,6 +37,14 @@ class SchedulerComponent(Component):
             await register_entity(self._hass, "timer", self._timer)
 
         run_async(async_create_timer(), self._hass)
+
+        async def _loaded_event(event: Event) -> None:
+            """Call the callback if we loaded the expected component."""
+            if event.data[ATTR_ENTITY_ID] == self._timer.entity_id:
+                pass
+
+        # hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, lambda *_: callback())
+        self._hass.bus.listen(EVENT_TIMER_FINISHED, _loaded_event)
 
     def _invoke_set_listeners(self, next_run=None) -> None:
         eventObj = SetSchedulerEventObject(self)
@@ -62,7 +70,7 @@ class SchedulerComponent(Component):
         # self._next_run = None
         # self._invoke_set_listeners(None)
         async def cancel():
-            await self._timer.async_cancel()
+            self._timer.async_cancel()
 
         run_async(cancel(), self._hass)
 
