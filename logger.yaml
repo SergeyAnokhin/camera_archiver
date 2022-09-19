@@ -2,4 +2,5 @@ default: warn
 logs:
   CamArc: debug
   es.url: debug
+  asyncio: error
   #homeassistant.components.mqtt: debug

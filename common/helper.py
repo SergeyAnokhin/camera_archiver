@@ -3,12 +3,14 @@ import socket
 from asyncio import gather
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any, Coroutine
 
 import pytz
 from homeassistant import bootstrap
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.helpers.entity_platform import async_get_platforms
+from homeassistant.util.async_ import fire_coroutine_threadsafe
 
 
 def getLogger(name: str, instance: str = "", component: str = "") -> logging.Logger:
@@ -102,6 +104,10 @@ def create_platform(hass, name):
 
 
 # from https://community.home-assistant.io/t/add-device-of-different-domain-in-custom-component/253189/6
-async def add_entity(hass, platform_name, entity):
+async def register_entity(hass, platform_name, entity):
     platform = get_platform(hass, platform_name)
     await platform.async_add_entities([entity], True)
+
+
+def run_async(coro: Coroutine[Any, Any, Any], hass: HomeAssistant):
+    fire_coroutine_threadsafe(coro, hass.loop)
