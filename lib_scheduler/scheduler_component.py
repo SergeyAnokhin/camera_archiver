@@ -44,7 +44,7 @@ class SchedulerComponent(Component):
                 pass
 
         # hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, lambda *_: callback())
-        self._hass.bus.listen(EVENT_TIMER_FINISHED, _loaded_event)
+        self._hass.bus.async_listen(EVENT_TIMER_FINISHED, _loaded_event)
 
     def _invoke_set_listeners(self, next_run=None) -> None:
         eventObj = SetSchedulerEventObject(self)
