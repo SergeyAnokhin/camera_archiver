@@ -41,7 +41,8 @@ class SchedulerComponent(Component):
         async def _loaded_event(event: Event) -> None:
             """Call the callback if we loaded the expected component."""
             if event.data[ATTR_ENTITY_ID] == self._timer.entity_id:
-                pass
+                if event.event_type == "timer.finished":
+                    pass
 
         # hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, lambda *_: callback())
         self._hass.bus.async_listen(EVENT_TIMER_FINISHED, _loaded_event)
