@@ -70,17 +70,21 @@ class SchedulerComponent(Component):
         #     self._unsub_refresh = None
         # self._next_run = None
         # self._invoke_set_listeners(None)
-        async def cancel():
+        def cancel():
             self._timer.async_cancel()
 
-        run_async(cancel(), self._hass)
+        cancel()
+
+        # run_async(cancel(), self._hass)
 
     @callback
     def _schedule_refresh(self):
-        async def start():
-            await self._timer.async_start()
+        def start():
+            self._timer.async_start()
 
-        run_async(start(), self._hass)
+        start()
+
+        # run_async(start(), self._hass)
 
         # self._schedule_off()
         # if not self._is_enabled:
