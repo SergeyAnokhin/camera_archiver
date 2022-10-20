@@ -1,9 +1,11 @@
+import asyncio
 import logging
 import socket
 from asyncio import gather
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Coroutine
+from collections.abc import Coroutine
+from typing import Any
 
 import pytz
 from homeassistant import bootstrap
@@ -111,3 +113,7 @@ async def register_entity(hass, platform_name, entity):
 
 def run_async(coro: Coroutine[Any, Any, Any], hass: HomeAssistant):
     fire_coroutine_threadsafe(coro, hass.loop)
+
+
+def run_async_asyncio(coro: Coroutine[Any, Any, Any], hass: HomeAssistant):
+    asyncio.run_coroutine_threadsafe(coro, hass.loop)

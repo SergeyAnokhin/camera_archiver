@@ -1,5 +1,4 @@
-import asyncio
-from homeassistant.util.async_ import fire_coroutine_threadsafe
+from ..common.helper import run_async, run_async_asyncio
 
 from ..common.abstract.listeners_components import ListenersComponent
 from ..const import CONF_SERVICE_CALLER
@@ -25,5 +24,4 @@ class ServiceCallerComponent(ListenersComponent):
 
     def process_item(self, input_data) -> object:
         super().process_item(input_data)
-        loop = asyncio.get_running_loop()
-        fire_coroutine_threadsafe(self.async_call_service(), self._hass.loop)
+        run_async_asyncio(self.async_call_service(), self._hass.loop)
