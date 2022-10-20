@@ -24,4 +24,4 @@ class ServiceCallerComponent(ListenersComponent):
 
     def process_item(self, input_data) -> object:
         super().process_item(input_data)
-        run_async_asyncio(self.async_call_service(), self._hass.loop)
+        run_async_asyncio(self.async_call_service())

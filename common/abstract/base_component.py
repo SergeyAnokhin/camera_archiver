@@ -19,7 +19,7 @@ class BaseComponent(ConceptComponent):
         super().__init__()
         self._id = config[CONF_ID]
         self._pipeline_path: str = None
-        self._is_enabled: bool = True
+        self._is_enabled: bool = None
         self._logger = getLogger(__name__, self._id)
 
         self._hass = hass

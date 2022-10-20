@@ -115,5 +115,6 @@ def run_async(coro: Coroutine[Any, Any, Any], hass: HomeAssistant):
     fire_coroutine_threadsafe(coro, hass.loop)
 
 
-def run_async_asyncio(coro: Coroutine[Any, Any, Any], hass: HomeAssistant):
-    asyncio.run_coroutine_threadsafe(coro, hass.loop)
+def run_async_asyncio(coro: Coroutine[Any, Any, Any]):
+    loop = asyncio.get_running_loop()
+    asyncio.run_coroutine_threadsafe(coro, loop)
