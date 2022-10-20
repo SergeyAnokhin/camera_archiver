@@ -2,8 +2,7 @@ from datetime import datetime, timedelta
 
 from homeassistant.components.timer import EVENT_TIMER_FINISHED, Timer
 from homeassistant.const import ATTR_ENTITY_ID, CONF_SCAN_INTERVAL
-from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, callback, Event
-from homeassistant.helpers.event import async_track_point_in_time
+from homeassistant.core import HomeAssistant, callback, Event
 
 from ..common.component import Component
 from ..common.event_objects import SetSchedulerEventObject, StartEventObject
