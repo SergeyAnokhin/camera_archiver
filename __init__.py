@@ -142,6 +142,8 @@ SERVICE_SCHEMA = COMPONENT_DEFAULT.extend(
 SERVICE_CALLER_SCHEMA = COMPONENT_DEFAULT.extend(
     {
         vol.Required(CONF_PLATFORM): CONF_SERVICE_CALLER,
+        vol.Required(CONF_SERVICE): cv.service,
+        vol.Optional("data"): vol.Any(cv.template, vol.All(dict, cv.template_complex)),
     }
 )
 

@@ -60,6 +60,11 @@ components:
   #   platform: service
   - id: log
     platform: service_caller
+    service: system_log.write
+    data:
+      message: "{{ now() }} Message from ServiceCallerComponent"
+      logger": CamArc
+      level: warning
   # - id: filter image
   #   platform: filter
   #   mimetype: image
