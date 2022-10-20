@@ -1,3 +1,9 @@
+from abc import abstractmethod
+from typing import cast
+from ..event_objects import (
+    EventObject,
+    SwitchEventObject,
+)
 from homeassistant.const import CONF_ID
 from homeassistant.core import HomeAssistant
 
@@ -23,3 +29,18 @@ class BaseComponent(ConceptComponent):
     @property
     def id(self):
         return self._id
+
+    def enabled_change(self, is_enabled: bool) -> None:
+        if self._is_enabled == is_enabled:
+            return
+        self._is_enabled = is_enabled
+        self.enabled_changed(is_enabled)
+
+    @abstractmethod
+    def enabled_changed(self, is_enabled: bool):
+        pass
+
+    def process_item(self, event_object: EventObject) -> object:
+        if isinstance(event_object, SwitchEventObject):
+            switch_eo = cast(SwitchEventObject, event_object)
+            self.enabled_change(switch_eo.enable)

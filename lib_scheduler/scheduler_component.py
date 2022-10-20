@@ -1,18 +1,18 @@
 from homeassistant.components.timer import EVENT_TIMER_FINISHED, Timer
 from homeassistant.const import ATTR_ENTITY_ID
-from homeassistant.core import HomeAssistant, callback, Event
+from homeassistant.core import Event, HomeAssistant, callback
 
-from ..common.component import Component
+from ..common.abstract.listeners_components import ListenersComponent
 from ..common.event_objects import (
+    EventObject,
     SetSchedulerEventObject,
     StartEventObject,
-    EventObject,
 )
 from ..common.helper import register_entity, run_async
 from ..const import CONF_SCHEDULER
 
 
-class SchedulerComponent(Component):
+class SchedulerComponent(ListenersComponent):
     Platform = CONF_SCHEDULER
 
     def __init__(self, hass: HomeAssistant, config: dict) -> None:
@@ -49,18 +49,18 @@ class SchedulerComponent(Component):
         self._hass.bus.async_listen(EVENT_TIMER_FINISHED, _loaded_event)
 
     def _invoke_set_listeners(self, next_run=None) -> None:
-        eventObj = SetSchedulerEventObject(self)
-        eventObj.NextRun = next_run if next_run else self._next_run
-        super().invoke_listeners(eventObj)
+        event_obj = SetSchedulerEventObject(self)
+        event_obj.NextRun = next_run if next_run else self._next_run
+        super().invoke_listeners(event_obj)
 
     @callback
     def _invoke_start_listeners(self, args) -> None:
-        eventObj = StartEventObject(self)
-        super().invoke_listeners(eventObj)
+        event_obj = StartEventObject(self)
+        super().invoke_listeners(event_obj)
         self._schedule_refresh()
 
-    def enabled_changed(self):
-        if self._is_enabled:
+    def enabled_changed(self, enabled: bool):
+        if enabled:
             self._schedule_refresh()
         else:
             self._schedule_off()
