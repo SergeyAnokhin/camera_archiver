@@ -14,7 +14,7 @@ _PLATFORM = "switch"
 
 
 class GenericEnabler(RestoreEntity, ToggleEntity):
-    def __init__(self, connector: SensorConnector):
+    def __init__(self, connector: SensorConnector) -> None:
         self.connector = connector
         self._attr_extra_state_attributes = {}
         self._attr_state = None

@@ -22,6 +22,7 @@ from .event_objects import (
     RepositoryEventObject,
     StartEventObject,
     SwitchEventObject,
+    EventObject,
 )
 from .generic_observable import GenericObservable
 from .helper import getLogger
@@ -36,19 +37,41 @@ class Component(GenericObservable):
         super().__init__()
         self._hass = hass
         self.id = config[CONF_ID]
+        self._logger = getLogger(__name__, self.id)
+        self._config = config
+        self._is_enabled: bool = True
+
+    def enabled_change(self, is_enabled: bool) -> None:
+        if self._is_enabled == is_enabled:
+            return
+        self._is_enabled = is_enabled
+        self.enabled_changed()
+
+    @abstractmethod
+    def enabled_changed(self):
+        pass
+
+    def callback(self, event_object: EventObject) -> object:
+        if isinstance(event_object, SwitchEventObject):
+            switchEO = cast(SwitchEventObject, event_object)
+            self.enabled_change(switchEO.enable)
+
+
+class FileComponent(Component):
+    Platform: str = None
+
+    def __init__(self, hass: HomeAssistant, config: dict) -> None:
+        super().__init__(hass, config)
         self.pipeline_path: str = None
         self.pipeline_id: str = None
         self.parent: Component = None
-        self._logger = getLogger(__name__, self.id)
         self._transfer_file = None
-        self._config = config
         self._data: list = config.get(CONF_DATA, [])
         self._copied_per_run = config.get(CONF_COPIED_PER_RUN, 100)
         self._path = config.get(CONF_PATH, "")
         self._clean = config.get(CONF_CLEAN, {})
         self._clean_dirs = self._clean.get(CONF_EMPTY_DIRECTORIES, False)
         self._clean_files = self._clean.get(CONF_FILES, list[str])
-        self._is_enabled: bool = True
 
     @abstractmethod
     def file_read(self, file: IFileInfo) -> Any:
@@ -74,14 +97,12 @@ class Component(GenericObservable):
         self._logger.debug(f"Delete: [{file.basename}] @ {file.dirname}")
         self.file_delete(file)
 
-    def callback(self, eventObj) -> bool:
-        if isinstance(eventObj, StartEventObject):
+    def callback(self, event_obj) -> bool:
+        super().callback(event_obj)
+        if isinstance(event_obj, StartEventObject):
             self._run()
-        if isinstance(eventObj, SwitchEventObject):
-            switchEO = cast(SwitchEventObject, eventObj)
-            self.enabled_change(switchEO.enable)
-        elif isinstance(eventObj, FileEventObject):
-            readEO = cast(FileEventObject, eventObj)
+        elif isinstance(event_obj, FileEventObject):
+            readEO = cast(FileEventObject, event_obj)
             file = readEO.File
             new_file = self.file_save(file, readEO.Content)
             new_file.source_file = file
@@ -90,16 +111,6 @@ class Component(GenericObservable):
             )
             self._invoke_file_listeners(new_file, None)
             return True  # need ack for file delete permission
-
-    def enabled_change(self, is_enabled: bool) -> None:
-        if self._is_enabled == is_enabled:
-            return
-        self._is_enabled = is_enabled
-        self.enabled_changed()
-
-    @abstractmethod
-    def enabled_changed(self):
-        pass
 
     def _invoke_file_listeners(self, file: IFileInfo, content) -> bool:
         eventObj = FileEventObject(self)

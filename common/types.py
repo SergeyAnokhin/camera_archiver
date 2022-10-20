@@ -82,8 +82,8 @@ class SensorConnector(GenericObservable):
         self.parent: str = None
         self.pipeline_id: str = None
 
-    def callback(self, eventObject: EventObject):
-        self.invoke_listeners(eventObject)
+    def callback(self, event_object: EventObject):
+        self.invoke_listeners(event_object)
 
     def __str__(self):
         return f"#{self.id} [{self.platform}] Listeners:{len(self._listeners)} Path: {self.pipeline_path}"
