@@ -12,19 +12,18 @@ class ServiceCallerComponent(ListenersComponent):
     #     super().__init__(hass, config)
 
     async def async_call_service(self):
-        # await self._hass.services.async_call(
-        #     "system_log",
-        #     "write",
-        #     {
-        #         "message": "Message from ServiceCallerComponent",
-        #         "logger": "CamArc",
-        #         "level": "warning",
-        #     },
-        #     blocking=True,
-        # )
-        pass
+        await self._hass.services.async_call(
+            "system_log",
+            "write",
+            {
+                "message": "Message from ServiceCallerComponent",
+                "logger": "CamArc",
+                "level": "warning",
+            },
+            blocking=True,
+        )
 
-    def process_item(self, input_data):
-        # loop = asyncio.get_running_loop()
-        # fire_coroutine_threadsafe(self.async_call_service(), loop)
-        return super().process_item(input_data)
+    def process_item(self, input_data) -> object:
+        super().process_item(input_data)
+        loop = asyncio.get_running_loop()
+        fire_coroutine_threadsafe(self.async_call_service(), self._hass.loop)
